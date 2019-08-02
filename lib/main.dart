@@ -1,7 +1,9 @@
 import 'package:flutter_web/material.dart';
+import 'package:flutter_web/rendering.dart';
+import 'package:tide_ui/widgets/flip_panel.dart';
 
-import 'package:tide_ui/widgets/draggable_card.dart';
-import 'package:tide_ui/widgets/event_container.dart';
+import 'widgets/draggable_card.dart';
+import 'widgets/event_container.dart';
 
 void main() => runApp(TheApp());
 
@@ -26,9 +28,10 @@ class TheApp extends StatelessWidget {
                       child: Container(
                         color: Colors.red,
                         child: DraggableCard(
-                          child: FlutterLogo(
-                            size: 128,
-                          ),
+                          child: Container(
+                              width: 150,
+                              height: 150,
+                              child: FlipPanelWidget()),
                         ),
                       ),
                     ),
