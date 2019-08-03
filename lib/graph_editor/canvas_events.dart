@@ -73,6 +73,19 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
           keyboardHandler.onKeyDown(evt, context, _isPageActive);
         }
       });
+
+      window.onKeyPress.listen((evt) {
+        if (IsCurrentHandler) {
+          keyboardHandler.onKeyPress(evt, context, _isPageActive);
+        }
+      });
+
+      window.onKeyUp.listen((evt) {
+        if (IsCurrentHandler) {
+          keyboardHandler.onKeyUp(evt, context, _isPageActive);
+        }
+      });
+
       window.onContextMenu.listen((evt) {
         if (IsCurrentHandler) {
           mouseHandler.onContextMenu(evt, context, _isPageActive);

@@ -1,8 +1,12 @@
 import 'package:flutter_web/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tide_ui/graph_editor/graph_tabs.dart';
 import 'data/canvas_state.dart';
+import 'data/canvas_tab.dart';
+import 'data/canvas_tabs_state.dart';
+
 import 'canvas_events.dart';
-import 'canvas_grid.dart';
+import 'canvas_grid_painter.dart';
 
 class GraphCanvas extends StatelessWidget {
   GraphCanvas();
@@ -14,12 +18,12 @@ class GraphCanvas extends StatelessWidget {
         return Column(
           children: <Widget>[
             Container(
-              color: Color(0xfffffff0),
               height: 50,
+              child: GraphTabs(),
             ),
             Expanded(
               child: CustomPaint(
-                painter: CanvasGrid(
+                painter: CanvasGridPainter(
                   pos: state.pos,
                   scale: state.scale,
                 ),
@@ -35,6 +39,14 @@ class GraphCanvas extends StatelessWidget {
   static List<SingleChildCloneableWidget> get providers {
     return [
       ChangeNotifierProvider(builder: (_) => CanvasState()),
+      ChangeNotifierProvider(
+        builder: (_) => CanvasTabsState(selected: "tab3", tabs: [
+          CanvasTab(title: "Tab 1", name: "tab1"),
+          CanvasTab(title: "Tab 2", name: "tab2"),
+          CanvasTab(title: "Tab 3", name: "tab3"),
+          CanvasTab(title: "Tab 4", name: "tab4"),
+        ]),
+      ),
     ];
   }
 }

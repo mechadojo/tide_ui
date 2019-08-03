@@ -1,6 +1,6 @@
 import 'package:flutter_web/material.dart';
 
-class CanvasGrid extends CustomPainter {
+class CanvasGridPainter extends CustomPainter {
   final Offset pos;
   final double scale;
 
@@ -10,7 +10,7 @@ class CanvasGrid extends CustomPainter {
 
   final backFill = Paint()..color = Color(0xfffffff0);
 
-  CanvasGrid({this.pos, this.scale});
+  CanvasGridPainter({this.pos, this.scale});
 
   @override
   void paint(Canvas canvas, Size size) {
