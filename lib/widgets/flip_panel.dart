@@ -18,7 +18,7 @@ class FlipPanelWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return new Center(
+    return Center(
       child: FlipPanel.builder(
         itemBuilder: (context, index) => Container(
           alignment: Alignment.center,
@@ -46,10 +46,10 @@ class FlipPanelWidget extends StatelessWidget {
 
 /// Signature for a function that creates a widget for a given index, e.g., in a
 /// list.
-typedef Widget IndexedItemBuilder(BuildContext, int);
+typedef Widget IndexedItemBuilder(BuildContext ctx, int val);
 
 /// Signature for a function that creates a widget for a value emitted from a [Stream]
-typedef Widget StreamItemBuilder<T>(BuildContext, T);
+typedef Widget StreamItemBuilder<T>(BuildContext ctx, T val);
 
 /// A widget for flip panel with built-in animation
 /// Content of the panel is built from [IndexedItemBuilder] or [StreamItemBuilder]
@@ -165,23 +165,22 @@ class _FlipPanelState<T> extends State<FlipPanel>
     _running = false;
     _loop = 0;
 
-    _controller =
-        new AnimationController(duration: widget.duration, vsync: this)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              _isReversePhase = true;
-              _controller.reverse();
-            }
-            if (status == AnimationStatus.dismissed) {
-              _currentValue = _nextValue;
-              _running = false;
-            }
-          })
-          ..addListener(() {
-            setState(() {
-              _running = true;
-            });
-          });
+    _controller = AnimationController(duration: widget.duration, vsync: this)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _isReversePhase = true;
+          _controller.reverse();
+        }
+        if (status == AnimationStatus.dismissed) {
+          _currentValue = _nextValue;
+          _running = false;
+        }
+      })
+      ..addListener(() {
+        setState(() {
+          _running = true;
+        });
+      });
     _animation =
         Tween(begin: _zeroAngle, end: math.pi / 2).animate(_controller);
 
