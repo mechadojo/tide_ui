@@ -67,6 +67,7 @@ class CanvasState with ChangeNotifier {
   void zoomOut({Offset focus = Offset.zero}) {
     var next = scale / 1.5;
     if (next < minScale) next = minScale;
+
     if (next != scale) {
       zoomAt(next, focus);
     }

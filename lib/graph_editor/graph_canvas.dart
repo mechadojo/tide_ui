@@ -5,20 +5,28 @@ import 'canvas_events.dart';
 import 'canvas_grid.dart';
 
 class GraphCanvas extends StatelessWidget {
-  final Widget child;
-
-  GraphCanvas({this.child});
+  GraphCanvas();
 
   @override
   Widget build(BuildContext context) {
     return CanvasEventContainer(
       child: Consumer<CanvasState>(builder: (context, state, _) {
-        return CustomPaint(
-          painter: CanvasGrid(
-            pos: state.pos,
-            scale: state.scale,
-          ),
-          child: child,
+        return Column(
+          children: <Widget>[
+            Container(
+              color: Color(0xfffffff0),
+              height: 50,
+            ),
+            Expanded(
+              child: CustomPaint(
+                painter: CanvasGrid(
+                  pos: state.pos,
+                  scale: state.scale,
+                ),
+                child: Container(),
+              ),
+            ),
+          ],
         );
       }),
     );
