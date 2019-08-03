@@ -7,12 +7,16 @@ import 'package:tide_ui/graph_editor/data/canvas_state.dart';
 
 class MouseHandler {
   void onContextMenu(MouseEvent evt, BuildContext context, bool isActive) {
-    print("Show Context Menu");
     // Stop the default context menu
     evt.preventDefault();
+    if (!isActive) return;
+
+    print("Show Context Menu");
   }
 
   void onMouseWheel(WheelEvent evt, BuildContext context, bool isActive) {
+    if (!isActive) return;
+
     RenderBox rb = context.findRenderObject();
     var pt = rb.globalToLocal(Offset(evt.client.x, evt.client.y));
     if (pt.dx < 0 || pt.dy < 0) return;
