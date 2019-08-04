@@ -101,11 +101,11 @@ class CanvasGridPainter extends CustomPainter {
       delta += majorOffset;
     }
 
-    //print("Painting: ${size.width}, ${size.height}");
+    //print("Repaint Canvas: ${size.width}, ${size.height}");
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return oldDelegate != this;
+  bool shouldRepaint(CanvasGridPainter oldDelegate) {
+    return oldDelegate.scale != scale || oldDelegate.pos != pos;
   }
 }

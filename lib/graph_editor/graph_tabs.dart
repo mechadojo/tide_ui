@@ -9,15 +9,17 @@ class GraphTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CanvasTabsState>(builder: (context, state, _) {
-      return CustomPaint(
+    final state = Provider.of<CanvasTabsState>(context, listen: true);
+    //print("Rebuild Tabs");
+    return RepaintBoundary(
+      child: CustomPaint(
         painter: CanvasTabsPainter(
           selected: state.selected,
           tabs: state.tabs,
         ),
         child: Container(),
-      );
-    });
+      ),
+    );
   }
 }
 
@@ -38,6 +40,8 @@ class CanvasTabsPainter extends CustomPainter {
   CanvasTabsPainter({this.selected, this.tabs}) {
     if (tabs == null) {
       tabs = [];
+    } else {
+      tabs = [...tabs];
     }
   }
 
@@ -80,7 +84,8 @@ class CanvasTabsPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return this != oldDelegate;
+  bool shouldRepaint(CanvasTabsPainter oldDelegate) {
+    return this.selected != oldDelegate.selected ||
+        this.tabs != oldDelegate.tabs;
   }
 }

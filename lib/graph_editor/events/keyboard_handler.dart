@@ -59,6 +59,8 @@ class KeyboardHandler {
 
   void onKeyUp(KeyboardEvent evt, BuildContext context, bool isActive) {}
 
+  var reFuncKey = RegExp(r"F\d\d?");
+
   void onKeyDown(KeyboardEvent evt, BuildContext context, bool isActive) {
     // Always allow the chrome dev tools
     if (evt.key == "I" && evt.ctrlKey) return;
@@ -66,10 +68,11 @@ class KeyboardHandler {
     if (evt.key == "R" && evt.ctrlKey) return;
 
     // Stop all the other browser shortcuts
-    if (evt.ctrlKey || evt.altKey) {
+    if (evt.ctrlKey || evt.altKey || reFuncKey.hasMatch(evt.key)) {
       evt.preventDefault();
     }
 
+    if (evt.key.startsWith("F"))
     // Only handle the keypress if the graph editor is the active page
     if (!isActive) {
       if (evt.key == "Backspace" && evt.ctrlKey) {
@@ -84,8 +87,11 @@ class KeyboardHandler {
       return;
     }
 
-    if (handleCanvasKeys(Provider.of<CanvasState>(context), evt)) return;
-    if (handleTabKeys(Provider.of<CanvasTabsState>(context), evt)) return;
+    var state = Provider.of<CanvasState>(context, listen: false);
+    if (handleCanvasKeys(state, evt)) return;
+
+    var tabs = Provider.of<CanvasTabsState>(context, listen: false);
+    if (handleTabKeys(tabs, evt)) return;
 
     if (evt.key != "Control" && evt.key != "Alt" && evt.key != "Shift") {
       print(

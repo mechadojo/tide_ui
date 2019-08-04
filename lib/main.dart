@@ -1,7 +1,12 @@
 import 'package:flutter_web/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tide_ui/graph_editor/canvas_events.dart';
+import 'package:tide_ui/graph_editor/graph_tabs.dart';
 
 import 'graph_editor/graph_canvas.dart';
+
+import 'graph_editor/data/canvas_state.dart';
+import 'graph_editor/data/canvas_tabs_state.dart';
 
 void main() => runApp(TheApp());
 
@@ -74,15 +79,28 @@ class GraphEditorPage extends StatelessWidget {
       appBar: AppBar(),
       drawer: Container(color: Colors.green, child: Text("Side Bar")),
       body: MultiProvider(
-        providers: [...GraphCanvas.providers],
+        providers: [...providers],
         child: Row(
           children: <Widget>[
-            Expanded(child: GraphCanvas()),
+            Expanded(
+                child: Column(
+              children: <Widget>[
+                Container(height: 50, child: GraphTabs()),
+                Expanded(child: GraphCanvas())
+              ],
+            )),
             Container(width: 300, color: Colors.green),
           ],
         ),
       ),
     );
+  }
+
+  static List<SingleChildCloneableWidget> get providers {
+    return [
+      ChangeNotifierProvider(builder: (_) => CanvasState()),
+      ChangeNotifierProvider(builder: (_) => CanvasTabsState()),
+    ];
   }
 }
 

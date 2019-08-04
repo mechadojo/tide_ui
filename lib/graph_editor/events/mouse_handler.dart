@@ -11,7 +11,12 @@ class MouseHandler {
     evt.preventDefault();
     if (!isActive) return;
 
-    print("Show Context Menu");
+    RenderBox rb = context.findRenderObject();
+    var pt = rb.globalToLocal(Offset(evt.client.x, evt.client.y));
+    if (pt.dx < 0 || pt.dy < 0) return;
+    if (pt.dx > rb.size.width || pt.dy > rb.size.height) return;
+
+    print("Local: ${pt.dx}, ${pt.dy}");
   }
 
   void onMouseWheel(WheelEvent evt, BuildContext context, bool isActive) {
@@ -19,10 +24,11 @@ class MouseHandler {
 
     RenderBox rb = context.findRenderObject();
     var pt = rb.globalToLocal(Offset(evt.client.x, evt.client.y));
+
     if (pt.dx < 0 || pt.dy < 0) return;
     if (pt.dx > rb.size.width || pt.dy > rb.size.height) return;
 
-    var canvas = Provider.of<CanvasState>(context);
+    var canvas = Provider.of<CanvasState>(context, listen: false);
 
     // Control Scroll = Zoom at Cursor
     if (evt.ctrlKey) {
