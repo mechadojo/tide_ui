@@ -1,13 +1,23 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
+import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
+import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 
-import 'package:tide_ui/graph_editor/events/keyboard_handler.dart';
-import 'package:tide_ui/graph_editor/events/mouse_handler.dart';
+import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
+import 'package:tide_ui/graph_editor/controller/mouse_handler.dart';
 
 import 'package:tide_ui/main.dart' show routeObserver; // this seems hacky
+
+import 'package:provider/provider.dart';
+
+import 'package:tide_ui/graph_editor/data/canvas_state.dart';
+import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 
 import 'dart:html';
 import 'dart:js' as js;
 import 'package:uuid/uuid.dart';
+
+import 'data/graph_state.dart';
 
 class CanvasEventContainer extends StatefulWidget {
   final Widget child;
@@ -22,8 +32,6 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
     with RouteAware {
   final _eventkey = Uuid().v1().toString();
 
-  final MouseHandler mouseHandler = MouseHandler();
-  final KeyboardHandler keyboardHandler = KeyboardHandler();
   bool _isPageActive = false;
 
   @override
@@ -64,6 +72,19 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
   @override
   Widget build(BuildContext context) {
+    final tabs = Provider.of<CanvasTabsState>(context, listen: false);
+    final canvas = Provider.of<CanvasState>(context, listen: false);
+    final graph = Provider.of<GraphState>(context, listen: false);
+
+    final tabsController = CanvasTabsController(tabs);
+    final canvasController = CanvasController(canvas);
+    final graphController = GraphController(graph);
+
+    final MouseHandler mouseHandler =
+        MouseHandler(canvasController, tabsController, graphController);
+    final KeyboardHandler keyboardHandler =
+        KeyboardHandler(canvasController, tabsController, graphController);
+
     if (!IsCurrentHandler) {
       js.context["Window"]["eventmaster"] = _eventkey;
       print("Adding new window event listener with key: $_eventkey");
@@ -94,6 +115,30 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
       window.onMouseWheel.listen((evt) {
         if (IsCurrentHandler) {
           mouseHandler.onMouseWheel(evt, context, _isPageActive);
+        }
+      });
+
+      window.onMouseOut.listen((evt) {
+        if (IsCurrentHandler) {
+          mouseHandler.onMouseOut(evt, context, _isPageActive);
+        }
+      });
+
+      window.onMouseMove.listen((evt) {
+        if (IsCurrentHandler) {
+          mouseHandler.onMouseMove(evt, context, _isPageActive);
+        }
+      });
+
+      window.onMouseDown.listen((evt) {
+        if (IsCurrentHandler) {
+          mouseHandler.onMouseDown(evt, context, _isPageActive);
+        }
+      });
+
+      window.onMouseUp.listen((evt) {
+        if (IsCurrentHandler) {
+          mouseHandler.onMouseUp(evt, context, _isPageActive);
         }
       });
     }

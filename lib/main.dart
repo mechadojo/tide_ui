@@ -1,12 +1,6 @@
 import 'package:flutter_web/material.dart';
-import 'package:provider/provider.dart';
-import 'package:tide_ui/graph_editor/canvas_events.dart';
-import 'package:tide_ui/graph_editor/graph_tabs.dart';
-
-import 'graph_editor/graph_canvas.dart';
-
-import 'graph_editor/data/canvas_state.dart';
-import 'graph_editor/data/canvas_tabs_state.dart';
+import 'graph_editor/font_awesome_icons.dart';
+import 'graph_editor/graph_editor.dart';
 
 void main() => runApp(TheApp());
 
@@ -52,55 +46,23 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Center(
-        child: Column(
-          children: <Widget>[
-            Text("Tide Charts UI"),
-            RaisedButton(
-              child: Text("Back"),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            )
-          ],
+    return Card(
+      child: Container(
+        child: Center(
+          child: Column(
+            children: <Widget>[
+              Text("Tide Charts UI"),
+              IconButton(
+                icon: Icon(FontAwesomeIcons.landmark),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              )
+            ],
+          ),
         ),
       ),
     );
-  }
-}
-
-class GraphEditorPage extends StatelessWidget {
-  const GraphEditorPage({Key key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      drawer: Container(color: Colors.green, child: Text("Side Bar")),
-      body: MultiProvider(
-        providers: [...providers],
-        child: Row(
-          children: <Widget>[
-            Expanded(
-                child: Column(
-              children: <Widget>[
-                Container(height: 50, child: GraphTabs()),
-                Expanded(child: GraphCanvas())
-              ],
-            )),
-            Container(width: 300, color: Colors.green),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static List<SingleChildCloneableWidget> get providers {
-    return [
-      ChangeNotifierProvider(builder: (_) => CanvasState()),
-      ChangeNotifierProvider(builder: (_) => CanvasTabsState()),
-    ];
   }
 }
 

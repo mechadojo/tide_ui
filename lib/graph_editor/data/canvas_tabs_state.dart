@@ -1,25 +1,58 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
+import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
+
 import 'canvas_tab.dart';
+import 'menu_item.dart';
 
 class CanvasTabsState with ChangeNotifier {
+  CanvasTabsController controller;
+
+  List<MenuItem> menu = [];
   List<CanvasTab> tabs = [];
   List<CanvasTab> history = [];
 
   String selected;
-
+  int nextTab = 1;
   int get length => tabs.length;
 
-  CanvasTabsState({this.selected, this.tabs}) {
-    if (tabs == null) tabs = [];
+  CanvasTabsState({this.selected, this.tabs, this.menu}) {
+    tabs = tabs ?? [];
+    menu = menu ?? [];
+
     if (selected == null) {
       selected = first == null ? null : first.name;
     }
+    nextTab = tabs.length + 1;
+  }
+
+  Iterable<CanvasInteractive> interactive() sync* {
+    for (var item in menu) {
+      yield item;
+    }
+
+    for (var tab in tabs) {
+      yield tab.closeBtn;
+      yield tab;
+    }
+  }
+
+  void beginUpdate() {}
+  void endUpdate(bool changed) {
+    if (changed) notifyListeners();
+  }
+
+  void addRange(List<CanvasTab> tabs) {
+    this.tabs = [...tabs];
+    if (selected == null) {
+      selected = first == null ? null : first.name;
+    }
+    nextTab = tabs.length + 1;
   }
 
   /// Add a new tab and optionally [select] it.
   void add({String title, String name, String icon, bool select}) {
-    if (name == null) name = "tab${tabs.length + 1}";
-    if (title == null) title = "Tab ${tabs.length + 1}";
+    if (name == null) name = "tab${nextTab++}";
 
     var tab = CanvasTab(title: title, name: name, icon: icon);
     addTab(tab, select);

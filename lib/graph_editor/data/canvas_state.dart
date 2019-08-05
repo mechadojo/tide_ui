@@ -1,6 +1,9 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
 
 class CanvasState with ChangeNotifier {
+  CanvasController controller;
+
   final double minScale = 0.1316872427983539;
   final double maxScale = 5.0625;
   double get stepSize => 100 / scale;
@@ -8,6 +11,30 @@ class CanvasState with ChangeNotifier {
   Offset pos = Offset.zero;
   double scale = 1.0;
   bool debugMode = true;
+
+  void beginUpdate() {}
+
+  void endUpdate(bool changed) {
+    if (changed) notifyListeners();
+  }
+
+  bool copy(CanvasState other) {
+    bool changed = false;
+
+    beginUpdate();
+    if (this.scale != other.scale) {
+      this.scale = other.scale;
+      changed = true;
+    }
+
+    if (this.pos != other.pos) {
+      this.pos = other.pos;
+      changed = true;
+    }
+
+    endUpdate(changed);
+    return changed;
+  }
 
   void scrollTo(Offset pos) {
     this.pos = pos;
