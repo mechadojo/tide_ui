@@ -20,12 +20,12 @@ class GraphEditorState with ChangeNotifier {
   void onChangeTab(CanvasTab tab, CanvasState canvas, GraphState graph) {
     // Save current canvas and graph state
     if (currentTab != null) {
-      currentTab.canvas.copy(canvas);
-      currentTab.graph.copy(graph);
-
       if (tab != null && currentTab.name == tab.name) {
         return;
       }
+
+      currentTab.canvas.copy(canvas);
+      currentTab.graph.copy(graph);
     }
 
     beginUpdate();

@@ -25,11 +25,17 @@ class GraphEditorController with MouseController, KeyboardController {
   final GraphState graph = GraphState();
   final CanvasState canvas = CanvasState();
 
+  void onChangeTabs() {
+    editor.onChangeTab(tabs.current, canvas, graph);
+  }
+
   GraphEditorController() {
     editor.controller = this;
     tabs.controller = CanvasTabsController(tabs);
     graph.controller = GraphController(graph);
     canvas.controller = CanvasController(canvas);
+
+    tabs.addListener(onChangeTabs);
   }
 
   List<SingleChildCloneableWidget> get providers {

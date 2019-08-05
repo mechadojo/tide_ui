@@ -76,14 +76,10 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
     final canvas = Provider.of<CanvasState>(context, listen: false);
     final graph = Provider.of<GraphState>(context, listen: false);
 
-    final tabsController = CanvasTabsController(tabs);
-    final canvasController = CanvasController(canvas);
-    final graphController = GraphController(graph);
-
     final MouseHandler mouseHandler =
-        MouseHandler(canvasController, tabsController, graphController);
+        MouseHandler(canvas.controller, tabs.controller, graph.controller);
     final KeyboardHandler keyboardHandler =
-        KeyboardHandler(canvasController, tabsController, graphController);
+        KeyboardHandler(canvas.controller, tabs.controller, graph.controller);
 
     if (!IsCurrentHandler) {
       js.context["Window"]["eventmaster"] = _eventkey;
