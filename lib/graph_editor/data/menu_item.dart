@@ -6,6 +6,13 @@ class MenuItem with CanvasInteractive {
   String name;
   String shortcut;
   String group;
+  String iconAlt;
 
-  MenuItem({this.icon, this.title, this.name, this.shortcut, this.group});
+  MenuItem(
+      {this.icon,
+      this.title,
+      this.name,
+      this.shortcut,
+      this.group,
+      this.iconAlt});
 }

@@ -1,7 +1,7 @@
 import 'package:flutter_web/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
-import 'package:tide_ui/graph_editor/icon_painter.dart';
+import 'package:tide_ui/graph_editor/icons/icon_painter.dart';
 
 import 'data/canvas_tab.dart';
 import 'data/canvas_tabs_state.dart';
@@ -68,8 +68,9 @@ class CanvasTabsPainter extends CustomPainter {
   final width = 193.0;
   final height = 35.0;
   final padding = 2.0;
-  final spacing = 22.0;
-  final iconSize = 13.5;
+  final spacing = 25.0;
+  final btnIconSize = 14.0;
+  final tabIconSize = 18.0;
 
   final backFill = Paint()
     ..color = Color(0xffeeeeee)
@@ -168,7 +169,8 @@ class CanvasTabsPainter extends CustomPainter {
         path, selected ? selectedOutlineStroke : unselectOutlineStroke);
 
     if (tab.icon != null) {
-      iconsTab.paint(canvas, tab.icon, Offset(cx - (width / 2) + 20, cy), 16);
+      iconsTab.paint(
+          canvas, tab.icon, Offset(cx - (width / 2) + 20, cy), tabIconSize);
     }
 
     tab.closeBtn.pos = Offset(cx + (width / 2) - 20, cy);
@@ -242,8 +244,11 @@ class CanvasTabsPainter extends CustomPainter {
     if (!item.disabled && item.hovered && item.name != "tab-close") {
       size = size * 1.25;
     }
-    var sz = painter.sizeOf(item.icon, size);
-    painter.paint(canvas, item.icon, item.pos, size);
+
+    var icon = (item.hovered ? item.iconAlt : item.icon) ?? item.icon;
+
+    var sz = painter.sizeOf(icon, size);
+    painter.paint(canvas, icon, item.pos, size);
     item.hitbox = Rect.fromCenter(
         center: item.pos, width: sz.width + 10, height: sz.height + 5);
     //canvas.drawRect(item.hitbox, selectedOutlineStroke);
@@ -260,14 +265,14 @@ class CanvasTabsPainter extends CustomPainter {
         Rect.fromLTRB(0, size.height - padding, size.width, size.height),
         paddingFill);
 
-    var btnPos = Offset(spacing, size.height - padding - height / 2);
+    var btnPos = Offset(spacing / 2, size.height - padding - height / 2);
 
     for (var item in menu) {
       if (item.name == "tab-new") continue;
 
       item.pos = btnPos;
-      drawButton(canvas, item, iconSize);
-      btnPos = btnPos.translate(30, 0);
+      drawButton(canvas, item, btnIconSize);
+      btnPos = btnPos.translate(spacing, 0);
     }
 
     drawTabs(btnPos.dx, canvas, size);
@@ -283,7 +288,7 @@ class CanvasTabsPainter extends CustomPainter {
     var item = menu.firstWhere((x) => x.name == "tab-new");
     if (item != null) {
       item.pos = btnPos;
-      drawButton(canvas, item, iconSize + 1);
+      drawButton(canvas, item, btnIconSize);
     }
   }
 

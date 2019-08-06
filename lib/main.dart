@@ -1,5 +1,5 @@
 import 'package:flutter_web/material.dart';
-import 'graph_editor/font_awesome_icons.dart';
+import 'package:tide_ui/graph_editor/icons/font_awesome_icons.dart';
 import 'graph_editor/graph_editor.dart';
 
 void main() => runApp(TheApp());
@@ -53,7 +53,7 @@ class AboutPage extends StatelessWidget {
             children: <Widget>[
               Text("Tide Charts UI"),
               IconButton(
-                icon: Icon(FontAwesomeIcons.landmark),
+                icon: Icon(FontAwesomeIcons.home),
                 onPressed: () {
                   Navigator.pop(context);
                 },

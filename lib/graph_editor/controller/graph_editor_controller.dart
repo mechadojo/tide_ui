@@ -17,9 +17,9 @@ class GraphEditorController with MouseController, KeyboardController {
   final GraphEditorState editor = GraphEditorState();
   final CanvasTabsState tabs = CanvasTabsState(menu: [
     MenuItem(name: "app-menu", icon: "ellipsisV"),
-    MenuItem(name: "save", icon: "solidSave")..alerted = true,
-    MenuItem(name: "open", icon: "solidFolderOpen")..disabled = true,
-    MenuItem(name: "tab-new", icon: "solidPlusSquare"),
+    MenuItem(name: "save", icon: "solidSave", iconAlt: "save"),
+    MenuItem(name: "open", icon: "solidFolderOpen", iconAlt: "folderOpen"),
+    MenuItem(name: "tab-new", icon: "solidPlusSquare", iconAlt: "plusSquare"),
   ]);
 
   final GraphState graph = GraphState();

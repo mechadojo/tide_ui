@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter_web/material.dart';
 
 class CanvasGridPainter extends CustomPainter {
@@ -17,12 +18,23 @@ class CanvasGridPainter extends CustomPainter {
     final minorStroke = Paint()
       ..color = Color.fromARGB(200, 211, 211, 211)
       ..strokeWidth = scale < .5 ? scale : .5
-      ..isAntiAlias = true;
+      ..isAntiAlias = true
+      ..style = PaintingStyle.stroke;
+
+    final originPaint = Paint()..color = Color.fromARGB(50, 211, 211, 211);
+
+    final originStroke = Paint()
+      ..color = Color.fromARGB(50, 211, 211, 211)
+      ..strokeWidth = 1
+      ..isAntiAlias = true
+      ..style = PaintingStyle.stroke;
 
     final majorStroke = Paint()
       ..color = Color.fromARGB(240, 128, 128, 128)
       ..strokeWidth = scale < 1 ? scale : .75
       ..isAntiAlias = true;
+
+    final originSize = scale < 1 ? 25.0 * scale : 25;
 
     // We are going to be drawing outside the clip rect
     canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height));
@@ -38,8 +50,14 @@ class CanvasGridPainter extends CustomPainter {
     var centerX = pos.dx * scale;
     var centerY = pos.dy * scale;
 
-    canvas.drawCircle(
-        Offset(centerX, centerY), 10, Paint()..color = Colors.red);
+    var origin = Rect.fromCenter(
+        center: Offset(centerX, centerY),
+        width: originSize,
+        height: originSize);
+
+    canvas.drawArc(origin, -pi / 2, pi / 2, true, originPaint);
+    canvas.drawArc(origin, pi / 2, pi / 2, true, originPaint);
+    canvas.drawCircle(Offset(centerX, centerY), originSize / 2, originStroke);
 
     // Calculate the origin of the major grid in the top left corner of the canvas
     // This ensures we always draw a full grid, but draw as little as possible offscreen
