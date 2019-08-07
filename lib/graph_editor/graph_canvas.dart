@@ -13,9 +13,7 @@ class GraphCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = Provider.of<CanvasState>(context, listen: true);
     final graph = Provider.of<GraphState>(context, listen: true);
-    final List<Widget> widgets = [
-      ...graph.nodes.map((n) => GraphWidget(n))
-    ];
+    final List<Widget> widgets = [...graph.nodes.map((n) => GraphWidget(n))];
 
     //print("Rebuild Canvas");
     return RepaintBoundary(
@@ -66,17 +64,20 @@ class GraphWidget extends StatelessWidget {
 class EmptyPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        Paint()
-          ..color = Colors.black
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke);
+    var pen = Paint()
+      ..color = Colors.red
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    var rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    canvas.drawRect(rect, pen);
+    canvas.drawLine(rect.topLeft, rect.bottomRight, pen);
+    canvas.drawLine(rect.bottomLeft, rect.topRight, pen);
   }
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
-    return false;
+    return true;
   }
 }
 
