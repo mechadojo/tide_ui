@@ -4,9 +4,10 @@ import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'data/graph_node.dart';
 
-class GraphNodePainter extends CustomPainter {
+class GraphNodePainter {
   GraphNode node;
-  GraphNodePainter(this.node);
+  Offset pos;
+  double scale;
 
   Paint get borderPaint => Graph.NodeBorder;
   Paint get shadowPaint =>
@@ -18,11 +19,11 @@ class GraphNodePainter extends CustomPainter {
   bool get darkNode =>
       node.type == GraphNodeType.inport || node.type == GraphNodeType.outport;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.scale(node.scale, node.scale);
-    canvas.translate(node.offset.dx, node.offset.dy);
+  void paint(
+      Canvas canvas, Size size, Offset pos, double scale, GraphNode node) {
+    this.node = node;
+    this.pos = pos;
+    this.scale = scale;
 
     var nodeRect = Rect.fromCenter(
         center: node.pos, width: node.size.width, height: node.size.height);
@@ -34,11 +35,5 @@ class GraphNodePainter extends CustomPainter {
     canvas..drawRRect(nodeRRect, borderPaint);
     VectorIcons.paintIcon(canvas, node.icon, node.pos, 45,
         fill: Paint()..color = Colors.black);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
   }
 }

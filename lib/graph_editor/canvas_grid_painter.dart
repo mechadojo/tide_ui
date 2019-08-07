@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:flutter_web/material.dart';
 
-class CanvasGridPainter extends CustomPainter {
-  final Offset pos;
-  final double scale;
+class CanvasGridPainter {
+  Offset pos;
+  double scale;
 
   final majorStep = 80;
   final minorStep = 20;
@@ -11,10 +11,10 @@ class CanvasGridPainter extends CustomPainter {
 
   final backFill = Paint()..color = Color(0xfffffff0);
 
-  CanvasGridPainter({this.pos, this.scale});
+  void paint(Canvas canvas, Size size, Offset pos, double scale) {
+    this.pos = pos;
+    this.scale = scale;
 
-  @override
-  void paint(Canvas canvas, Size size) {
     final minorStroke = Paint()
       ..color = Color.fromARGB(200, 211, 211, 211)
       ..strokeWidth = scale < .5 ? scale : .5
@@ -120,10 +120,5 @@ class CanvasGridPainter extends CustomPainter {
     }
 
     //print("Repaint Canvas: ${size.width}, ${size.height}");
-  }
-
-  @override
-  bool shouldRepaint(CanvasGridPainter oldDelegate) {
-    return oldDelegate.scale != scale || oldDelegate.pos != pos;
   }
 }
