@@ -9,7 +9,7 @@ class GraphState with ChangeNotifier {
   String id = Uuid().v1().toString();
   int version = 0;
 
-  List<GraphNode> nodes = [GraphNode.action()..pos = Offset(100, 100)];
+  List<GraphNode> nodes = [GraphNode.action()..pos = Offset(160, 160)];
   List<GraphLink> links = [];
 
   void beginUpdate() {}

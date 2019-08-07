@@ -13,7 +13,7 @@ class GraphCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = Provider.of<CanvasState>(context, listen: true);
     final graph = Provider.of<GraphState>(context, listen: true);
-    final List<GraphWidget> widgets = [
+    final List<Widget> widgets = [
       ...graph.nodes.map((n) => GraphWidget(n))
     ];
 
@@ -26,7 +26,7 @@ class GraphCanvas extends StatelessWidget {
         ),
         child: Container(
           alignment: Alignment.topLeft,
-          child: Flow(
+          child: Flow.unwrapped(
             delegate: GraphFlowDelegate(
                 pos: state.pos,
                 scale: state.scale,
@@ -84,7 +84,7 @@ class GraphFlowDelegate extends FlowDelegate {
   double scale;
   Offset pos;
   GraphState graph;
-  List<GraphWidget> children;
+  List<Widget> children;
 
   GraphFlowDelegate({this.scale, this.pos, this.graph, this.children});
 
@@ -93,11 +93,14 @@ class GraphFlowDelegate extends FlowDelegate {
     for (int i = 0; i < context.childCount; ++i) {
       var m = Matrix4.identity();
 
-      m.scale(scale, scale);
-      m.translate(pos.dx, pos.dy);
-
       var child = children[i];
-      m.translate(child.obj.pos.dx, child.obj.pos.dy);
+      if (child is GraphWidget) {
+        child.obj.scale = scale;
+        child.obj.offset = pos;
+      } else {
+        m.scale(scale, scale);
+        m.translate(pos.dx, pos.dy);
+      }
 
       context.paintChild(i, transform: m);
     }

@@ -18,7 +18,10 @@ enum GraphNodeType {
 
 enum NodePortType { input, output }
 
-class GraphObject with CanvasInteractive {}
+class GraphObject with CanvasInteractive {
+  double scale;
+  Offset offset;
+}
 
 class NodePort extends GraphObject {
   NodePortType type = NodePortType.input;
