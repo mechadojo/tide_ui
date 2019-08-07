@@ -18,10 +18,7 @@ enum GraphNodeType {
 
 enum NodePortType { input, output }
 
-class GraphObject with CanvasInteractive {
-  double scale;
-  Offset offset;
-}
+class GraphObject with CanvasInteractive {}
 
 class NodePort extends GraphObject {
   NodePortType type = NodePortType.input;
@@ -48,8 +45,8 @@ class NodePort extends GraphObject {
     size = Size(Graph.DefaultPortSize, Graph.DefaultPortSize);
   }
 
-  bool equals(NodePort other) {
-    if (!node.equals(other.node)) return false;
+  bool equalTo(NodePort other) {
+    if (node.name != other.node.name) return false;
     if (type != other.type) return false;
     if (ordinal != other.ordinal) return false;
     if (name != other.name) return false;
@@ -70,8 +67,9 @@ class GraphLink extends GraphObject {
   Offset pathStart;
   Offset pathEnd;
 
-  bool equals(GraphLink other) {
-    return fromPort.equals(other.fromPort) && toPort.equals(other.toPort);
+  bool equalTo(GraphLink other) {
+    if (fromPort.equalTo(other.fromPort)) return false;
+    if (toPort.equalTo(other.toPort)) return false;
   }
 
   @override
@@ -200,25 +198,28 @@ class GraphNode extends GraphObject {
     resize();
   }
 
-  bool equals(GraphNode other) {
+  bool equalTo(GraphNode other) {
     if (name != other.name) return false;
     if (version != other.version) return false;
-    if (title != other.title) return false;
-    if (icon != other.icon) return false;
-    if (type != other.type) return false;
-    if (pos != other.pos) return false;
-    if (size != other.size) return false;
 
-    if (inports.length != other.inports.length) return false;
-    if (outports.length != other.outports.length) return false;
+    // Lets try to just have version be the only check
+    //
+    // if (title != other.title) return false;
+    // if (icon != other.icon) return false;
+    // if (type != other.type) return false;
+    // if (pos != other.pos) return false;
+    // if (size != other.size) return false;
 
-    for (int i = 0; i < inports.length; i++) {
-      if (!inports[i].equals(other.inports[i])) return false;
-    }
+    // if (inports.length != other.inports.length) return false;
+    // if (outports.length != other.outports.length) return false;
 
-    for (int i = 0; i < outports.length; i++) {
-      if (!outports[i].equals(other.outports[i])) return false;
-    }
+    // for (int i = 0; i < inports.length; i++) {
+    //   if (!inports[i].equalTo(other.inports[i])) return false;
+    // }
+
+    // for (int i = 0; i < outports.length; i++) {
+    //   if (!outports[i].equalTo(other.outports[i])) return false;
+    // }
 
     return true;
   }
