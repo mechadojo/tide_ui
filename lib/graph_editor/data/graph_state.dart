@@ -1,30 +1,55 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
-import '../icons/font_awesome_icons.dart';
 import 'package:uuid/uuid.dart';
+
+import 'graph_node.dart';
 
 class GraphState with ChangeNotifier {
   GraphController controller;
   String id = Uuid().v1().toString();
   int version = 0;
 
-  bool copy(GraphState other) {
-    id = other.id;
-    version = other.version;
+  List<GraphNode> nodes = [GraphNode.action()..pos = Offset(100, 100)];
+  List<GraphLink> links = [];
 
-    return false;
+  void beginUpdate() {}
+
+  void endUpdate(bool changed) {
+    if (changed) {
+      notifyListeners();
+    }
   }
 
-  Iterable<Widget> getNodes(double scale) sync* {
-    yield Text("Hello!");
-    for (int i = 0; i < 10; i++) {
-      yield Icon(FontAwesomeIcons.getIconByIndex(i * 25), size: 50);
+  bool equals(GraphState other) {
+    if (id != other.id) return false;
+    if (version != other.version) return false;
+    if (nodes.length != other.nodes.length) return false;
+    if (links.length != other.links.length) return false;
 
-      // yield Transform(
-      //     transform: Matrix4.identity()..scale(1.0 / scale, 1.0 / scale),
-      //     child:
-      //         Icon(FontAwesomeIcons.getIconByIndex(i * 25), size: 50 * scale));
+    for (int i = 0; i < nodes.length; i++) {
+      if (!nodes[i].equals(other.nodes[i])) return false;
     }
+
+    for (int i = 0; i < links.length; i++) {
+      if (!links[i].equals(other.links[i])) return false;
+    }
+
+    return true;
+  }
+
+  bool copy(GraphState other) {
+    bool changed = !equals(other);
+
+    beginUpdate();
+
+    id = other.id;
+    version = other.version;
+    nodes = [...other.nodes];
+    links = [...other.links];
+
+    endUpdate(changed);
+
+    return changed;
   }
 
   void clear() {}
