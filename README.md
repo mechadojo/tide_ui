@@ -44,7 +44,7 @@ Teams can provide custom Java code libraries to Lighthouse to implement graph no
 
 ## Low Tide - Code Only
 
-Low Tide runs Tide Chart data flow graphs by with code that executes equivalent to how the graph runs in a VM.
+Low Tide runs Tide Chart data flow graphs with code that executes equivalent to how the graph runs in a VM.
 
 ### Kraken
 
