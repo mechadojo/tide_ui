@@ -19,6 +19,31 @@ mixin CanvasInteractive {
     return hitbox.contains(pt);
   }
 
+  bool clearInteractive() {
+    var changed = false;
+    for (var item in interactive()) {
+      changed |= item.disabled;
+      item.disabled = false;
+      changed |= item.selected;
+      item.selected = false;
+      changed |= item.hovered;
+      item.hovered = false;
+      changed |= item.selected;
+      item.selected = false;
+      changed |= item.alerted;
+      item.alerted = false;
+      changed |= item.dragging;
+      item.dragging = false;
+
+      if (dragStart != Offset.zero) changed = true;
+      dragStart = Offset.zero;
+      if (alertText.isNotEmpty) changed = true;
+      alertText = "";
+    }
+
+    return changed;
+  }
+
   bool checkHovered(Offset pt) {
     if (hovered != isHovered(pt)) {
       hovered = !hovered;

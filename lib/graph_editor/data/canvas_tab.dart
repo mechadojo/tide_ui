@@ -14,6 +14,12 @@ class CanvasTab with CanvasInteractive {
   MenuItem closeBtn = MenuItem(name: "close-tab");
   CanvasTab({this.icon, this.title, this.name});
 
+  @override
+  Iterable<CanvasInteractive> interactive() sync* {
+    yield closeBtn;
+    yield this;
+  }
+
   void copy(CanvasTab other) {
     icon = other.icon;
     title = other.title;

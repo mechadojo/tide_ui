@@ -1,3 +1,6 @@
+// Parses an SVG font file and creates a Dart class to render the glyphs
+// Note: remove the DOCTYPE from the svg file because xml parser errors out
+
 import "dart:io";
 
 var fontFamily = "MaterialIcons";

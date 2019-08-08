@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 
 class CanvasGridPainter {
   Offset pos;
@@ -9,7 +10,7 @@ class CanvasGridPainter {
   final minorStep = 20;
   final ratio = 4;
 
-  final backFill = Paint()..color = Color(0xfffffff0);
+  final backFill = Graph.CanvasColor;
 
   void paint(Canvas canvas, Size size, Offset pos, double scale) {
     this.pos = pos;

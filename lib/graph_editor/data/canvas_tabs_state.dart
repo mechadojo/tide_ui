@@ -224,6 +224,7 @@ class CanvasTabsState with ChangeNotifier {
   void restore([bool select = false]) {
     if (history.isNotEmpty) {
       var last = history.removeLast();
+      last.clearInteractive();
       addTab(last, select);
     }
   }

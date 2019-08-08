@@ -11,7 +11,7 @@ class GraphState with ChangeNotifier {
   String id = Uuid().v1().toString();
   int version = 0;
 
-  List<GraphNode> nodes = [...random(100)];
+  List<GraphNode> nodes = [...random(10)];
   List<GraphLink> links = [];
 
   void beginUpdate() {}
@@ -26,8 +26,19 @@ class GraphState with ChangeNotifier {
     var rnd = Random();
 
     for (int i = 0; i < count; i++) {
-      yield GraphNode.action()
-        ..pos = Offset(rnd.nextInt(1000) + 50.0, rnd.nextInt(1000) + 50.0);
+      yield GraphNode.action(
+          inputs: List.filled(rnd.nextInt(6) + 1, ""),
+          outputs: List.filled(rnd.nextInt(6) + 1, ""))
+        ..moveTo(rnd.nextInt(500) + 50.0, rnd.nextInt(500) + 50.0)
+        ..logging = rnd.nextBool()
+        ..debugging = rnd.nextBool()
+        ..method = rnd.nextBool()
+            ? GraphNode.randomName()
+            : rnd.nextBool() ? "really_long_method_name" : ""
+        ..delay = rnd.nextBool()
+            ? rnd.nextInt(6) + rnd.nextInt(16) / 16.0
+            : rnd.nextInt(3)
+        ..title = rnd.nextBool() ? "Node ${rnd.nextInt(count) + 1}" : "";
     }
   }
 

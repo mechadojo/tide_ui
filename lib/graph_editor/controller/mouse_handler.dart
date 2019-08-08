@@ -13,11 +13,22 @@ class MouseHandler {
 
   MouseHandler(this.canvas, this.tabs, this.graph);
 
+  Offset globalToLocal(RenderBox rb, Offset pt) {
+    try {
+      return rb.globalToLocal(pt);
+    } catch (ex) {
+      print(ex.toString());
+      return null;
+    }
+  }
+
   void onMouseMove(MouseEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
 
     RenderBox rb = context.findRenderObject();
-    var pt = rb.globalToLocal(Offset(evt.client.x, evt.client.y));
+    var pt = globalToLocal(rb, Offset(evt.client.x, evt.client.y));
+    if (pt == null) return;
+
     if (pt.dx < 0 || pt.dy < 0) return;
     if (pt.dx > rb.size.width || pt.dy > rb.size.height) return;
 
@@ -44,7 +55,9 @@ class MouseHandler {
     if (!isActive) return;
 
     RenderBox rb = context.findRenderObject();
-    var pt = rb.globalToLocal(Offset(evt.client.x, evt.client.y));
+    var pt = globalToLocal(rb, Offset(evt.client.x, evt.client.y));
+    if (pt == null) return;
+
     if (pt.dx < 0 || pt.dy < 0) return;
     if (pt.dx > rb.size.width || pt.dy > rb.size.height) return;
 
@@ -64,7 +77,9 @@ class MouseHandler {
     if (!isActive) return;
 
     RenderBox rb = context.findRenderObject();
-    var pt = rb.globalToLocal(Offset(evt.client.x, evt.client.y));
+    var pt = globalToLocal(rb, Offset(evt.client.x, evt.client.y));
+    if (pt == null) return;
+
     if (pt.dx < 0 || pt.dy < 0) return;
     if (pt.dx > rb.size.width || pt.dy > rb.size.height) return;
 
@@ -86,7 +101,9 @@ class MouseHandler {
     if (!isActive) return;
 
     RenderBox rb = context.findRenderObject();
-    var pt = rb.globalToLocal(Offset(evt.client.x, evt.client.y));
+    var pt = globalToLocal(rb, Offset(evt.client.x, evt.client.y));
+    if (pt == null) return;
+
     if (pt.dx < 0 || pt.dy < 0) return;
     if (pt.dx > rb.size.width || pt.dy > rb.size.height) return;
 
@@ -106,7 +123,8 @@ class MouseHandler {
     if (!isActive) return;
 
     RenderBox rb = context.findRenderObject();
-    var pt = rb.globalToLocal(Offset(evt.client.x, evt.client.y));
+    var pt = globalToLocal(rb, Offset(evt.client.x, evt.client.y));
+    if (pt == null) return;
 
     if (pt.dx < 0 || pt.dy < 0) return;
     if (pt.dx > rb.size.width || pt.dy > rb.size.height) return;

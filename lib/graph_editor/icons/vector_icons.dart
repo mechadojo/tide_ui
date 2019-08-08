@@ -60,7 +60,7 @@ class VectorIcons {
     return iconDefinitions[name];
   }
 
-  static void paintIcon(Canvas canvas, String name, Offset pos, double size,
+  static void paint(Canvas canvas, String name, Offset pos, double size,
       {Paint fill, Paint stroke}) {
     var icon = iconDefinitions[name];
     if (icon == null) return;

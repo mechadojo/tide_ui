@@ -6,6 +6,12 @@ import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'graph.dart';
 
+const Inport_Outport = [GraphNodeType.inport, GraphNodeType.outport];
+const Inport_Trigger = [GraphNodeType.inport, GraphNodeType.trigger];
+const Outport_Event = [GraphNodeType.outport, GraphNodeType.event];
+const Action_Behavior = [GraphNodeType.action, GraphNodeType.behavior];
+const Trigger_Event = [GraphNodeType.trigger, GraphNodeType.event];
+
 enum GraphNodeType {
   action,
   behavior,
@@ -70,6 +76,7 @@ class GraphLink extends GraphObject {
   bool equalTo(GraphLink other) {
     if (fromPort.equalTo(other.fromPort)) return false;
     if (toPort.equalTo(other.toPort)) return false;
+    return true;
   }
 
   @override
@@ -154,13 +161,25 @@ class GraphLink extends GraphObject {
 }
 
 class GraphNode extends GraphObject {
+  GraphNodeType type = GraphNodeType.action;
+
   String name;
   String title;
   String icon;
-  GraphNodeType type = GraphNodeType.action;
+  String method;
+  String comment;
+
+  bool logging = true;
+  bool debugging = true;
+
+  double delay = 0;
+
   List<NodePort> inports = [];
   List<NodePort> outports = [];
   int version = 0;
+
+  bool get hasMethod => method != null && method.isNotEmpty;
+  bool get hasTitle => title != null && title.isNotEmpty;
 
   static Random nodeRandom = Random();
   static randomName() {
@@ -198,6 +217,14 @@ class GraphNode extends GraphObject {
     resize();
   }
 
+  bool isAnyType(List<GraphNodeType> types) {
+    return types.any((x) => x == type);
+  }
+
+  bool isNotType(List<GraphNodeType> types) {
+    return !isAnyType(types);
+  }
+
   bool equalTo(GraphNode other) {
     if (name != other.name) return false;
     if (version != other.version) return false;
@@ -231,9 +258,10 @@ class GraphNode extends GraphObject {
     yield this;
   }
 
-  bool move(Offset pos) {
+  @override
+  bool moveTo(double dx, double dy) {
     var origin = this.pos;
-    var moved = moveTo(pos.dx, pos.dy);
+    var moved = super.moveTo(dx, dy);
     if (moved) {
       double dx = pos.dx - origin.dx;
       double dy = pos.dy - origin.dy;
@@ -293,7 +321,7 @@ class GraphNode extends GraphObject {
     //
     dy = (height - Graph.DefaultPortPadding) / outports.length;
     if (dy < Graph.DefaultPortSpacing) dy = Graph.DefaultPortSpacing;
-    py = pos.dy - ((inports.length - 1) * dy) / 2;
+    py = pos.dy - ((outports.length - 1) * dy) / 2;
     px = pos.dx + (width / 2 + Graph.DefaultPortOffset);
     for (var port in outports) {
       changed |= port.moveTo(px, py);
