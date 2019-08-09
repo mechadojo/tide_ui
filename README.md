@@ -42,7 +42,7 @@ Lighthouse is a Flutter/Dart android application that integrates the Luna VM and
 
 **Lighthouse is intended only for development and is not legal for use in competition.**
 
-During development Lighthouse runs on the robot in place of the competition Robot Controll app. By running a Luna VM directly on the robot, Tide Charts have direct access to physical robot sensors, motors and servos like they would in competition mode.
+During development Lighthouse runs on the robot in place of the standard SDK Robot Controller app. By running a Luna VM directly on the robot, Tide Charts have direct access to physical robot sensors, motors and servos like they would in competition mode.
 
 Teams can provide custom Java code libraries to Lighthouse to implement graph nodes directly in Java code (Java Nodes).
 
