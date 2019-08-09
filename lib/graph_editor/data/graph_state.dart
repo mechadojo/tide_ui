@@ -8,6 +8,7 @@ import 'graph_node.dart';
 
 class GraphState with ChangeNotifier {
   GraphController controller;
+
   String id = Uuid().v1().toString();
   int version = 0;
 

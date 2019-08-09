@@ -22,19 +22,19 @@ enum GraphNodeType {
   gamepad,
 }
 
-enum NodePortType { input, output }
+enum NodePortType { inport, outport }
 
 class GraphObject with CanvasInteractive {}
 
 class NodePort extends GraphObject {
-  NodePortType type = NodePortType.input;
+  NodePortType type = NodePortType.inport;
   GraphNode node;
 
   String name = "";
   int ordinal = 0;
 
   NodePort.input(this.node, this.ordinal, [this.name]) {
-    type = NodePortType.input;
+    type = NodePortType.inport;
     if (name == null || name.isEmpty) {
       name = ordinal == 0 ? "in" : "in$ordinal";
     }
@@ -43,7 +43,7 @@ class NodePort extends GraphObject {
   }
 
   NodePort.output(this.node, this.ordinal, [this.name]) {
-    type = NodePortType.output;
+    type = NodePortType.outport;
     if (name == null || name.isEmpty) {
       name = ordinal == 0 ? "out" : "out$ordinal";
     }

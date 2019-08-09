@@ -38,9 +38,14 @@ class MouseHandler {
     } else {
       tabs.onMouseOut();
 
-      var gpt =
-          canvas.toGraphCoord(pt.translate(0, -GraphTabs.DefaultTabHeight));
-      graph.onMouseMove(evt, gpt);
+      pt = pt.translate(0, -GraphTabs.DefaultTabHeight);
+
+      if (canvas.panning) {
+        canvas.onMouseMove(evt, pt);
+      } else {
+        var gpt = canvas.toGraphCoord(pt);
+        graph.onMouseMove(evt, gpt);
+      }
     }
   }
 
@@ -67,9 +72,14 @@ class MouseHandler {
     } else {
       tabs.onMouseOut();
 
-      var gpt =
-          canvas.toGraphCoord(pt.translate(0, -GraphTabs.DefaultTabHeight));
-      graph.onMouseDown(evt, gpt);
+      pt = pt.translate(0, -GraphTabs.DefaultTabHeight);
+
+      if (evt.shiftKey && !evt.ctrlKey) {
+        canvas.startPanning(pt);
+      } else {
+        var gpt = canvas.toGraphCoord(pt);
+        graph.onMouseDown(evt, gpt);
+      }
     }
   }
 
@@ -88,7 +98,7 @@ class MouseHandler {
       tabs.onMouseUp(evt, pt);
     } else {
       tabs.onMouseOut();
-
+      canvas.stopPanning();
       var gpt =
           canvas.toGraphCoord(pt.translate(0, -GraphTabs.DefaultTabHeight));
       graph.onMouseUp(evt, gpt);

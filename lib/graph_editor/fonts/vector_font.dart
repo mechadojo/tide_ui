@@ -155,13 +155,13 @@ class VectorFont {
 
     sz = Size(sz.width * size / font.height, sz.height * size / font.height);
 
-    print("Scaled size: $sz");
+    //print("Scaled size: $sz");
 
     var hw = sz.width / 2;
     var hh = sz.height / 2;
 
     var dx = -hw - hw * alignment.x;
-    var dy = hh + hh * alignment.y;
+    var dy = -hh + -hh * alignment.y;
 
     return Rect.fromLTWH(pos.dx + dx, pos.dy + dy, sz.width, sz.height);
   }

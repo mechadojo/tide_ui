@@ -9,6 +9,7 @@ class CanvasState with ChangeNotifier {
   double get stepSize => 100 / scale;
 
   Offset pos = Offset.zero;
+  Offset get screenPos => toScreenCoord(pos);
   double scale = 1.0;
   bool debugMode = true;
 

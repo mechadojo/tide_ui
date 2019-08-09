@@ -36,6 +36,7 @@ class GraphEditorController with MouseController, KeyboardController {
     canvas.controller = CanvasController(canvas);
 
     tabs.addListener(onChangeTabs);
+    tabs.add(select: true);
   }
 
   List<SingleChildCloneableWidget> get providers {

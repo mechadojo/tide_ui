@@ -1,11 +1,11 @@
 import 'package:flutter_web/material.dart';
 
-import 'package:tide_ui/graph_editor/data/graph.dart';
-import 'package:tide_ui/graph_editor/data/node_port_painter.dart';
-import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
-import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
-
+import 'data/graph.dart';
 import 'data/graph_node.dart';
+import 'fonts/vector_font.dart';
+import 'icons/vector_icons.dart';
+
+import 'node_port_painter.dart';
 
 class GraphNodePainter {
   NodePortPainter portPainter = NodePortPainter();
@@ -13,25 +13,24 @@ class GraphNodePainter {
   GraphNode node;
   Offset pos;
   double scale;
-  var font = SourceSansProFont;
-
-  Paint blackPaint = Paint()..color = Colors.black;
-  Paint redPen = Paint()
-    ..color = Colors.red
-    ..style = PaintingStyle.stroke;
 
   Paint get borderPaint => Graph.NodeBorder;
   Paint get shadowPaint =>
       node.hovered ? Graph.NodeHoverShadow : Graph.NodeShadow;
-  Paint get fillPaint => node.hovered
-      ? Graph.NodeHoverColor
-      : darkNode ? Graph.NodeDarkColor : Graph.NodeColor;
+
+  Paint get fillPaint {
+    if (darkNode) return Graph.NodeDarkColor;
+    if (node.selected) return Graph.NodeSelectedColor;
+    if (node.hovered) return Graph.NodeHoverColor;
+    return Graph.NodeColor;
+  }
 
   bool get darkNode =>
       node.type == GraphNodeType.inport || node.type == GraphNodeType.outport;
 
-  bool get zoomedIn => scale > 2.0;
-  bool get zoomedOut => scale < .5;
+  bool get zoomedIn => Graph.isZoomedIn(scale);
+  bool get zoomedOut => Graph.isZoomedOut(scale);
+  VectorFont get font => Graph.font;
 
   void paint(
       Canvas canvas, Size size, Offset pos, double scale, GraphNode node) {
@@ -74,12 +73,12 @@ class GraphNodePainter {
     var rect = font.limits(label, pos, 8, alignment: Alignment.topCenter);
     rect = Rect.fromCenter(
         center: rect.center, width: rect.width + 4, height: rect.height + 2);
-    var rrect = RRect.fromRectXY(rect.inflate(2), 4, 4);
+    var rrect = RRect.fromRectXY(rect, 4, 4);
 
     canvas.drawRRect(rrect, Graph.NodeLabelShadow);
 
     font.paint(canvas, label, pos, 8,
-        fill: blackPaint, alignment: Alignment.topCenter);
+        fill: Graph.blackPaint, alignment: Alignment.topCenter);
   }
 
   void drawMethodLabel(Canvas canvas) {
@@ -94,7 +93,7 @@ class GraphNodePainter {
         font.paint(canvas, label, pt, 5,
             width: node.size.width - Graph.NodeCornerRadius * 2 - 10,
             alignment: Alignment.bottomCenter,
-            fill: blackPaint);
+            fill: Graph.blackPaint);
       }
     }
   }

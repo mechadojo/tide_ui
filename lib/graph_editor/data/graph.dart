@@ -1,4 +1,5 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
 
 class Graph {
   static const double DefaultNodeSize = 75;
@@ -23,7 +24,9 @@ class Graph {
   static double NodeCornerRadius = 10;
   static Paint NodeColor = Paint()..color = Colors.white;
   static Paint NodeDarkColor = Paint()..color = Color(0xFF333333);
-  static Paint NodeHoverColor = Paint()..color = Colors.cyan[100];
+  static Paint NodeHoverColor = Paint()..color = Color(0xFFDFFEFE);
+  static Paint NodeSelectedColor = Paint()..color = Color(0xFFDEFCE9);
+
   static Paint NodeBorder = Paint()
     ..color = Color(0xFF333333)
     ..strokeWidth = 2
@@ -42,7 +45,7 @@ class Graph {
     ..color = Colors.black.withAlpha(64);
   static Paint NodeInportIconColor = Paint()..color = Color(0xFF2ecc40);
   static Paint NodeOutportIconColor = Paint()..color = Color(0xFFff851b);
-  static Paint NodeHoverDarkIconColor = Paint()..color = Colors.cyan[100];
+  static Paint NodeHoverDarkIconColor = Paint()..color = Color(0xFFDFFEFE);
 
   static Paint NodeStatusIconColor = Paint()..color = Color(0xFF333333);
   static Paint NodeZoomedStatusIconColor = Paint()..color = Color(0x40333333);
@@ -56,11 +59,36 @@ class Graph {
   static Paint PortColor = Paint()..color = Colors.white;
   static Paint PortHoverColor = Paint()..color = Colors.cyan[50];
   static Paint PortBorder = Paint()
-    ..color = Color(0xFF333333).withAlpha(200)
+    ..color = Color(0xFF333333).withAlpha(128)
     ..strokeWidth = 1
     ..style = PaintingStyle.stroke;
   static Paint PortHoverBorder = Paint()
-    ..color = Color(0xFF333333).withAlpha(200)
+    ..color = Color(0xFF333333).withAlpha(128)
     ..strokeWidth = 2
     ..style = PaintingStyle.stroke;
+
+  static Paint PortLabelShadow = Paint()
+    ..color = CanvasColor.color.withAlpha(200);
+
+  //
+  //  Other Styles
+  //
+  static var font = SourceSansProFont;
+  static Paint blackPaint = Paint()..color = Colors.black;
+  static Paint redPen = Paint()
+    ..color = Colors.red
+    ..style = PaintingStyle.stroke;
+
+  static Paint SelectionBorder = Paint()
+    ..color = Colors.black
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0;
+
+  static double SelectDashSize = 10;
+
+  //
+  // Utlitity methods
+  //
+  static bool isZoomedIn(double scale) => scale > 2.0;
+  static bool isZoomedOut(double scale) => scale < .5;
 }

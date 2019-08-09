@@ -1,5 +1,5 @@
 import 'dart:html';
-
+import 'dart:js' as js;
 import 'package:flutter_web/material.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
@@ -10,6 +10,46 @@ class CanvasController with MouseController, KeyboardController {
   CanvasState canvas;
 
   CanvasController(this.canvas);
+
+  bool panning = false;
+  Offset posStart = Offset.zero;
+  Offset panStart = Offset.zero;
+
+  String cursor = "default";
+
+  void setCursor(String next) {
+    if (cursor != next) {
+      var result = js.context["window"];
+      cursor = next;
+      result.document.body.style.cursor = cursor;
+    }
+  }
+
+  void startPanning(Offset pt) {
+    setCursor("grab");
+    panning = true;
+    posStart = canvas.pos;
+    panStart = pt;
+  }
+
+  void stopPanning() {
+    setCursor("default");
+    panning = false;
+  }
+
+  @override
+  bool onMouseMove(MouseEvent evt, Offset pt) {
+    if (evt.buttons != 1) {
+      stopPanning();
+      return true;
+    }
+
+    var dx = posStart.dx + (pt.dx - panStart.dx) / canvas.scale;
+    var dy = posStart.dy + (pt.dy - panStart.dy) / canvas.scale;
+
+    canvas.scrollTo(Offset(dx, dy));
+    return true;
+  }
 
   @override
   bool onKeyDown(KeyboardEvent evt) {
