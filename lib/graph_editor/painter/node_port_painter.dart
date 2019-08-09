@@ -1,8 +1,9 @@
 import 'package:flutter_web/material.dart';
 
-import 'data/graph.dart';
-import 'data/graph_node.dart';
-import 'fonts/vector_font.dart';
+import '../data/graph.dart';
+import '../data/graph_node.dart';
+import '../data/node_port.dart';
+import '../fonts/vector_font.dart';
 
 class NodePortPainter {
   NodePort port;

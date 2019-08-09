@@ -6,6 +6,7 @@ import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
+import 'package:tide_ui/graph_editor/data/node_port.dart';
 
 enum MouseMoveMode {
   none,

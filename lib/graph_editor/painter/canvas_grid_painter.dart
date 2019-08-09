@@ -6,8 +6,8 @@ class CanvasGridPainter {
   Offset pos;
   double scale;
 
-  final majorStep = 80;
-  final minorStep = 20;
+  final majorStep = 100;
+  final minorStep = 25;
   final ratio = 4;
 
   final backFill = Graph.CanvasColor;

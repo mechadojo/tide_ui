@@ -1,9 +1,9 @@
 import 'package:flutter_web/material.dart';
 
-import 'data/graph.dart';
-import 'data/graph_node.dart';
-import 'fonts/vector_font.dart';
-import 'icons/vector_icons.dart';
+import '../data/graph.dart';
+import '../data/graph_node.dart';
+import '../fonts/vector_font.dart';
+import '../icons/vector_icons.dart';
 
 import 'node_port_painter.dart';
 

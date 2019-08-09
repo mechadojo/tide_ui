@@ -1,11 +1,12 @@
 import 'package:flutter_web/material.dart';
-import 'package:tide_ui/graph_editor/canvas_grid_painter.dart';
-import 'package:tide_ui/graph_editor/data/canvas_state.dart';
-import 'package:tide_ui/graph_editor/data/graph_state.dart';
-import 'package:tide_ui/graph_editor/graph_node_painter.dart';
-import 'package:tide_ui/graph_editor/utility/dashed_path.dart';
 
-import 'data/graph.dart';
+import '../data/canvas_state.dart';
+import '../data/graph_state.dart';
+import '../utility/dashed_path.dart';
+import '../data/graph.dart';
+
+import 'canvas_grid_painter.dart';
+import 'graph_node_painter.dart';
 
 class CanvasPainter extends CustomPainter {
   final CanvasState state;

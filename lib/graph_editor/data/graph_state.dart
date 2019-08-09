@@ -4,6 +4,7 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 import 'package:uuid/uuid.dart';
 
+import 'graph_link.dart';
 import 'graph_node.dart';
 
 class GraphState with ChangeNotifier {

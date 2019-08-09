@@ -1,6 +1,6 @@
 import 'package:flutter_web/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tide_ui/graph_editor/canvas_painter.dart';
+import 'package:tide_ui/graph_editor/painter/canvas_painter.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'data/canvas_state.dart';
 

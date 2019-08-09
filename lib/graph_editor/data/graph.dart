@@ -2,7 +2,7 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
 
 class Graph {
-  static const double DefaultNodeSize = 75;
+  static const double DefaultNodeSize = 80;
 
   static const double DefaultPortSpacing = 20;
   static const double DefaultPortPadding = 20;
