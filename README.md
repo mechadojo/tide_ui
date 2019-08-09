@@ -54,6 +54,6 @@ Low Tide runs Tide Chart data flow graphs with code that executes equivalent to 
 
 Kraken is a Low Tide code generator written in Dart that produces Java code from Tide Chart data flow graphs. Code produced by Kraken is easy to read and runs efficiently.
 
-Lighthouse uses Kraken and *FTC OnBot Java* to produce generate competition ready versions of the data flow graph that run on the official FTC Robot Controller.
+Lighthouse uses Kraken and *FTC OnBot Java* to generate a competition ready Java code version of their data flow graph that can be run using the official FTC Robot Controller (using *Android Studio* is not required, use Robot Controller installed from Play store
 
-Tide Chart Editor can use Kraken to output Java code that teams can include with their customized Robot Controller using *Android Studio.*
+Teams can also use Kraken built into Tide Chart Editor to generate Java class libraries that can be included with the rest of their custom code to build their SDK Robot Controller with *Android Studio.*
