@@ -36,6 +36,13 @@ class CanvasPainter extends CustomPainter {
       nodePainter.paint(canvas, size, state.pos, state.scale, node);
     }
 
+    if (graph.controller.linking) {
+      var p1 = graph.controller.linkStart.pos;
+      var p2 = graph.controller.moveEnd;
+
+      canvas.drawLine(p1, p2, Graph.redPen);
+    }
+
     canvas.restore();
 
     if (graph.controller.selecting) {

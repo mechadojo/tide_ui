@@ -2,26 +2,87 @@ import 'dart:math';
 
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
+import 'package:tide_ui/graph_editor/data/graph_history.dart';
 import 'package:uuid/uuid.dart';
 
 import 'graph_link.dart';
 import 'graph_node.dart';
+import 'node_port.dart';
+
+typedef GetNodeByName(String name);
 
 class GraphState with ChangeNotifier {
   GraphController controller;
 
   String id = Uuid().v1().toString();
+  String title = "";
   int version = 0;
 
   List<GraphNode> nodes = [...random(10)];
   List<GraphLink> links = [];
 
-  void beginUpdate() {}
+  // access nodes by reference where nodes may not be fully defined
+  // allows reconstructing the recursively defined graph objects
+  Map<String, GraphNode> referenced = {};
+  GraphHistory history = GraphHistory();
+
+  int updating = 0;
+  bool hasChanged = false;
+
+  void beginUpdate() {
+    updating++;
+  }
 
   void endUpdate(bool changed) {
-    if (changed) {
+    updating--;
+    hasChanged |= changed;
+
+    if (updating <= 0 && hasChanged) {
       notifyListeners();
+      hasChanged = false;
+      updating = 0;
     }
+  }
+
+  GraphNode getNode(String name) {
+    var result = referenced[name];
+    if (result != null) return result;
+
+    result = nodes.firstWhere((x) => x.name == name,
+        orElse: () => GraphNode()..name = name);
+    referenced[name] = result;
+    return result;
+  }
+
+  GraphNode unpackNode(PackedGraphNode node) {
+    return node.unpack(getNode);
+  }
+
+  GraphLink unpackLink(PackedGraphLink link) {
+    return link.unpack(getNode);
+  }
+
+  NodePort unpackPort(PackedNodePort port) {
+    return port.unpack(getNode);
+  }
+
+  int findLink(NodePort fromPort, NodePort toPort) {
+    return links.indexWhere(
+        (x) => x.fromPort.equalTo(fromPort) && x.toPort.equalTo(toPort));
+  }
+
+  GraphLink removeLink(NodePort fromPort, NodePort toPort) {
+    var index = findLink(fromPort, toPort);
+    if (index >= 0) {
+      return links.removeAt(index);
+    }
+    return GraphLink.none;
+  }
+
+  GraphLink addLink(NodePort fromPort, NodePort toPort) {
+    var link = GraphLink.link(fromPort, toPort);
+    links.add(link);
+    return link;
   }
 
   static Iterable<GraphNode> random(int count) sync* {
@@ -70,6 +131,13 @@ class GraphState with ChangeNotifier {
     version = other.version;
     nodes = [...other.nodes];
     links = [...other.links];
+
+    referenced.clear();
+    for (var name in other.referenced.keys) {
+      referenced[name] = other.referenced[name];
+    }
+
+    history.copy(other.history);
 
     endUpdate(changed);
 

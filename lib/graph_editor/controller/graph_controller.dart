@@ -4,6 +4,7 @@ import 'package:flutter_web/material.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
+import 'package:tide_ui/graph_editor/data/graph_history.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/node_port.dart';
@@ -37,6 +38,56 @@ class GraphController with MouseController, KeyboardController {
   bool get linking => moveMode == MouseMoveMode.linking;
 
   bool hoverCanceled = false; // tracks if hovering needs to be canceled
+  bool updating = false;
+
+  void applyCommand(GraphCommand cmd) {
+    graph.beginUpdate();
+    if (cmd is GraphCommandGroup) {
+      for (var inner in cmd.cmds) {
+        applyCommand(inner);
+      }
+    }
+
+    if (cmd is GraphMoveCommand) {
+      var node = graph.getNode(cmd.node.name);
+      node.moveTo(cmd.toPos.dx, cmd.toPos.dy);
+    }
+
+    if (cmd is GraphLinkCommand) {
+      var fromPort = graph.unpackPort(cmd.link.fromPort);
+      var toPort = graph.unpackPort(cmd.link.toPort);
+
+      if (cmd.type == "add") {
+        addLink(fromPort, toPort, save: false);
+      } else if (cmd.type == "remove") {
+        removeLink(fromPort, toPort, save: false);
+      }
+    }
+
+    graph.endUpdate(true);
+  }
+
+  void undoHistory() {
+    if (!graph.history.canUndo) return;
+
+    graph.beginUpdate();
+    var cmd = graph.history.undo();
+    applyCommand(cmd.reverse);
+
+    clearSelection();
+    graph.endUpdate(true);
+  }
+
+  void redoHistory() {
+    if (!graph.history.canRedo) return;
+    graph.beginUpdate();
+    var cmd = graph.history.redo();
+    applyCommand(cmd);
+    graph.history.push(cmd);
+
+    clearSelection();
+    graph.endUpdate(true);
+  }
 
   void clearSelection() {
     if (selection.isEmpty) return;
@@ -57,6 +108,43 @@ class GraphController with MouseController, KeyboardController {
     graph.beginUpdate();
     node.selected = true;
     graph.endUpdate(true);
+  }
+
+  void removeLink(NodePort fromPort, NodePort toPort, {bool save = true}) {
+    var outport = fromPort.isOutport ? fromPort : toPort;
+    var inport = fromPort.isInport ? fromPort : toPort;
+    var idx = graph.findLink(outport, inport);
+
+    if (idx < 0) return;
+
+    graph.beginUpdate();
+    var link = graph.links.removeAt(idx);
+    graph.endUpdate(true);
+
+    if (save) {
+      var cmd = GraphLinkCommand.remove(link);
+      graph.history.push(cmd);
+    }
+  }
+
+  void addLink(NodePort fromPort, NodePort toPort,
+      {bool replace = false, bool save = true}) {
+    var outport = fromPort.isOutport ? fromPort : toPort;
+    var inport = fromPort.isInport ? fromPort : toPort;
+
+    var idx = graph.findLink(outport, inport);
+    if (idx >= 0 && replace) return;
+
+    graph.beginUpdate();
+    if (idx >= 0) graph.links.removeAt(idx);
+
+    var link = graph.addLink(outport, inport);
+    graph.endUpdate(true);
+
+    if (save) {
+      var cmd = GraphLinkCommand.add(link);
+      graph.history.push(cmd);
+    }
   }
 
   void lassoSelection(Rect rect) {
@@ -175,9 +263,21 @@ class GraphController with MouseController, KeyboardController {
       return true;
     }
 
+    if (focus is NodePort) {
+      var port = focus as NodePort;
+      if (linkStart.canLinkTo(port)) {
+        addLink(linkStart, port);
+      }
+    }
     selectRect = Rect.zero;
 
     graph.beginUpdate();
+
+    if (dragging && selection.isNotEmpty) {
+      var cmd = GraphCommandGroup.moveAll(selection);
+      graph.history.push(cmd);
+    }
+
     moveMode = MouseMoveMode.none;
     graph.endUpdate(true);
     return true;
@@ -215,7 +315,8 @@ class GraphController with MouseController, KeyboardController {
   void startDragging(Offset pt) {
     moveMode = MouseMoveMode.dragging;
     for (var node in selection) {
-      node.dragStart = node.pos - pt;
+      node.dragOffset = node.pos - pt;
+      node.dragStart = node.pos;
     }
   }
 
@@ -226,7 +327,7 @@ class GraphController with MouseController, KeyboardController {
     var dy = pt.dy;
 
     for (var node in selection) {
-      node.moveTo(node.dragStart.dx + dx, node.dragStart.dy + dy);
+      node.moveTo(node.dragOffset.dx + dx, node.dragOffset.dy + dy);
       //node.moveTo(node.dragStart.dx + dx, node.dragStart.dy + dy);
     }
 
@@ -239,7 +340,7 @@ class GraphController with MouseController, KeyboardController {
   }
 
   bool onMouseLink(MouseEvent evt, Offset pt) {
-    return false;
+    return true;
   }
 
   bool onMouseHover(MouseEvent evt, Offset pt) {
@@ -286,5 +387,22 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(changed);
     hoverCanceled = true;
     return true;
+  }
+
+  @override
+  bool onKeyDown(KeyboardEvent evt) {
+    var key = evt.key.toLowerCase();
+
+    if (key == "z" && evt.ctrlKey) {
+      undoHistory();
+      return true;
+    }
+
+    if (key == "y" && evt.ctrlKey) {
+      redoHistory();
+      return true;
+    }
+
+    return false;
   }
 }

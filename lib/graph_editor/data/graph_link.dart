@@ -2,11 +2,30 @@ import 'dart:math';
 
 import 'package:flutter_web/material.dart';
 import 'graph_node.dart';
+import 'graph_state.dart';
 import 'node_port.dart';
 
+class PackedGraphLink {
+  PackedNodePort fromPort;
+  PackedNodePort toPort;
+
+  PackedGraphLink.link(GraphLink link) {
+    fromPort = link.fromPort.pack();
+    toPort = link.toPort.pack();
+  }
+
+  GraphLink unpack(GetNodeByName lookup) {
+    return GraphLink()
+      ..fromPort = fromPort.unpack(lookup)
+      ..toPort = toPort.unpack(lookup);
+  }
+}
+
 class GraphLink extends GraphObject {
-  NodePort fromPort;
-  NodePort toPort;
+  static GraphLink none = GraphLink();
+
+  NodePort fromPort = NodePort.none;
+  NodePort toPort = NodePort.none;
   Path path;
 
   List<Offset> hitPath = [];
@@ -14,6 +33,16 @@ class GraphLink extends GraphObject {
 
   Offset pathStart;
   Offset pathEnd;
+
+  GraphLink();
+  GraphLink.link(NodePort fromPort, NodePort toPort) {
+    this.fromPort = fromPort;
+    this.toPort = toPort;
+  }
+
+  PackedGraphLink pack() {
+    return PackedGraphLink.link(this);
+  }
 
   bool equalTo(GraphLink other) {
     if (fromPort.equalTo(other.fromPort)) return false;
