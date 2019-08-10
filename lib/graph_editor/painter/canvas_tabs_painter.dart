@@ -158,9 +158,26 @@ class CanvasTabsPainter extends CustomPainter {
     }
   }
 
-  void drawTabs(double offset, Canvas canvas, Size size) {
+  int drawTabs(double offset, Canvas canvas, Size size) {
+    var tls = [...tabs];
+    if (tls.isEmpty) return 0;
+
+    var max_width = size.width - (offset + btnIconSize * 3 + spacing * 2);
+
+    var max_tabs = (max_width / width).floor();
+    if (max_tabs == 0) max_tabs = 1; // always show at least one tab
+
+    if (tls.length >= max_tabs) {
+      // trim displayed tabs
+      var idx = tls.indexWhere((x) => x.name == selected);
+      if (idx >= max_tabs) {
+        tls = [...tls.skip((idx + 1) - max_tabs)];
+      }
+      tls = [...tls.take(max_tabs)];
+    }
+
     // Recalculate tab starting position of each tab
-    for (var tab in tabs) {
+    for (var tab in tls) {
       tab.pos = Offset(offset, 0);
       tab.icon = tab.icon ?? IconPainter.random;
       offset += width;
@@ -170,7 +187,7 @@ class CanvasTabsPainter extends CustomPainter {
     CanvasTab top;
     var overlapped = <CanvasTab>[];
 
-    for (var tab in tabs.reversed) {
+    for (var tab in tls.reversed) {
       if (tab.name == selected) {
         top = tab;
         continue;
@@ -183,6 +200,8 @@ class CanvasTabsPainter extends CustomPainter {
     }
 
     if (top != null) drawTab(top, canvas, size);
+
+    return tls.length;
   }
 
   Offset drawButton(Canvas canvas, MenuItem item, double size) {
@@ -204,7 +223,7 @@ class CanvasTabsPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    print("Painting Tabs");
+    //print("Painting Tabs");
     canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height));
     canvas.drawPaint(backFill);
 
@@ -215,21 +234,34 @@ class CanvasTabsPainter extends CustomPainter {
     var btnPos = Offset(spacing / 2, size.height - padding - height / 2);
 
     for (var item in menu) {
-      if (item.name == "tab-new") continue;
+      if (item.name == "tab-new" ||
+          item.name == "tab-next" ||
+          item.name == "tab-prev") continue;
 
       item.pos = btnPos;
       drawButton(canvas, item, btnIconSize);
       btnPos = btnPos.translate(spacing, 0);
     }
 
-    drawTabs(btnPos.dx, canvas, size);
+    var tabs_drawn = drawTabs(btnPos.dx, canvas, size);
 
     if (tabs.isNotEmpty) {
-      btnPos = Offset(tabs.last.pos.dx + width + spacing, btnPos.dy);
+      btnPos = Offset(btnPos.dx + tabs_drawn * width + spacing, btnPos.dy);
     } else {
       var lineY = size.height - padding;
       canvas.drawLine(
           Offset(0, lineY), Offset(size.width, lineY), selectedOutlineStroke);
+    }
+
+    if (tabs_drawn < tabs.length) {
+      var btns = menu
+          .where((x) => x.name == "tab-next" || x.name == "tab-prev")
+          .toList();
+      for (var btn in btns) {
+        btn.pos = btnPos;
+        drawButton(canvas, btn, btnIconSize);
+        btnPos = btnPos.translate(spacing, 0);
+      }
     }
 
     var item = menu.firstWhere((x) => x.name == "tab-new");

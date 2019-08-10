@@ -21,6 +21,8 @@ class GraphEditorController with MouseController, KeyboardController {
     MenuItem(name: "app-menu", icon: "ellipsisV"),
     MenuItem(name: "save", icon: "solidSave", iconAlt: "save"),
     MenuItem(name: "open", icon: "solidFolderOpen", iconAlt: "folderOpen"),
+    MenuItem(name: "tab-prev", icon: "angleLeft"),
+    MenuItem(name: "tab-next", icon: "angleRight"),
     MenuItem(name: "tab-new", icon: "solidPlusSquare", iconAlt: "plusSquare"),
   ]);
 

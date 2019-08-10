@@ -141,7 +141,7 @@ class MouseHandler {
   //
 
   void onMouseDownTabs(MouseEvent evt, Offset pt) {
-    print("Mouse Down Tabs: $pt");
+    //print("Mouse Down Tabs: $pt");
 
     evt = evt ?? keyboard.mouse;
     if (!canvas.handleEvent(evt)) {

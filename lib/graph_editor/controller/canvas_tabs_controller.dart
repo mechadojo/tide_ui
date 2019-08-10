@@ -16,6 +16,25 @@ class CanvasTabsController with MouseController, KeyboardController {
   Offset cursorPos = Offset.zero;
   String cursor = "default";
 
+  Offset swipeStart = Offset.zero;
+  Offset swipeLast = Offset.zero;
+
+  void startSwipe(Offset pt) {
+    swipeStart = pt;
+  }
+
+  void updateSwipe(Offset pt) {
+    swipeLast = pt;
+  }
+
+  void endSwipe(double velocity) {
+    var direction = velocity;
+    if (direction == 0) {
+      direction = swipeLast.dx - swipeStart.dx;
+    }
+    scroll(direction);
+  }
+
   void setCursor(bool hovered) {
     var next = hovered ? "pointer" : "default";
     if (cursor != next) {
@@ -26,6 +45,7 @@ class CanvasTabsController with MouseController, KeyboardController {
   }
 
   void scroll(double velocity) {
+    print(velocity);
     if (tabs.length < 1) return;
 
     var idx = tabs.selectedIndex;
@@ -71,11 +91,22 @@ class CanvasTabsController with MouseController, KeyboardController {
 
     for (var item in tabs.menu) {
       if (item.hitbox.contains(pt) && !item.disabled) {
-        if (item.name == "tab-new") {
-          tabs.add(select: true);
-        } else {
-          print("Select menu: ${item.name} [${item.group}]");
+        switch (item.name) {
+          case "tab-new":
+            tabs.add(select: true);
+            break;
+          case "tab-next":
+            scroll(1);
+            break;
+          case "tab-prev":
+            scroll(-1);
+            break;
+          default:
+            print("Select menu: ${item.name} [${item.group}]");
+
+            break;
         }
+
         tabs.endUpdate(true);
         return true;
       }
