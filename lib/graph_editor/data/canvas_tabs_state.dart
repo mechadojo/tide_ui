@@ -42,6 +42,20 @@ class CanvasTabsState with ChangeNotifier {
     if (changed) notifyListeners();
   }
 
+  int get selectedIndex => tabs.indexWhere((t) => t.name == selected);
+
+  void shiftLeft() {
+    if (tabs.length <= 1) return;
+    var first = tabs.first;
+    tabs = [...tabs.skip(1), first];
+  }
+
+  void shiftRight() {
+    if (tabs.length <= 1) return;
+    var last = tabs.last;
+    tabs = [last, ...tabs.take(tabs.length - 1)];
+  }
+
   void addRange(List<CanvasTab> tabs) {
     this.tabs = [...tabs];
     if (selected == null) {
@@ -116,6 +130,13 @@ class CanvasTabsState with ChangeNotifier {
   void select(String name) {
     var tab = tabs.firstWhere((x) => x.name == name);
     selectTab(tab);
+  }
+
+  void selectIndex(int idx) {
+    if (idx >= 0 && idx < tabs.length) {
+      var tab = tabs[idx];
+      selectTab(tab);
+    }
   }
 
   /// Select a [tab].

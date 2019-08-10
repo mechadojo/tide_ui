@@ -40,6 +40,9 @@ class GraphTabs extends StatelessWidget {
         editor.mouseHandler.onMouseUpTabs(null, pt);
         editor.mouseHandler.onMouseOutTabs();
       },
+      onHorizontalDragEnd: (evt) {
+        state.controller.scroll(evt.primaryVelocity);
+      },
       child: RepaintBoundary(
         child: CustomPaint(
           painter: CanvasTabsPainter(state),

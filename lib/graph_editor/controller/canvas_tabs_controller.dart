@@ -25,6 +25,20 @@ class CanvasTabsController with MouseController, KeyboardController {
     }
   }
 
+  void scroll(double velocity) {
+    if (tabs.length < 1) return;
+
+    var idx = tabs.selectedIndex;
+
+    if (velocity < 0) {
+      tabs.shiftLeft();
+    } else {
+      tabs.shiftRight();
+    }
+
+    tabs.selectIndex(idx);
+  }
+
   @override
   bool onMouseOut() {
     if (hoverCanceled) return true;
