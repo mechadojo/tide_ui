@@ -17,6 +17,14 @@ class CanvasController with MouseController, KeyboardController {
 
   String cursor = "default";
 
+  bool handleEvent(MouseEvent evt) {
+    if (canvas.touchMode) {
+      return evt.type.isEmpty;
+    } else {
+      return evt.type.isNotEmpty;
+    }
+  }
+
   void setCursor(String next) {
     if (cursor != next) {
       var result = js.context["window"];

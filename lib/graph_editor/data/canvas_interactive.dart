@@ -13,6 +13,8 @@ mixin CanvasInteractive {
   Size size = Size.zero;
 
   Offset dragStart = Offset.zero;
+  Offset dragOffset = Offset.zero;
+
   String alertText = "";
 
   bool isHovered(Offset pt) {
@@ -37,6 +39,10 @@ mixin CanvasInteractive {
 
       if (dragStart != Offset.zero) changed = true;
       dragStart = Offset.zero;
+
+      if (dragOffset != Offset.zero) changed = true;
+      dragOffset = Offset.zero;
+
       if (alertText.isNotEmpty) changed = true;
       alertText = "";
     }

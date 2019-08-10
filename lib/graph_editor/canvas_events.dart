@@ -2,19 +2,17 @@ import 'package:flutter_web/material.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_handler.dart';
+import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 
 import 'package:tide_ui/main.dart' show routeObserver; // this seems hacky
 
 import 'package:provider/provider.dart';
 
 import 'package:tide_ui/graph_editor/data/canvas_state.dart';
-import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 
 import 'dart:html';
 import 'dart:js' as js;
 import 'package:uuid/uuid.dart';
-
-import 'data/graph_state.dart';
 
 class CanvasEventContainer extends StatefulWidget {
   final Widget child;
@@ -27,7 +25,7 @@ class CanvasEventContainer extends StatefulWidget {
 
 class _CanvasEventContainerState extends State<CanvasEventContainer>
     with RouteAware {
-  final _eventkey = Uuid().v1().toString();
+  String _eventkey = Uuid().v1().toString();
 
   bool _isPageActive = false;
 
@@ -69,75 +67,90 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
   @override
   Widget build(BuildContext context) {
-    final tabs = Provider.of<CanvasTabsState>(context, listen: false);
     final canvas = Provider.of<CanvasState>(context, listen: false);
-    final graph = Provider.of<GraphState>(context, listen: false);
+    final editor = Provider.of<GraphEditorState>(context, listen: false);
 
-    final MouseHandler mouseHandler =
-        MouseHandler(canvas.controller, tabs.controller, graph.controller);
-    final KeyboardHandler keyboardHandler =
-        KeyboardHandler(canvas.controller, tabs.controller, graph.controller);
+    final media = MediaQuery.of(context);
+    print("Resize to ${media.size}");
 
-    if (!IsCurrentHandler) {
-      js.context["Window"]["eventmaster"] = _eventkey;
-      print("Adding new window event listener with key: $_eventkey");
-
-      window.onKeyDown.listen((evt) {
-        if (IsCurrentHandler) {
-          keyboardHandler.onKeyDown(evt, context, _isPageActive);
-        }
-      });
-
-      window.onKeyPress.listen((evt) {
-        if (IsCurrentHandler) {
-          keyboardHandler.onKeyPress(evt, context, _isPageActive);
-        }
-      });
-
-      window.onKeyUp.listen((evt) {
-        if (IsCurrentHandler) {
-          keyboardHandler.onKeyUp(evt, context, _isPageActive);
-        }
-      });
-
-      window.onContextMenu.listen((evt) {
-        if (IsCurrentHandler) {
-          mouseHandler.onContextMenu(evt, context, _isPageActive);
-        }
-      });
-      window.onMouseWheel.listen((evt) {
-        if (IsCurrentHandler) {
-          mouseHandler.onMouseWheel(evt, context, _isPageActive);
-        }
-      });
-
-      window.onMouseOut.listen((evt) {
-        if (IsCurrentHandler) {
-          mouseHandler.onMouseOut(evt, context, _isPageActive);
-        }
-      });
-
-      window.onMouseMove.listen((evt) {
-        if (IsCurrentHandler) {
-          mouseHandler.onMouseMove(evt, context, _isPageActive);
-        }
-      });
-
-      window.onMouseDown.listen((evt) {
-        if (IsCurrentHandler) {
-          mouseHandler.onMouseDown(evt, context, _isPageActive);
-        }
-      });
-
-      window.onMouseUp.listen((evt) {
-        if (IsCurrentHandler) {
-          mouseHandler.onMouseUp(evt, context, _isPageActive);
-        }
-      });
+    if (!IsCurrentHandler && !canvas.touchMode) {
+      attachBrowserEvents(editor.mouseHandler, editor.keyboardHandler, canvas);
     }
 
     return Container(
       child: widget.child,
     );
+  }
+
+  void attachBrowserEvents(MouseHandler mouseHandler,
+      KeyboardHandler keyboardHandler, CanvasState canvas) {
+    js.context["Window"]["eventmaster"] = _eventkey;
+    print("Adding new window event listener with key: $_eventkey");
+
+    window.onKeyDown.listen((evt) {
+      if (IsCurrentHandler) {
+        keyboardHandler.onKeyDown(evt, context, _isPageActive);
+      }
+    });
+
+    window.onTouchStart.listen((evt) {
+      if (IsCurrentHandler && !canvas.touchMode) {
+        print("Activating touch mode");
+        canvas.beginUpdate();
+        canvas.touchMode = true;
+        canvas.endUpdate(true);
+      }
+    });
+
+    window.onKeyPress.listen((evt) {
+      if (IsCurrentHandler) {
+        keyboardHandler.onKeyPress(evt, context, _isPageActive);
+      }
+    });
+
+    window.onKeyUp.listen((evt) {
+      if (IsCurrentHandler) {
+        keyboardHandler.onKeyUp(evt, context, _isPageActive);
+      }
+    });
+
+    window.onContextMenu.listen((evt) {
+      if (IsCurrentHandler) {
+        if (canvas.touchMode) {
+          evt.preventDefault();
+        } else {
+          mouseHandler.onContextMenu(evt, context, _isPageActive);
+        }
+      }
+    });
+    window.onMouseWheel.listen((evt) {
+      if (IsCurrentHandler) {
+        mouseHandler.onMouseWheel(evt, context, _isPageActive);
+      }
+    });
+
+    window.onMouseOut.listen((evt) {
+      if (IsCurrentHandler) {
+        mouseHandler.onMouseOut(evt, context, _isPageActive);
+      }
+    });
+
+    window.onMouseMove.listen((evt) {
+      if (IsCurrentHandler) {
+        mouseHandler.onMouseMove(evt, context, _isPageActive);
+      }
+    });
+
+    window.onMouseDown.listen((evt) {
+      if (IsCurrentHandler && !canvas.touchMode) {
+        mouseHandler.onMouseDown(evt, context, _isPageActive);
+      }
+    });
+
+    window.onMouseUp.listen((evt) {
+      if (IsCurrentHandler && !canvas.touchMode) {
+        mouseHandler.onMouseUp(evt, context, _isPageActive);
+      }
+    });
   }
 }

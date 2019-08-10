@@ -10,15 +10,34 @@ class KeyboardHandler {
   CanvasController canvas;
   GraphController graph;
 
+  bool ctrlKey = false;
+  bool shiftKey = false;
+  bool altKey = false;
+
   KeyboardHandler(this.canvas, this.tabs, this.graph);
 
   final reFuncKey = RegExp(r"F\d\d?");
 
+  MouseEvent get mouse => MouseEvent(
+        "",
+        ctrlKey: ctrlKey,
+        altKey: altKey,
+        shiftKey: shiftKey,
+      );
+
   void onKeyPress(KeyboardEvent evt, BuildContext context, bool isActive) {}
 
-  void onKeyUp(KeyboardEvent evt, BuildContext context, bool isActive) {}
+  void onKeyUp(KeyboardEvent evt, BuildContext context, bool isActive) {
+    if (evt.key == "Control") ctrlKey = false;
+    if (evt.key == "Alt") altKey = false;
+    if (evt.key == "Shift") shiftKey = false;
+  }
 
   void onKeyDown(KeyboardEvent evt, BuildContext context, bool isActive) {
+    if (evt.key == "Control") ctrlKey = true;
+    if (evt.key == "Alt") altKey = true;
+    if (evt.key == "Shift") shiftKey = true;
+
     // Always allow the chrome dev tools
     if (evt.key.toLowerCase() == "i" && evt.ctrlKey && evt.shiftKey) return;
     // Always allow a full refresh

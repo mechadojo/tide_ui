@@ -1,0 +1,170 @@
+syntax = "proto3";
+
+message TideChartPort {
+    string type = 1;
+    string node = 2;
+    string name = 3;
+    int32 ordinal = 4;
+    repeated TideChartProperty props = 5;
+}
+
+message TideChartLink {
+    TideChartPort fromPort = 1;
+    TideChartPort toPort = 2;
+    int32 group = 3;
+}
+
+message TideChartNode {
+    string name = 1;
+    string type = 2;
+    TideChartOffset pos = 3;
+
+    string title=4;
+    string icon=5;
+    string method=6;
+    string comment=7;
+
+    bool logging=8;
+    bool debugging=9;
+
+    double delay = 10;
+
+    repeated TideChartPort inports = 11;
+    repeated TideChartPort outports = 12;
+    repeated TideChartProperty props = 13;
+}
+
+message TideChartOffset {
+    double dx = 1;
+    double dy = 2;
+}
+
+message TideChartGroupCommand {
+    repeated TideChartCommand cmds = 1;
+}
+message TideChartMoveCommand {
+    string node = 1;
+    TideChartOffset fromPos = 2;
+    TideChartOffset toPos = 3;
+}
+
+message TideChartNodeCommand {
+    string node = 1;
+    string type = 2;
+}
+
+message TideChartPortCommand {
+    TideChartPort port = 1;
+    string type = 2;
+}
+
+message TideChartLinkCommand {
+    TideChartLink link = 1;
+    string type = 2;
+}
+
+message TideChartGraphCommand {
+    TideChartGraph graph = 1;
+    string type = 2;
+}
+
+message TideChartPropertyCommand {
+    repeated TideChartProperty props = 1;
+    string type = 2;
+    oneof target {
+        string node = 3;
+        string port = 4;
+        string graph = 5;
+        string chart = 6;
+    }    
+}
+
+message TideChartCommand {
+    string version = 1;       // unique id for the change
+    string id = 2;            // graph id for the change
+    oneof command {
+        TideChartGroupCommand group = 3;
+        TideChartMoveCommand move = 4;
+        TideChartNodeCommand node = 5;
+        TideChartPortCommand port = 6;
+        TideChartLinkCommand link = 7;
+        TideChartGraphCommand graph = 8;
+        TideChartPropertyCommand props = 9;
+    }
+}
+
+message TideChartProperty {
+    string name = 1;
+    string type = 2;
+    string value = 3;
+    
+    repeated TideChartProperty props = 4;
+}
+
+message TideChartGraph {
+    string id = 1;                              // unique id for the graph           
+    string title = 2;                           
+    string version = 3;                         // version the graph is on
+    string source = 4;                          // version the graph started on
+    
+    repeated TideChartNode nodes = 5;
+    repeated TideChartLink links = 6;
+
+    repeated TideChartCommand history = 7;      // all the changes made from source to current
+    repeated TideChartProperty props = 8;
+}
+
+message TideChart {
+    string version = 1;         // unique id for this chart version
+    string branch = 2;          // branch this version is associated with
+    string source = 3;          // previous version
+    string merge = 4;           // last version id on branch merging into
+
+    string commitDate = 5;
+    string commitBy = 6;       
+    string commitDesc = 7;      // short commit comment
+    string commitNotes = 8;     // longer commit notes
+    
+    repeated TideChartGraph graphs = 9;
+    repeated TideChartProperty props = 10;
+}
+
+message TideChartFile {
+    string id = 1;                          // unique id for this file
+    string filename = 2;                    // name for the file (virtual file system)
+    string folder = 3;                      // path for the file (virtual file system)
+
+    string createdDate = 4;
+    string createdBy = 5;
+    string origin = 6;                       // shared repository this file syncs to
+
+    TideChart chart = 7;                      // the last committed version  
+    repeated TideChartCommand working = 8;    // uncommitted local changes
+    repeated TideChartCommand remote = 9;     // unmerged changes committed remotely
+    repeated TideChart history = 10;          // previous version history
+}
+
+// Read only the file header information
+message TideChartFileHeader {
+    string id = 1;                          // unique id for this file
+    string filename = 2;                    // name for the file (virtual file system)
+    string folder = 3;                      // path for the file (virtual file system)
+
+    string createdDate = 4;
+    string createdBy = 5;
+    string origin = 6;                       // shared repository this file syncs to
+}
+
+// Read only the current version
+message TideChartFileCurrent {
+    string id = 1;                          // unique id for this file
+    string filename = 2;                    // name for the file (virtual file system)
+    string folder = 3;                      // path for the file (virtual file system)
+
+    string createdDate = 4;
+    string createdBy = 5;
+    string origin = 6;                      // shared repository this file syncs to
+
+    TideChart chart = 7;                    // the last committed version  
+}
+

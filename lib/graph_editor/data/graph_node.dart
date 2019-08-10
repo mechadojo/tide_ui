@@ -1,6 +1,8 @@
 import 'dart:math';
+import 'package:flutter_web/material.dart';
 
 import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
+import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'graph.dart';
@@ -24,9 +26,79 @@ enum GraphNodeType {
 
 enum NodePortType { inport, outport }
 
-class GraphObject with CanvasInteractive {}
+class GraphObject with CanvasInteractive {
+  static GraphObject none = GraphObject();
+}
+
+class RefGraphNode {
+  String name;
+
+  RefGraphNode.node(GraphNode node) {
+    name = node.name;
+  }
+}
+
+class PackedGraphNode {
+  GraphNodeType type = GraphNodeType.action;
+
+  Offset pos;
+
+  String name;
+  String title;
+  String icon;
+  String method;
+  String comment;
+
+  bool logging = true;
+  bool debugging = true;
+
+  double delay = 0;
+
+  List<PackedNodePort> inports = [];
+  List<PackedNodePort> outports = [];
+  int version = 0;
+
+  PackedGraphNode.node(GraphNode node) {
+    pos = node.pos;
+    type = node.type;
+    name = node.name;
+    title = node.title;
+    icon = node.icon;
+    method = node.method;
+    comment = node.comment;
+    logging = node.logging;
+    debugging = node.debugging;
+    version = node.version;
+
+    inports = [...node.inports.map((x) => x.pack())];
+    outports = [...node.outports.map((x) => x.pack())];
+  }
+
+  GraphNode unpack(GetNodeByName lookup) {
+    var node = lookup(name) as GraphNode;
+
+    node.type = type;
+    node.name = name;
+    node.title = title;
+    node.icon = icon;
+    node.method = method;
+    node.comment = comment;
+    node.logging = logging;
+    node.debugging = debugging;
+
+    node.inports = [...inports.map((x) => x.unpack(lookup))];
+    node.outports = [...outports.map((x) => x.unpack(lookup))];
+    node.resize();
+    node.moveTo(pos.dx, pos.dy);
+
+    node.version = version;
+    return node;
+  }
+}
 
 class GraphNode extends GraphObject {
+  static GraphNode none = GraphNode()..name = "<none>";
+
   GraphNodeType type = GraphNodeType.action;
 
   String name;
@@ -52,6 +124,8 @@ class GraphNode extends GraphObject {
     int number = (nodeRandom.nextInt(58786560)).floor() + 1679617;
     return number.toRadixString(36);
   }
+
+  GraphNode();
 
   GraphNode.action(
       {this.name,
@@ -81,6 +155,19 @@ class GraphNode extends GraphObject {
     }
 
     resize();
+  }
+
+  @override
+  String toString() {
+    return "$name";
+  }
+
+  RefGraphNode ref() {
+    return RefGraphNode.node(this);
+  }
+
+  PackedGraphNode pack() {
+    return PackedGraphNode.node(this);
   }
 
   bool isAnyType(List<GraphNodeType> types) {
