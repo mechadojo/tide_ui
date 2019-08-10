@@ -15,6 +15,7 @@ class CanvasTabsState with ChangeNotifier {
   String selected;
   int nextTab = 1;
   int get length => tabs.length;
+  bool requirePaint = false;
 
   CanvasTabsState({this.selected, this.tabs, this.menu}) {
     tabs = tabs ?? [];

@@ -36,6 +36,12 @@ class CanvasTabsController with MouseController, KeyboardController {
       tabs.shiftRight();
     }
 
+    for (var item in tabs.interactive()) {
+      if (item.hovered) {
+        item.hovered = false;
+      }
+    }
+    tabs.requirePaint = true;
     tabs.selectIndex(idx);
   }
 
@@ -96,12 +102,13 @@ class CanvasTabsController with MouseController, KeyboardController {
   bool onMouseUp(MouseEvent evt) {
     // This helps with tabs that get removed on mouse down
     // Its not perfect but we cannot call state changes from inside the re-paint
-
     return onMouseMove(evt, cursorPos);
   }
 
   @override
   bool onMouseMove(MouseEvent evt, Offset pt) {
+    if (tabs.requirePaint) return false;
+
     cursorPos = pt;
 
     bool notify = false;
