@@ -6,7 +6,7 @@ mixin MouseController {
     return false;
   }
 
-  bool onMouseUp(MouseEvent evt, Offset pt) {
+  bool onMouseUp(MouseEvent evt) {
     return false;
   }
 
@@ -15,6 +15,10 @@ mixin MouseController {
   }
 
   bool onMouseOut() {
+    return false;
+  }
+
+  bool onMouseDoubleTap() {
     return false;
   }
 

@@ -28,6 +28,8 @@ class NodePortPainter {
     canvas.drawCircle(port.pos, sz, fillPaint);
     canvas.drawCircle(port.pos, sz, borderPaint);
 
+    if (Graph.ShowHitBox) canvas.drawRect(port.hitbox, Graph.redPen);
+
     if (Graph.isZoomedOut(scale) || port.node.isNotType(Action_Behavior)) {
       return;
     }

@@ -98,18 +98,17 @@ class TideChartNode extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo('TideChartNode')
     ..aOS(1, 'name')
     ..aOS(2, 'type')
-    ..a<$core.int>(3, 'version', $pb.PbFieldType.O3)
-    ..a<TideChartOffset>(4, 'pos', $pb.PbFieldType.OM, TideChartOffset.getDefault, TideChartOffset.create)
-    ..aOS(5, 'title')
-    ..aOS(6, 'icon')
-    ..aOS(7, 'method')
-    ..aOS(8, 'comment')
-    ..aOB(9, 'logging')
-    ..aOB(10, 'debugging')
-    ..a<$core.double>(11, 'delay', $pb.PbFieldType.OD)
-    ..pc<TideChartPort>(12, 'inports', $pb.PbFieldType.PM,TideChartPort.create)
-    ..pc<TideChartPort>(13, 'outports', $pb.PbFieldType.PM,TideChartPort.create)
-    ..pc<TideChartProperty>(14, 'props', $pb.PbFieldType.PM,TideChartProperty.create)
+    ..a<TideChartOffset>(3, 'pos', $pb.PbFieldType.OM, TideChartOffset.getDefault, TideChartOffset.create)
+    ..aOS(4, 'title')
+    ..aOS(5, 'icon')
+    ..aOS(6, 'method')
+    ..aOS(7, 'comment')
+    ..aOB(8, 'logging')
+    ..aOB(9, 'debugging')
+    ..a<$core.double>(10, 'delay', $pb.PbFieldType.OD)
+    ..pc<TideChartPort>(11, 'inports', $pb.PbFieldType.PM,TideChartPort.create)
+    ..pc<TideChartPort>(12, 'outports', $pb.PbFieldType.PM,TideChartPort.create)
+    ..pc<TideChartProperty>(13, 'props', $pb.PbFieldType.PM,TideChartProperty.create)
     ..hasRequiredFields = false
   ;
 
@@ -137,62 +136,57 @@ class TideChartNode extends $pb.GeneratedMessage {
   $core.bool hasType() => $_has(1);
   void clearType() => clearField(2);
 
-  $core.int get version => $_get(2, 0);
-  set version($core.int v) { $_setSignedInt32(2, v); }
-  $core.bool hasVersion() => $_has(2);
-  void clearVersion() => clearField(3);
+  TideChartOffset get pos => $_getN(2);
+  set pos(TideChartOffset v) { setField(3, v); }
+  $core.bool hasPos() => $_has(2);
+  void clearPos() => clearField(3);
 
-  TideChartOffset get pos => $_getN(3);
-  set pos(TideChartOffset v) { setField(4, v); }
-  $core.bool hasPos() => $_has(3);
-  void clearPos() => clearField(4);
+  $core.String get title => $_getS(3, '');
+  set title($core.String v) { $_setString(3, v); }
+  $core.bool hasTitle() => $_has(3);
+  void clearTitle() => clearField(4);
 
-  $core.String get title => $_getS(4, '');
-  set title($core.String v) { $_setString(4, v); }
-  $core.bool hasTitle() => $_has(4);
-  void clearTitle() => clearField(5);
+  $core.String get icon => $_getS(4, '');
+  set icon($core.String v) { $_setString(4, v); }
+  $core.bool hasIcon() => $_has(4);
+  void clearIcon() => clearField(5);
 
-  $core.String get icon => $_getS(5, '');
-  set icon($core.String v) { $_setString(5, v); }
-  $core.bool hasIcon() => $_has(5);
-  void clearIcon() => clearField(6);
+  $core.String get method => $_getS(5, '');
+  set method($core.String v) { $_setString(5, v); }
+  $core.bool hasMethod() => $_has(5);
+  void clearMethod() => clearField(6);
 
-  $core.String get method => $_getS(6, '');
-  set method($core.String v) { $_setString(6, v); }
-  $core.bool hasMethod() => $_has(6);
-  void clearMethod() => clearField(7);
+  $core.String get comment => $_getS(6, '');
+  set comment($core.String v) { $_setString(6, v); }
+  $core.bool hasComment() => $_has(6);
+  void clearComment() => clearField(7);
 
-  $core.String get comment => $_getS(7, '');
-  set comment($core.String v) { $_setString(7, v); }
-  $core.bool hasComment() => $_has(7);
-  void clearComment() => clearField(8);
+  $core.bool get logging => $_get(7, false);
+  set logging($core.bool v) { $_setBool(7, v); }
+  $core.bool hasLogging() => $_has(7);
+  void clearLogging() => clearField(8);
 
-  $core.bool get logging => $_get(8, false);
-  set logging($core.bool v) { $_setBool(8, v); }
-  $core.bool hasLogging() => $_has(8);
-  void clearLogging() => clearField(9);
+  $core.bool get debugging => $_get(8, false);
+  set debugging($core.bool v) { $_setBool(8, v); }
+  $core.bool hasDebugging() => $_has(8);
+  void clearDebugging() => clearField(9);
 
-  $core.bool get debugging => $_get(9, false);
-  set debugging($core.bool v) { $_setBool(9, v); }
-  $core.bool hasDebugging() => $_has(9);
-  void clearDebugging() => clearField(10);
+  $core.double get delay => $_getN(9);
+  set delay($core.double v) { $_setDouble(9, v); }
+  $core.bool hasDelay() => $_has(9);
+  void clearDelay() => clearField(10);
 
-  $core.double get delay => $_getN(10);
-  set delay($core.double v) { $_setDouble(10, v); }
-  $core.bool hasDelay() => $_has(10);
-  void clearDelay() => clearField(11);
+  $core.List<TideChartPort> get inports => $_getList(10);
 
-  $core.List<TideChartPort> get inports => $_getList(11);
+  $core.List<TideChartPort> get outports => $_getList(11);
 
-  $core.List<TideChartPort> get outports => $_getList(12);
-
-  $core.List<TideChartProperty> get props => $_getList(13);
+  $core.List<TideChartProperty> get props => $_getList(12);
 }
 
 class TideChartOffset extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo('TideChartOffset')
-    ..a<$core.double>(1, 'x', $pb.PbFieldType.OD)
-    ..a<$core.double>(2, 'y', $pb.PbFieldType.OD)
+    ..a<$core.double>(1, 'dx', $pb.PbFieldType.OD)
+    ..a<$core.double>(2, 'dy', $pb.PbFieldType.OD)
     ..hasRequiredFields = false
   ;
 
@@ -210,15 +204,15 @@ class TideChartOffset extends $pb.GeneratedMessage {
   static TideChartOffset getDefault() => _defaultInstance ??= create()..freeze();
   static TideChartOffset _defaultInstance;
 
-  $core.double get x => $_getN(0);
-  set x($core.double v) { $_setDouble(0, v); }
-  $core.bool hasX() => $_has(0);
-  void clearX() => clearField(1);
+  $core.double get dx => $_getN(0);
+  set dx($core.double v) { $_setDouble(0, v); }
+  $core.bool hasDx() => $_has(0);
+  void clearDx() => clearField(1);
 
-  $core.double get y => $_getN(1);
-  set y($core.double v) { $_setDouble(1, v); }
-  $core.bool hasY() => $_has(1);
-  void clearY() => clearField(2);
+  $core.double get dy => $_getN(1);
+  set dy($core.double v) { $_setDouble(1, v); }
+  $core.bool hasDy() => $_has(1);
+  void clearDy() => clearField(2);
 }
 
 class TideChartGroupCommand extends $pb.GeneratedMessage {
@@ -349,7 +343,7 @@ class TideChartPortCommand extends $pb.GeneratedMessage {
 class TideChartLinkCommand extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo('TideChartLinkCommand')
     ..a<TideChartLink>(1, 'link', $pb.PbFieldType.OM, TideChartLink.getDefault, TideChartLink.create)
-    ..aOS(3, 'type')
+    ..aOS(2, 'type')
     ..hasRequiredFields = false
   ;
 
@@ -375,7 +369,39 @@ class TideChartLinkCommand extends $pb.GeneratedMessage {
   $core.String get type => $_getS(1, '');
   set type($core.String v) { $_setString(1, v); }
   $core.bool hasType() => $_has(1);
-  void clearType() => clearField(3);
+  void clearType() => clearField(2);
+}
+
+class TideChartGraphCommand extends $pb.GeneratedMessage {
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('TideChartGraphCommand')
+    ..a<TideChartGraph>(1, 'graph', $pb.PbFieldType.OM, TideChartGraph.getDefault, TideChartGraph.create)
+    ..aOS(2, 'type')
+    ..hasRequiredFields = false
+  ;
+
+  TideChartGraphCommand._() : super();
+  factory TideChartGraphCommand() => create();
+  factory TideChartGraphCommand.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory TideChartGraphCommand.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  TideChartGraphCommand clone() => TideChartGraphCommand()..mergeFromMessage(this);
+  TideChartGraphCommand copyWith(void Function(TideChartGraphCommand) updates) => super.copyWith((message) => updates(message as TideChartGraphCommand));
+  $pb.BuilderInfo get info_ => _i;
+  @$core.pragma('dart2js:noInline')
+  static TideChartGraphCommand create() => TideChartGraphCommand._();
+  TideChartGraphCommand createEmptyInstance() => create();
+  static $pb.PbList<TideChartGraphCommand> createRepeated() => $pb.PbList<TideChartGraphCommand>();
+  static TideChartGraphCommand getDefault() => _defaultInstance ??= create()..freeze();
+  static TideChartGraphCommand _defaultInstance;
+
+  TideChartGraph get graph => $_getN(0);
+  set graph(TideChartGraph v) { setField(1, v); }
+  $core.bool hasGraph() => $_has(0);
+  void clearGraph() => clearField(1);
+
+  $core.String get type => $_getS(1, '');
+  set type($core.String v) { $_setString(1, v); }
+  $core.bool hasType() => $_has(1);
+  void clearType() => clearField(2);
 }
 
 enum TideChartPropertyCommand_Target {
@@ -456,6 +482,7 @@ enum TideChartCommand_Command {
   node, 
   port, 
   link, 
+  graph, 
   props, 
   notSet
 }
@@ -467,19 +494,21 @@ class TideChartCommand extends $pb.GeneratedMessage {
     5 : TideChartCommand_Command.node,
     6 : TideChartCommand_Command.port,
     7 : TideChartCommand_Command.link,
-    8 : TideChartCommand_Command.props,
+    8 : TideChartCommand_Command.graph,
+    9 : TideChartCommand_Command.props,
     0 : TideChartCommand_Command.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo('TideChartCommand')
-    ..oo(0, [3, 4, 5, 6, 7, 8])
+    ..oo(0, [3, 4, 5, 6, 7, 8, 9])
     ..aOS(1, 'version')
-    ..aOS(2, 'source')
+    ..aOS(2, 'id')
     ..a<TideChartGroupCommand>(3, 'group', $pb.PbFieldType.OM, TideChartGroupCommand.getDefault, TideChartGroupCommand.create)
     ..a<TideChartMoveCommand>(4, 'move', $pb.PbFieldType.OM, TideChartMoveCommand.getDefault, TideChartMoveCommand.create)
     ..a<TideChartNodeCommand>(5, 'node', $pb.PbFieldType.OM, TideChartNodeCommand.getDefault, TideChartNodeCommand.create)
     ..a<TideChartPortCommand>(6, 'port', $pb.PbFieldType.OM, TideChartPortCommand.getDefault, TideChartPortCommand.create)
     ..a<TideChartLinkCommand>(7, 'link', $pb.PbFieldType.OM, TideChartLinkCommand.getDefault, TideChartLinkCommand.create)
-    ..a<TideChartPropertyCommand>(8, 'props', $pb.PbFieldType.OM, TideChartPropertyCommand.getDefault, TideChartPropertyCommand.create)
+    ..a<TideChartGraphCommand>(8, 'graph', $pb.PbFieldType.OM, TideChartGraphCommand.getDefault, TideChartGraphCommand.create)
+    ..a<TideChartPropertyCommand>(9, 'props', $pb.PbFieldType.OM, TideChartPropertyCommand.getDefault, TideChartPropertyCommand.create)
     ..hasRequiredFields = false
   ;
 
@@ -505,10 +534,10 @@ class TideChartCommand extends $pb.GeneratedMessage {
   $core.bool hasVersion() => $_has(0);
   void clearVersion() => clearField(1);
 
-  $core.String get source => $_getS(1, '');
-  set source($core.String v) { $_setString(1, v); }
-  $core.bool hasSource() => $_has(1);
-  void clearSource() => clearField(2);
+  $core.String get id => $_getS(1, '');
+  set id($core.String v) { $_setString(1, v); }
+  $core.bool hasId() => $_has(1);
+  void clearId() => clearField(2);
 
   TideChartGroupCommand get group => $_getN(2);
   set group(TideChartGroupCommand v) { setField(3, v); }
@@ -535,42 +564,15 @@ class TideChartCommand extends $pb.GeneratedMessage {
   $core.bool hasLink() => $_has(6);
   void clearLink() => clearField(7);
 
-  TideChartPropertyCommand get props => $_getN(7);
-  set props(TideChartPropertyCommand v) { setField(8, v); }
-  $core.bool hasProps() => $_has(7);
-  void clearProps() => clearField(8);
-}
+  TideChartGraphCommand get graph => $_getN(7);
+  set graph(TideChartGraphCommand v) { setField(8, v); }
+  $core.bool hasGraph() => $_has(7);
+  void clearGraph() => clearField(8);
 
-class TideChartHistory extends $pb.GeneratedMessage {
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo('TideChartHistory')
-    ..aOS(1, 'verion')
-    ..pc<TideChartCommand>(2, 'undo', $pb.PbFieldType.PM,TideChartCommand.create)
-    ..pc<TideChartCommand>(3, 'redo', $pb.PbFieldType.PM,TideChartCommand.create)
-    ..hasRequiredFields = false
-  ;
-
-  TideChartHistory._() : super();
-  factory TideChartHistory() => create();
-  factory TideChartHistory.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory TideChartHistory.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
-  TideChartHistory clone() => TideChartHistory()..mergeFromMessage(this);
-  TideChartHistory copyWith(void Function(TideChartHistory) updates) => super.copyWith((message) => updates(message as TideChartHistory));
-  $pb.BuilderInfo get info_ => _i;
-  @$core.pragma('dart2js:noInline')
-  static TideChartHistory create() => TideChartHistory._();
-  TideChartHistory createEmptyInstance() => create();
-  static $pb.PbList<TideChartHistory> createRepeated() => $pb.PbList<TideChartHistory>();
-  static TideChartHistory getDefault() => _defaultInstance ??= create()..freeze();
-  static TideChartHistory _defaultInstance;
-
-  $core.String get verion => $_getS(0, '');
-  set verion($core.String v) { $_setString(0, v); }
-  $core.bool hasVerion() => $_has(0);
-  void clearVerion() => clearField(1);
-
-  $core.List<TideChartCommand> get undo => $_getList(1);
-
-  $core.List<TideChartCommand> get redo => $_getList(2);
+  TideChartPropertyCommand get props => $_getN(8);
+  set props(TideChartPropertyCommand v) { setField(9, v); }
+  $core.bool hasProps() => $_has(8);
+  void clearProps() => clearField(9);
 }
 
 class TideChartProperty extends $pb.GeneratedMessage {
@@ -618,11 +620,11 @@ class TideChartGraph extends $pb.GeneratedMessage {
   static final $pb.BuilderInfo _i = $pb.BuilderInfo('TideChartGraph')
     ..aOS(1, 'id')
     ..aOS(2, 'title')
-    ..a<$core.int>(3, 'version', $pb.PbFieldType.O3)
-    ..pc<TideChartNode>(4, 'nodes', $pb.PbFieldType.PM,TideChartNode.create)
-    ..pc<TideChartLink>(5, 'links', $pb.PbFieldType.PM,TideChartLink.create)
-    ..pc<TideChartNode>(6, 'referenced', $pb.PbFieldType.PM,TideChartNode.create)
-    ..a<TideChartHistory>(7, 'history', $pb.PbFieldType.OM, TideChartHistory.getDefault, TideChartHistory.create)
+    ..aOS(3, 'version')
+    ..aOS(4, 'source')
+    ..pc<TideChartNode>(5, 'nodes', $pb.PbFieldType.PM,TideChartNode.create)
+    ..pc<TideChartLink>(6, 'links', $pb.PbFieldType.PM,TideChartLink.create)
+    ..pc<TideChartCommand>(7, 'history', $pb.PbFieldType.PM,TideChartCommand.create)
     ..pc<TideChartProperty>(8, 'props', $pb.PbFieldType.PM,TideChartProperty.create)
     ..hasRequiredFields = false
   ;
@@ -651,21 +653,21 @@ class TideChartGraph extends $pb.GeneratedMessage {
   $core.bool hasTitle() => $_has(1);
   void clearTitle() => clearField(2);
 
-  $core.int get version => $_get(2, 0);
-  set version($core.int v) { $_setSignedInt32(2, v); }
+  $core.String get version => $_getS(2, '');
+  set version($core.String v) { $_setString(2, v); }
   $core.bool hasVersion() => $_has(2);
   void clearVersion() => clearField(3);
 
-  $core.List<TideChartNode> get nodes => $_getList(3);
+  $core.String get source => $_getS(3, '');
+  set source($core.String v) { $_setString(3, v); }
+  $core.bool hasSource() => $_has(3);
+  void clearSource() => clearField(4);
 
-  $core.List<TideChartLink> get links => $_getList(4);
+  $core.List<TideChartNode> get nodes => $_getList(4);
 
-  $core.List<TideChartNode> get referenced => $_getList(5);
+  $core.List<TideChartLink> get links => $_getList(5);
 
-  TideChartHistory get history => $_getN(6);
-  set history(TideChartHistory v) { setField(7, v); }
-  $core.bool hasHistory() => $_has(6);
-  void clearHistory() => clearField(7);
+  $core.List<TideChartCommand> get history => $_getList(6);
 
   $core.List<TideChartProperty> get props => $_getList(7);
 }
@@ -752,10 +754,10 @@ class TideChartFile extends $pb.GeneratedMessage {
     ..aOS(4, 'createdDate')
     ..aOS(5, 'createdBy')
     ..aOS(6, 'origin')
-    ..a<TideChart>(7, 'current', $pb.PbFieldType.OM, TideChart.getDefault, TideChart.create)
-    ..pc<TideChart>(8, 'history', $pb.PbFieldType.PM,TideChart.create)
-    ..pc<TideChartCommand>(9, 'working', $pb.PbFieldType.PM,TideChartCommand.create)
-    ..pc<TideChartCommand>(10, 'remote', $pb.PbFieldType.PM,TideChartCommand.create)
+    ..a<TideChart>(7, 'chart', $pb.PbFieldType.OM, TideChart.getDefault, TideChart.create)
+    ..pc<TideChartCommand>(8, 'working', $pb.PbFieldType.PM,TideChartCommand.create)
+    ..pc<TideChartCommand>(9, 'remote', $pb.PbFieldType.PM,TideChartCommand.create)
+    ..pc<TideChart>(10, 'history', $pb.PbFieldType.PM,TideChart.create)
     ..hasRequiredFields = false
   ;
 
@@ -803,15 +805,133 @@ class TideChartFile extends $pb.GeneratedMessage {
   $core.bool hasOrigin() => $_has(5);
   void clearOrigin() => clearField(6);
 
-  TideChart get current => $_getN(6);
-  set current(TideChart v) { setField(7, v); }
-  $core.bool hasCurrent() => $_has(6);
-  void clearCurrent() => clearField(7);
+  TideChart get chart => $_getN(6);
+  set chart(TideChart v) { setField(7, v); }
+  $core.bool hasChart() => $_has(6);
+  void clearChart() => clearField(7);
 
-  $core.List<TideChart> get history => $_getList(7);
+  $core.List<TideChartCommand> get working => $_getList(7);
 
-  $core.List<TideChartCommand> get working => $_getList(8);
+  $core.List<TideChartCommand> get remote => $_getList(8);
 
-  $core.List<TideChartCommand> get remote => $_getList(9);
+  $core.List<TideChart> get history => $_getList(9);
+}
+
+class TideChartFileHeader extends $pb.GeneratedMessage {
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('TideChartFileHeader')
+    ..aOS(1, 'id')
+    ..aOS(2, 'filename')
+    ..aOS(3, 'folder')
+    ..aOS(4, 'createdDate')
+    ..aOS(5, 'createdBy')
+    ..aOS(6, 'origin')
+    ..hasRequiredFields = false
+  ;
+
+  TideChartFileHeader._() : super();
+  factory TideChartFileHeader() => create();
+  factory TideChartFileHeader.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory TideChartFileHeader.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  TideChartFileHeader clone() => TideChartFileHeader()..mergeFromMessage(this);
+  TideChartFileHeader copyWith(void Function(TideChartFileHeader) updates) => super.copyWith((message) => updates(message as TideChartFileHeader));
+  $pb.BuilderInfo get info_ => _i;
+  @$core.pragma('dart2js:noInline')
+  static TideChartFileHeader create() => TideChartFileHeader._();
+  TideChartFileHeader createEmptyInstance() => create();
+  static $pb.PbList<TideChartFileHeader> createRepeated() => $pb.PbList<TideChartFileHeader>();
+  static TideChartFileHeader getDefault() => _defaultInstance ??= create()..freeze();
+  static TideChartFileHeader _defaultInstance;
+
+  $core.String get id => $_getS(0, '');
+  set id($core.String v) { $_setString(0, v); }
+  $core.bool hasId() => $_has(0);
+  void clearId() => clearField(1);
+
+  $core.String get filename => $_getS(1, '');
+  set filename($core.String v) { $_setString(1, v); }
+  $core.bool hasFilename() => $_has(1);
+  void clearFilename() => clearField(2);
+
+  $core.String get folder => $_getS(2, '');
+  set folder($core.String v) { $_setString(2, v); }
+  $core.bool hasFolder() => $_has(2);
+  void clearFolder() => clearField(3);
+
+  $core.String get createdDate => $_getS(3, '');
+  set createdDate($core.String v) { $_setString(3, v); }
+  $core.bool hasCreatedDate() => $_has(3);
+  void clearCreatedDate() => clearField(4);
+
+  $core.String get createdBy => $_getS(4, '');
+  set createdBy($core.String v) { $_setString(4, v); }
+  $core.bool hasCreatedBy() => $_has(4);
+  void clearCreatedBy() => clearField(5);
+
+  $core.String get origin => $_getS(5, '');
+  set origin($core.String v) { $_setString(5, v); }
+  $core.bool hasOrigin() => $_has(5);
+  void clearOrigin() => clearField(6);
+}
+
+class TideChartFileCurrent extends $pb.GeneratedMessage {
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo('TideChartFileCurrent')
+    ..aOS(1, 'id')
+    ..aOS(2, 'filename')
+    ..aOS(3, 'folder')
+    ..aOS(4, 'createdDate')
+    ..aOS(5, 'createdBy')
+    ..aOS(6, 'origin')
+    ..a<TideChart>(7, 'chart', $pb.PbFieldType.OM, TideChart.getDefault, TideChart.create)
+    ..hasRequiredFields = false
+  ;
+
+  TideChartFileCurrent._() : super();
+  factory TideChartFileCurrent() => create();
+  factory TideChartFileCurrent.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory TideChartFileCurrent.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  TideChartFileCurrent clone() => TideChartFileCurrent()..mergeFromMessage(this);
+  TideChartFileCurrent copyWith(void Function(TideChartFileCurrent) updates) => super.copyWith((message) => updates(message as TideChartFileCurrent));
+  $pb.BuilderInfo get info_ => _i;
+  @$core.pragma('dart2js:noInline')
+  static TideChartFileCurrent create() => TideChartFileCurrent._();
+  TideChartFileCurrent createEmptyInstance() => create();
+  static $pb.PbList<TideChartFileCurrent> createRepeated() => $pb.PbList<TideChartFileCurrent>();
+  static TideChartFileCurrent getDefault() => _defaultInstance ??= create()..freeze();
+  static TideChartFileCurrent _defaultInstance;
+
+  $core.String get id => $_getS(0, '');
+  set id($core.String v) { $_setString(0, v); }
+  $core.bool hasId() => $_has(0);
+  void clearId() => clearField(1);
+
+  $core.String get filename => $_getS(1, '');
+  set filename($core.String v) { $_setString(1, v); }
+  $core.bool hasFilename() => $_has(1);
+  void clearFilename() => clearField(2);
+
+  $core.String get folder => $_getS(2, '');
+  set folder($core.String v) { $_setString(2, v); }
+  $core.bool hasFolder() => $_has(2);
+  void clearFolder() => clearField(3);
+
+  $core.String get createdDate => $_getS(3, '');
+  set createdDate($core.String v) { $_setString(3, v); }
+  $core.bool hasCreatedDate() => $_has(3);
+  void clearCreatedDate() => clearField(4);
+
+  $core.String get createdBy => $_getS(4, '');
+  set createdBy($core.String v) { $_setString(4, v); }
+  $core.bool hasCreatedBy() => $_has(4);
+  void clearCreatedBy() => clearField(5);
+
+  $core.String get origin => $_getS(5, '');
+  set origin($core.String v) { $_setString(5, v); }
+  $core.bool hasOrigin() => $_has(5);
+  void clearOrigin() => clearField(6);
+
+  TideChart get chart => $_getN(6);
+  set chart(TideChart v) { setField(7, v); }
+  $core.bool hasChart() => $_has(6);
+  void clearChart() => clearField(7);
 }
 

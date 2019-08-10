@@ -2,12 +2,15 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
 
 class Graph {
+  static const bool ShowHitBox = false;
+
   static const double DefaultNodeSize = 80;
 
   static const double DefaultPortSpacing = 20;
   static const double DefaultPortPadding = 20;
   static const double DefaultPortOffset = 6;
   static const double DefaultPortSize = 8;
+  static const Size DefaultPortHitboxSize = Size(20, 18);
 
   static const double DefaultGamepadWidth = 250;
   static const double DefaultGamepadHeight = 100;

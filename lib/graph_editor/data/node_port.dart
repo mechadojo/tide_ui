@@ -1,4 +1,3 @@
-import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 
 import 'graph.dart';
@@ -57,7 +56,7 @@ class NodePort extends GraphObject {
       name = ordinal == 0 ? "in" : "in$ordinal";
     }
     if (ordinal == 0) ordinal = 1;
-    size = Size(Graph.DefaultPortSize, Graph.DefaultPortSize);
+    size = Graph.DefaultPortHitboxSize;
   }
 
   NodePort.output(this.node, this.ordinal, [this.name]) {
@@ -66,7 +65,7 @@ class NodePort extends GraphObject {
       name = ordinal == 0 ? "out" : "out$ordinal";
     }
     if (ordinal == 0) ordinal = 1;
-    size = Size(Graph.DefaultPortSize, Graph.DefaultPortSize);
+    size = Graph.DefaultPortHitboxSize;
   }
 
   bool equalTo(NodePort other) {

@@ -17,27 +17,26 @@ message TideChartLink {
 message TideChartNode {
     string name = 1;
     string type = 2;
-    int32 version = 3;
-    TideChartOffset pos = 4;
+    TideChartOffset pos = 3;
 
-    string title=5;
-    string icon=6;
-    string method=7;
-    string comment=8;
+    string title=4;
+    string icon=5;
+    string method=6;
+    string comment=7;
 
-    bool logging=9;
-    bool debugging=10;
+    bool logging=8;
+    bool debugging=9;
 
-    double delay = 11;
+    double delay = 10;
 
-    repeated TideChartPort inports = 12;
-    repeated TideChartPort outports = 13;
-    repeated TideChartProperty props = 14;
+    repeated TideChartPort inports = 11;
+    repeated TideChartPort outports = 12;
+    repeated TideChartProperty props = 13;
 }
 
 message TideChartOffset {
-    double x = 1;
-    double y = 2;
+    double dx = 1;
+    double dy = 2;
 }
 
 message TideChartGroupCommand {
@@ -61,7 +60,12 @@ message TideChartPortCommand {
 
 message TideChartLinkCommand {
     TideChartLink link = 1;
-    string type = 3;
+    string type = 2;
+}
+
+message TideChartGraphCommand {
+    TideChartGraph graph = 1;
+    string type = 2;
 }
 
 message TideChartPropertyCommand {
@@ -76,25 +80,18 @@ message TideChartPropertyCommand {
 }
 
 message TideChartCommand {
-    string version = 1;         // unique id for the change
-    string source = 2;          // previous version
-
+    string version = 1;       // unique id for the change
+    string id = 2;            // graph id for the change
     oneof command {
         TideChartGroupCommand group = 3;
         TideChartMoveCommand move = 4;
         TideChartNodeCommand node = 5;
         TideChartPortCommand port = 6;
         TideChartLinkCommand link = 7;
-        TideChartPropertyCommand props = 8;
+        TideChartGraphCommand graph = 8;
+        TideChartPropertyCommand props = 9;
     }
 }
-
-message TideChartHistory {
-    string verion = 1;
-    repeated TideChartCommand undo = 2;
-    repeated TideChartCommand redo = 3;
-}
-
 
 message TideChartProperty {
     string name = 1;
@@ -105,16 +102,15 @@ message TideChartProperty {
 }
 
 message TideChartGraph {
-    string id = 1;                  
-    string title = 2;
-    int32 version = 3;
+    string id = 1;                              // unique id for the graph           
+    string title = 2;                           
+    string version = 3;                         // version the graph is on
+    string source = 4;                          // version the graph started on
+    
+    repeated TideChartNode nodes = 5;
+    repeated TideChartLink links = 6;
 
-    repeated TideChartNode nodes = 4;
-    repeated TideChartLink links = 5;
-
-    repeated TideChartNode referenced = 6;
-    TideChartHistory history = 7;
-
+    repeated TideChartCommand history = 7;      // all the changes made from source to current
     repeated TideChartProperty props = 8;
 }
 
@@ -142,8 +138,33 @@ message TideChartFile {
     string createdBy = 5;
     string origin = 6;                       // shared repository this file syncs to
 
-    TideChart current = 7;                   // the last committed version  
-    repeated TideChart history = 8;          // previous version history
-    repeated TideChartCommand working = 9;   // uncommitted local changes
-    repeated TideChartCommand remote = 10;   // unmerged changes committed remotely
+    TideChart chart = 7;                      // the last committed version  
+    repeated TideChartCommand working = 8;    // uncommitted local changes
+    repeated TideChartCommand remote = 9;     // unmerged changes committed remotely
+    repeated TideChart history = 10;          // previous version history
 }
+
+// Read only the file header information
+message TideChartFileHeader {
+    string id = 1;                          // unique id for this file
+    string filename = 2;                    // name for the file (virtual file system)
+    string folder = 3;                      // path for the file (virtual file system)
+
+    string createdDate = 4;
+    string createdBy = 5;
+    string origin = 6;                       // shared repository this file syncs to
+}
+
+// Read only the current version
+message TideChartFileCurrent {
+    string id = 1;                          // unique id for this file
+    string filename = 2;                    // name for the file (virtual file system)
+    string folder = 3;                      // path for the file (virtual file system)
+
+    string createdDate = 4;
+    string createdBy = 5;
+    string origin = 6;                      // shared repository this file syncs to
+
+    TideChart chart = 7;                    // the last committed version  
+}
+

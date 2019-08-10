@@ -51,25 +51,24 @@ const TideChartNode$json = const {
   '2': const [
     const {'1': 'name', '3': 1, '4': 1, '5': 9, '10': 'name'},
     const {'1': 'type', '3': 2, '4': 1, '5': 9, '10': 'type'},
-    const {'1': 'version', '3': 3, '4': 1, '5': 5, '10': 'version'},
     const {
       '1': 'pos',
-      '3': 4,
+      '3': 3,
       '4': 1,
       '5': 11,
       '6': '.TideChartOffset',
       '10': 'pos'
     },
-    const {'1': 'title', '3': 5, '4': 1, '5': 9, '10': 'title'},
-    const {'1': 'icon', '3': 6, '4': 1, '5': 9, '10': 'icon'},
-    const {'1': 'method', '3': 7, '4': 1, '5': 9, '10': 'method'},
-    const {'1': 'comment', '3': 8, '4': 1, '5': 9, '10': 'comment'},
-    const {'1': 'logging', '3': 9, '4': 1, '5': 8, '10': 'logging'},
-    const {'1': 'debugging', '3': 10, '4': 1, '5': 8, '10': 'debugging'},
-    const {'1': 'delay', '3': 11, '4': 1, '5': 1, '10': 'delay'},
+    const {'1': 'title', '3': 4, '4': 1, '5': 9, '10': 'title'},
+    const {'1': 'icon', '3': 5, '4': 1, '5': 9, '10': 'icon'},
+    const {'1': 'method', '3': 6, '4': 1, '5': 9, '10': 'method'},
+    const {'1': 'comment', '3': 7, '4': 1, '5': 9, '10': 'comment'},
+    const {'1': 'logging', '3': 8, '4': 1, '5': 8, '10': 'logging'},
+    const {'1': 'debugging', '3': 9, '4': 1, '5': 8, '10': 'debugging'},
+    const {'1': 'delay', '3': 10, '4': 1, '5': 1, '10': 'delay'},
     const {
       '1': 'inports',
-      '3': 12,
+      '3': 11,
       '4': 3,
       '5': 11,
       '6': '.TideChartPort',
@@ -77,7 +76,7 @@ const TideChartNode$json = const {
     },
     const {
       '1': 'outports',
-      '3': 13,
+      '3': 12,
       '4': 3,
       '5': 11,
       '6': '.TideChartPort',
@@ -85,7 +84,7 @@ const TideChartNode$json = const {
     },
     const {
       '1': 'props',
-      '3': 14,
+      '3': 13,
       '4': 3,
       '5': 11,
       '6': '.TideChartProperty',
@@ -97,8 +96,8 @@ const TideChartNode$json = const {
 const TideChartOffset$json = const {
   '1': 'TideChartOffset',
   '2': const [
-    const {'1': 'x', '3': 1, '4': 1, '5': 1, '10': 'x'},
-    const {'1': 'y', '3': 2, '4': 1, '5': 1, '10': 'y'},
+    const {'1': 'dx', '3': 1, '4': 1, '5': 1, '10': 'dx'},
+    const {'1': 'dy', '3': 2, '4': 1, '5': 1, '10': 'dy'},
   ],
 };
 
@@ -173,7 +172,22 @@ const TideChartLinkCommand$json = const {
       '6': '.TideChartLink',
       '10': 'link'
     },
-    const {'1': 'type', '3': 3, '4': 1, '5': 9, '10': 'type'},
+    const {'1': 'type', '3': 2, '4': 1, '5': 9, '10': 'type'},
+  ],
+};
+
+const TideChartGraphCommand$json = const {
+  '1': 'TideChartGraphCommand',
+  '2': const [
+    const {
+      '1': 'graph',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.TideChartGraph',
+      '10': 'graph'
+    },
+    const {'1': 'type', '3': 2, '4': 1, '5': 9, '10': 'type'},
   ],
 };
 
@@ -203,7 +217,7 @@ const TideChartCommand$json = const {
   '1': 'TideChartCommand',
   '2': const [
     const {'1': 'version', '3': 1, '4': 1, '5': 9, '10': 'version'},
-    const {'1': 'source', '3': 2, '4': 1, '5': 9, '10': 'source'},
+    const {'1': 'id', '3': 2, '4': 1, '5': 9, '10': 'id'},
     const {
       '1': 'group',
       '3': 3,
@@ -250,8 +264,17 @@ const TideChartCommand$json = const {
       '10': 'link'
     },
     const {
-      '1': 'props',
+      '1': 'graph',
       '3': 8,
+      '4': 1,
+      '5': 11,
+      '6': '.TideChartGraphCommand',
+      '9': 0,
+      '10': 'graph'
+    },
+    const {
+      '1': 'props',
+      '3': 9,
       '4': 1,
       '5': 11,
       '6': '.TideChartPropertyCommand',
@@ -261,29 +284,6 @@ const TideChartCommand$json = const {
   ],
   '8': const [
     const {'1': 'command'},
-  ],
-};
-
-const TideChartHistory$json = const {
-  '1': 'TideChartHistory',
-  '2': const [
-    const {'1': 'verion', '3': 1, '4': 1, '5': 9, '10': 'verion'},
-    const {
-      '1': 'undo',
-      '3': 2,
-      '4': 3,
-      '5': 11,
-      '6': '.TideChartCommand',
-      '10': 'undo'
-    },
-    const {
-      '1': 'redo',
-      '3': 3,
-      '4': 3,
-      '5': 11,
-      '6': '.TideChartCommand',
-      '10': 'redo'
-    },
   ],
 };
 
@@ -309,10 +309,11 @@ const TideChartGraph$json = const {
   '2': const [
     const {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
     const {'1': 'title', '3': 2, '4': 1, '5': 9, '10': 'title'},
-    const {'1': 'version', '3': 3, '4': 1, '5': 5, '10': 'version'},
+    const {'1': 'version', '3': 3, '4': 1, '5': 9, '10': 'version'},
+    const {'1': 'source', '3': 4, '4': 1, '5': 9, '10': 'source'},
     const {
       '1': 'nodes',
-      '3': 4,
+      '3': 5,
       '4': 3,
       '5': 11,
       '6': '.TideChartNode',
@@ -320,26 +321,18 @@ const TideChartGraph$json = const {
     },
     const {
       '1': 'links',
-      '3': 5,
+      '3': 6,
       '4': 3,
       '5': 11,
       '6': '.TideChartLink',
       '10': 'links'
     },
     const {
-      '1': 'referenced',
-      '3': 6,
-      '4': 3,
-      '5': 11,
-      '6': '.TideChartNode',
-      '10': 'referenced'
-    },
-    const {
       '1': 'history',
       '3': 7,
-      '4': 1,
+      '4': 3,
       '5': 11,
-      '6': '.TideChartHistory',
+      '6': '.TideChartCommand',
       '10': 'history'
     },
     const {
@@ -393,24 +386,16 @@ const TideChartFile$json = const {
     const {'1': 'createdBy', '3': 5, '4': 1, '5': 9, '10': 'createdBy'},
     const {'1': 'origin', '3': 6, '4': 1, '5': 9, '10': 'origin'},
     const {
-      '1': 'current',
+      '1': 'chart',
       '3': 7,
       '4': 1,
       '5': 11,
       '6': '.TideChart',
-      '10': 'current'
-    },
-    const {
-      '1': 'history',
-      '3': 8,
-      '4': 3,
-      '5': 11,
-      '6': '.TideChart',
-      '10': 'history'
+      '10': 'chart'
     },
     const {
       '1': 'working',
-      '3': 9,
+      '3': 8,
       '4': 3,
       '5': 11,
       '6': '.TideChartCommand',
@@ -418,11 +403,51 @@ const TideChartFile$json = const {
     },
     const {
       '1': 'remote',
-      '3': 10,
+      '3': 9,
       '4': 3,
       '5': 11,
       '6': '.TideChartCommand',
       '10': 'remote'
+    },
+    const {
+      '1': 'history',
+      '3': 10,
+      '4': 3,
+      '5': 11,
+      '6': '.TideChart',
+      '10': 'history'
+    },
+  ],
+};
+
+const TideChartFileHeader$json = const {
+  '1': 'TideChartFileHeader',
+  '2': const [
+    const {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
+    const {'1': 'filename', '3': 2, '4': 1, '5': 9, '10': 'filename'},
+    const {'1': 'folder', '3': 3, '4': 1, '5': 9, '10': 'folder'},
+    const {'1': 'createdDate', '3': 4, '4': 1, '5': 9, '10': 'createdDate'},
+    const {'1': 'createdBy', '3': 5, '4': 1, '5': 9, '10': 'createdBy'},
+    const {'1': 'origin', '3': 6, '4': 1, '5': 9, '10': 'origin'},
+  ],
+};
+
+const TideChartFileCurrent$json = const {
+  '1': 'TideChartFileCurrent',
+  '2': const [
+    const {'1': 'id', '3': 1, '4': 1, '5': 9, '10': 'id'},
+    const {'1': 'filename', '3': 2, '4': 1, '5': 9, '10': 'filename'},
+    const {'1': 'folder', '3': 3, '4': 1, '5': 9, '10': 'folder'},
+    const {'1': 'createdDate', '3': 4, '4': 1, '5': 9, '10': 'createdDate'},
+    const {'1': 'createdBy', '3': 5, '4': 1, '5': 9, '10': 'createdBy'},
+    const {'1': 'origin', '3': 6, '4': 1, '5': 9, '10': 'origin'},
+    const {
+      '1': 'chart',
+      '3': 7,
+      '4': 1,
+      '5': 11,
+      '6': '.TideChart',
+      '10': 'chart'
     },
   ],
 };

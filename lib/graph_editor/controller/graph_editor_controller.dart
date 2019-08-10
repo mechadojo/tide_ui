@@ -11,7 +11,9 @@ import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'canvas_controller.dart';
 import 'graph_controller.dart';
 import 'keyboard_controller.dart';
+import 'keyboard_handler.dart';
 import 'mouse_controller.dart';
+import 'mouse_handler.dart';
 
 class GraphEditorController with MouseController, KeyboardController {
   final GraphEditorState editor = GraphEditorState();
@@ -34,6 +36,13 @@ class GraphEditorController with MouseController, KeyboardController {
     tabs.controller = CanvasTabsController(tabs);
     graph.controller = GraphController(graph);
     canvas.controller = CanvasController(canvas);
+
+    editor.keyboardHandler =
+        KeyboardHandler(canvas.controller, tabs.controller, graph.controller);
+
+    editor.mouseHandler =
+        MouseHandler(canvas.controller, tabs.controller, graph.controller)
+          ..keyboard = editor.keyboardHandler;
 
     tabs.addListener(onChangeTabs);
     tabs.add(select: true);

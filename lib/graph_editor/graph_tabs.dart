@@ -1,5 +1,6 @@
 import 'package:flutter_web/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/icons/icon_painter.dart';
 
@@ -11,42 +12,33 @@ class GraphTabs extends StatelessWidget {
 
   GraphTabs({Key key}) : super(key: key);
 
-  void handleTapDown(
-      BuildContext context, TapDownDetails evt, CanvasTabsState state) {
-    RenderBox rb = context.findRenderObject();
-    var local = rb.globalToLocal(evt.globalPosition);
+  Offset globalToLocal(BuildContext context, Offset pt) {
+    try {
+      RenderBox rb = context.findRenderObject();
 
-    for (var item in state.menu) {
-      if (item.hitbox.contains(local) && !item.disabled) {
-        if (item.name == "tab-new") {
-          state.add(select: true);
-        } else {
-          print("Select menu: ${item.name} [${item.group}]");
-        }
-        return;
-      }
-    }
-
-    for (var tab in state.tabs) {
-      if (tab.closeBtn.hitbox.contains(local) && !tab.closeBtn.disabled) {
-        state.remove(tab.name);
-        return;
-      }
-
-      if (tab.hitbox.contains(local) && !tab.disabled) {
-        state.select(tab.name);
-        return;
-      }
+      return rb.globalToLocal(pt);
+    } catch (ex) {
+      print(ex.toString());
+      return null;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = Provider.of<CanvasTabsState>(context, listen: true);
+    final editor = Provider.of<GraphEditorState>(context, listen: false);
+
     //print("Rebuild Tabs");
     return GestureDetector(
       onTapDown: (evt) {
-        handleTapDown(context, evt, state);
+        var pt = globalToLocal(context, evt.globalPosition);
+        editor.mouseHandler.onMouseMoveTabs(null, pt);
+        editor.mouseHandler.onMouseDownTabs(null, pt);
+      },
+      onTapUp: (evt) {
+        var pt = globalToLocal(context, evt.globalPosition);
+        editor.mouseHandler.onMouseUpTabs(null, pt);
+        editor.mouseHandler.onMouseOutTabs();
       },
       child: RepaintBoundary(
         child: CustomPaint(

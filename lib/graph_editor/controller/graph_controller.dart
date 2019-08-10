@@ -255,7 +255,7 @@ class GraphController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseUp(MouseEvent evt, Offset pt) {
+  bool onMouseUp(MouseEvent evt) {
     if (moveMode == MouseMoveMode.none) return true;
 
     if (focus == null && dragging && moveStart == moveEnd) {
@@ -369,6 +369,17 @@ class GraphController with MouseController, KeyboardController {
     }
 
     return changed;
+  }
+
+  @override
+  bool onMouseDoubleTap() {
+    print("Double Tap");
+    graph.beginUpdate();
+    onMouseOut();
+    clearSelection();
+    moveMode = MouseMoveMode.none;
+    graph.endUpdate(true);
+    return true;
   }
 
   @override

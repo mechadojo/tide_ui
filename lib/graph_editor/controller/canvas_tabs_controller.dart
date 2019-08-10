@@ -45,11 +45,45 @@ class CanvasTabsController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseUp(MouseEvent evt, Offset pt) {
+  bool onMouseDown(MouseEvent evt, Offset pt) {
+    cursorPos = pt;
+    tabs.beginUpdate();
+
+    for (var item in tabs.menu) {
+      if (item.hitbox.contains(pt) && !item.disabled) {
+        if (item.name == "tab-new") {
+          tabs.add(select: true);
+        } else {
+          print("Select menu: ${item.name} [${item.group}]");
+        }
+        tabs.endUpdate(true);
+        return true;
+      }
+    }
+
+    for (var tab in tabs.tabs) {
+      if (tab.closeBtn.hitbox.contains(pt) && !tab.closeBtn.disabled) {
+        tabs.remove(tab.name);
+        tabs.endUpdate(true);
+        return true;
+      }
+
+      if (tab.hitbox.contains(pt) && !tab.disabled) {
+        tabs.select(tab.name);
+        tabs.endUpdate(true);
+        return true;
+      }
+    }
+    tabs.endUpdate(false);
+    return false;
+  }
+
+  @override
+  bool onMouseUp(MouseEvent evt) {
     // This helps with tabs that get removed on mouse down
     // Its not perfect but we cannot call state changes from inside the re-paint
 
-    return onMouseMove(evt, pt);
+    return onMouseMove(evt, cursorPos);
   }
 
   @override

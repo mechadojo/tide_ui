@@ -12,6 +12,7 @@ class CanvasState with ChangeNotifier {
   Offset get screenPos => toScreenCoord(pos);
   double scale = 1.0;
   bool debugMode = true;
+  bool touchMode = false;
 
   void beginUpdate() {}
 
@@ -74,6 +75,9 @@ class CanvasState with ChangeNotifier {
   }
 
   void zoomAt(double next, Offset center) {
+    if (next > maxScale) next = maxScale;
+    if (next < minScale) next = minScale;
+
     var dx = (center.dx + pos.dx) * scale / next - pos.dx - center.dx;
     var dy = (center.dy + pos.dy) * scale / next - pos.dy - center.dy;
     pos = pos.translate(dx, dy);
