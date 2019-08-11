@@ -1,118 +1,371 @@
 syntax = "proto3";
 
-message TideChartPort {
-    string type = 1;
-    string node = 2;
-    string name = 3;
-    int32 ordinal = 4;
-    repeated TideChartProperty props = 5;
-}
-
-message TideChartLink {
-    TideChartPort fromPort = 1;
-    TideChartPort toPort = 2;
-    int32 group = 3;
-}
-
-message TideChartNode {
-    string name = 1;
-    string type = 2;
-    TideChartOffset pos = 3;
-
-    string title=4;
-    string icon=5;
-    string method=6;
-    string comment=7;
-
-    bool logging=8;
-    bool debugging=9;
-
-    double delay = 10;
-
-    repeated TideChartPort inports = 11;
-    repeated TideChartPort outports = 12;
-    repeated TideChartProperty props = 13;
-}
-
-message TideChartOffset {
-    double dx = 1;
-    double dy = 2;
-}
-
-message TideChartGroupCommand {
-    repeated TideChartCommand cmds = 1;
-}
-message TideChartMoveCommand {
-    string node = 1;
-    TideChartOffset fromPos = 2;
-    TideChartOffset toPos = 3;
-}
-
-message TideChartNodeCommand {
-    string node = 1;
-    string type = 2;
-}
-
-message TideChartPortCommand {
-    TideChartPort port = 1;
-    string type = 2;
-}
-
-message TideChartLinkCommand {
-    TideChartLink link = 1;
-    string type = 2;
-}
-
-message TideChartGraphCommand {
-    TideChartGraph graph = 1;
-    string type = 2;
-}
-
-message TideChartPropertyCommand {
-    repeated TideChartProperty props = 1;
-    string type = 2;
-    oneof target {
-        string node = 3;
-        string port = 4;
-        string graph = 5;
-        string chart = 6;
-    }    
-}
-
-message TideChartCommand {
-    string version = 1;       // unique id for the change
-    string id = 2;            // graph id for the change
-    oneof command {
-        TideChartGroupCommand group = 3;
-        TideChartMoveCommand move = 4;
-        TideChartNodeCommand node = 5;
-        TideChartPortCommand port = 6;
-        TideChartLinkCommand link = 7;
-        TideChartGraphCommand graph = 8;
-        TideChartPropertyCommand props = 9;
-    }
-}
-
-message TideChartProperty {
-    string name = 1;
+message TideChartProperty {                     // a recursive data type that provides configuration values for graphs, regions and nodes
+    string name = 1;        
     string type = 2;
     string value = 3;
     
-    repeated TideChartProperty props = 4;
+    repeated TideChartProperty props = 4;       // create a heirarchy of properties (repeate names to make collections)
+}
+
+message TideChartCommentBox {
+    string id = 1;                              // unique id for the comment box
+    string region = 2;                          // comment boxes can be relative to a region or to the graph
+    sint32 posX = 3;                            // X position of the comment box 
+    sint32 posY = 4;                            // Y position of the comment box 
+    int32 width = 5;                            // width of comment box - 0 indicates autosize to fit content
+    int32 height = 6;                           // height of comment box - 0 indicates autosize to fit content 
+
+    oneof content {
+        string text = 7;
+        bytes image = 8;
+        string icon = 9;
+    }
+
+    double fontSize = 10;                       // size of font to draw text
+    string fontStyle = 11;                      // font style to use: Light, Regular, Bold, LightItalic, RegularItalic, BoldItalic
+    sint32 alignment = 12;                      // alignment of text within box (start (left):-1, middle:0, end (right):1)
+    int32 color = 13;                           // color used to draw text - default is black
+    int32 background = 14;                      // color used to draw background - default is transparent
+    int32 border = 15;                          // color used to draw border - default is none
+    bool raised = 16;                           // flag to indicate if a drop shadow should be used
+    bool reversed = 17;                         // flag to indicate if the text requires left to right layout order
+}
+
+message TideChartWidget {
+    string id = 1;                              // unique id for the widget
+    string type = 2;                            // type of widget
+    string title = 3;                           // description title of the widget
+    
+    string region = 4;                          // comment boxes can be relative to a region or to the graph
+    sint32 posX = 5;                            // X position of the comment box 
+    sint32 posY = 6;                            // Y position of the comment box 
+    int32 width = 7;                            // width of comment box - 0 indicates autosize to fit content
+    int32 height = 8;                           // height of comment box - 0 indicates autosize to fit content 
+
+    oneof target {                              // widgets can be optionally be associated with specific graph elements
+        string link = 9;                        
+        string port = 10;
+        string node = 11;
+    }
+
+    repeated TideChartProperty props = 12;      // widgets can have configuration paremeters
+}
+
+message TideChartPort {
+    string type = 1;                            // type of port: inport, outport
+    string name = 2;                            // port name (unique to node scope)
+    int32 ordinal = 3;                          // position in the node's set of inports or outports
+
+    bool default  = 4;                          // used by methods to indicate which ports are used for default in/out routing
+    bool required = 5;                          // used by methods to indicate the port must exist
+    repeated string allowed = 6;                // used by methods to define what value / message types are allowed to be
+    string hint = 7;                            // used by methods to describe how a port should be used
+
+    TideChartProperty constant = 8;             // a constant value applied to the inport
+    string trigger = 9;                         // a trigger the inport automatically reads from 
+    string filter = 10;                         // a filter or conditional expressions applied to messages received or sent
+    string event = 11;                          // an event the outport automatically writes to
+
+    string sync = 12;                           // creates a syncronizing group between ports
+    bool block = 13;                            // determines if the port will block to wait for the rest of the port group
+    bool queue = 14;                            // determines if messages should queue while blocking or replace with latest received
+}
+
+message TideChartLink {
+    string outNode = 1;                         // linking from node outports
+    string outPort = 2;                         // outport linked from
+    string inNode = 3;                          // linking to node inports
+    string inPort = 4;                          // inport linked to
+    int32 group = 5;                            // links can be associated into groups (usually just determins color)
+
+    int32 delay = 6;                            // automatic time delay (msec) added to messages (equivalent to routing thru a delay node)
+    string filter = 7;                          // a filter or conditional expression applied to messages on the link
+
+    bool logging = 16;                          // flag indicating this link will trace messages
+    bool debugging = 17;                        // flag indicating this link is a debug breakpoint
+    bool paused = 18;                           // flag indicating this link is paused (messages are queued)
+    bool disabled = 19;                         // flag indicating this link is disabled (messages are dropped)
+}
+
+message TideChartNote {
+    string id = 1;                              // unique id for the note
+    string replyTo = 2;                         // reference to note this replies to
+    string changeTo = 3;                        // reference to note this replaces
+    string content = 4;                         // content of note (Markdown and :icons allowed)
+    string createdBy = 5;                       // user that created the note
+    string createdDate = 6;                     // datetime the note was created
+}
+
+message TideChartNode {
+    string name = 1;                            // unique (graph scope) name for this node
+    string type = 2;                            // node type: action, behavior, inport, outport, trigger, event, filter, router, sequence, timeline, controller, navigation, gamepad, custom
+    sint32 posX = 3;                            // X position on the chart
+    sint32 posY = 4;                            // Y position on the chart
+
+    string title = 5;                           // descriptive label for the name
+    string icon = 6;                            // name of icon (font-awesome)
+
+    string library = 7;                         // name of the library for the nodes method (libraries allow implementation to be abstracted and modular)
+    string method = 8;                          // name of method that implements the node's action
+   
+    int32 delay = 9;                            // automatic time delay (msec) added to output messages (equivalent to routing thru a delay node)
+   
+    repeated TideChartPort inports = 10;        // node inports to connect inbound links
+    repeated TideChartPort outports = 11;       // node outports to connect outbound links
+    repeated TideChartProperty props = 12;      // configuration properties for this node (combines with graph properties and region properties)
+    
+    bool logging = 16;                          // flag indicating this node will trace messages
+    bool debugging = 17;                        // flag indicating this node is a debug breakpoint
+    bool paused = 18;                           // flag indicating this node is paused (messages are queued)
+    bool disabled = 19;                         // flag indicating this node is disabled (messages are dropped)
+
+    repeated TideChartNote notes = 20;       // comments associated with this node
+    string script = 21;                         // a user script of custom code to implement the node's action, filter or mux/demux operations
+}
+
+message TideChartRegion {
+    string name = 1;                            // unique (graph scope) name for this region
+    string title = 2;                           // a descriptive label for the group
+    repeated string nodes = 3;                  // a collection of nodes contained within this region (nodes can be in multiple regions)
+    int32 group = 4;                            // regions can be associated into groups (usually just determines color)
+
+    string scope = 5;                           // an event scope used to limit (or exclude) events to route to only nodes in the region
+    repeated TideChartProperty props = 6;       // a set of properties shared by all nodes in the region
+
+    bool logging = 16;                          // flag indicating this region will trace messages
+    bool debugging = 17;                        // flag indicating this region is a debug breakpoint
+    bool paused = 18;                           // flag indicating this region is paused (messages are queued)
+    bool disabled = 19;                         // flag indicating this region is disabled (messages are dropped)
+
+    repeated TideChartNote notes = 20;       // comments associated with this region
+    string script = 21;                         // a user script of custom code for the region (interacting with non-message based threads, scoped exception handling)
 }
 
 message TideChartGraph {
-    string id = 1;                              // unique id for the graph           
-    string title = 2;                           
-    string version = 3;                         // version the graph is on
-    string source = 4;                          // version the graph started on
-    
-    repeated TideChartNode nodes = 5;
-    repeated TideChartLink links = 6;
+    string id = 1;                              // unique id (global scope) for the graph
+    string type = 2;                            // graph type: behavior, opmode, internal       
+    string name = 3;                            // short name for the graph (unique chart scope)
+    string title = 4;                           // description name for the graph
 
-    repeated TideChartCommand history = 7;      // all the changes made from source to current
-    repeated TideChartProperty props = 8;
+    string version = 5;                         // version of last command applied to the graph
+    string source = 6;                          // version the graph at the last committed chart version
+    
+    repeated TideChartNode nodes = 7;           // nodes in the graph
+    repeated TideChartLink links = 8;           // links in the graph
+    repeated TideChartRegion regions = 9;       // regions in the graph
+    repeated TideChartCommentBox comments = 10;  // comment boxes on the graph
+    repeated TideChartWidget widgets = 11;      // interactive widgets for the graph (not part of the data flow graph: test instrudements, data visualization, debugging, etc.)
+
+    repeated TideChartProperty props = 12;       // a set of properties shared by all nodes on the graph
+    repeated TideChartCommand history = 13;     // all the changes made from source version to current version
+            
+    bool logging = 16;                          // flag indicating this graph will trace messages
+    bool debugging = 17;                        // flag indicating this graph is a debug breakpoint
+    bool paused = 18;                           // flag indicating this graph is paused (messages are queued)
+    bool disabled = 19;                         // flag indicating this graph is disabled (messages are dropped)
+    
+    repeated TideChartNote notes = 20;          // comments associated with this graph
+    string script = 21;                         // a user script of custom code for the graph (non-message based thread initialization, global exception handling)
 }
+
+//////////////////////////////////////////////////////////
+//
+//  Tide Chart Commands 
+//
+//////////////////////////////////////////////////////////
+
+message TideChartCommand {
+    string version = 1;                     // unique id for the change
+    string target = 2;                      // graph id being targetd by the the change (used by chart level streams: working, remote)
+    oneof command {
+        TideChartGroupCommand group = 3;
+        TideChartMoveCommand move = 4;
+        TideChartCommentBoxCommand comment = 5;
+        TideChartWidgetCommand widget = 6;
+        TideChartPortCommand port = 7;
+        TideChartLinkCommand link = 8;
+        TideChartNodeCommand node = 9;
+        TideChartRegionCommand region = 10;
+        TideChartGraphCommand graph = 11;
+        TideChartPropertyCommand props = 12;
+        TideChartNoteCommand  note = 13;
+    }
+}
+
+message TideChartGroupCommand {
+    repeated TideChartCommand cmds = 1;         // a collection of updates that are applied atomically
+}
+
+message TideChartMoveCommand {
+    string node = 1;                            // name of node being moved
+    sint32 fromPosX = 2;                        // previous X position on the chart
+    sint32 fromPosY = 3;                        // previous Y position on the chart
+    sint32 toPosX = 4;                          // next X position on the chart
+    sint32 toPosY = 5;                          // next Y position on the chart
+}
+
+message TideChartCommentBoxCommand {            // add, remove or update a comment box on the graph
+    TideChartPort fromComment = 1;                 
+    TideChartPort toComment = 2;                   
+    string type = 3;
+}
+
+message TideChartWidgetCommand {                // add, remove or update a widget on the graph
+    TideChartPort fromWidget = 1;                 
+    TideChartPort toWidget = 2;                   
+    string type = 3;
+}
+
+message TideChartPortCommand {                  // add, remove or update a port on the graph
+    TideChartPort fromPort = 1;                 
+    TideChartPort toPort = 2;                   
+    string type = 3;
+}
+
+message TideChartLinkCommand {                  // add, remove or update a link on the graph
+    TideChartLink fromLink = 1;                 
+    TideChartLink toLink = 2;                   
+    string type = 3;
+}
+
+message TideChartNodeCommand {
+    TideChartNode fromNode = 1;                 // add, remove or update a node on the graph
+    TideChartNode toNode = 2;
+    string type = 3;
+}
+
+message TideChartRegionCommand {                // adds, remove or update a region on the graph
+    TideChartRegion fromRegion = 1;             
+    TideChartRegion toRegion = 2;               
+    string type = 3;                            
+}
+
+message TideChartGraphCommand {                 // adds or removes a graph from the chart
+    TideChartGraph fromGraph = 1;               
+    TideChartGraph toGraph = 2;                     
+    string type = 3;                                
+}
+
+message TideChartPropertyCommand {
+    repeated TideChartProperty fromProps = 1;   // previous values of the properties (only for included updates)
+    repeated TideChartProperty toProps = 2;     // new values of the properties (only include changes)
+    string type = 3;                            // type of update: add, update or remove
+
+    oneof target {
+        string node = 5;                        // node reference (graph-id:node-name)
+        string region = 6;                      // region reference (graph-id:region-name)
+        string widget = 7;                      // widget reference (widget-id)
+        string graph = 8;                       // graph reference (graph-id)
+    }    
+}
+
+message TideChartNoteCommand {
+    repeated TideChartNote notes = 1;       // a set of notes being added or removed
+    string type = 2;                        // type of update: add, remove
+
+    oneof target {
+        string node = 3;                    // node reference (graph-id:node-name)
+        string region = 4;                  // region reference (graph-id:region-name)
+        string graph = 5;                   // graph reference (graph-id)
+    }    
+}
+
+
+//////////////////////////////////////////////////////////
+//
+//  Tide Chart Library
+//
+//////////////////////////////////////////////////////////
+
+message TideChartMethod {
+    string id = 1;                          // unique id for the method definition
+    string name = 2;                        // name of the method (unique to the library)
+    string extends = 3;                     // method extends (customizes) the implementation of another method
+    string script = 4;                      // custom script that implements the node action for this method
+
+    repeated TideChartPort inports = 5;     // definition of inports for this method
+    repeated TideChartPort outports = 6;    // definition of outports for this methid
+    repeated TideChartPort props = 7;       // definition of property values used by the method defined like a port
+}
+
+message TideChartSource {
+    string id = 1;                      // unique id for this source file
+    string name = 2;                    // name of the source file 
+    string path = 3;                    // relative path of the source file 
+
+    string createdDate = 5;
+    string createdBy = 6;
+
+    oneof content {
+        string version = 7;             // reference to the exact version of the file    
+        string script = 8;              // contents of the file
+    }
+}
+
+message TideChartLibrary {
+    string id = 1;                          // unique id for the library
+    string name = 2;                        // fully qualified name for the library
+    string title = 3;                       // descriptive title for the library
+
+    string origin = 4;                      // repository containing referenced files
+    string branch = 5;                      // branch containing referenced files
+    string path = 6;                        // root path for files in the library
+
+    repeated TideChartSource files = 7;     // files included in the library
+    repeated TideChartMethod methods = 8;   // definitions for methods implemented by the library
+}
+
+//////////////////////////////////////////////////////////
+//
+//  Tide Chart Messages
+//
+//////////////////////////////////////////////////////////
+
+message TideChartSite {                 
+    int64 index = 1;                    // An index that uniquely identifies all message producers and consumers sites and sequences with messages
+    repeated TideChartSite stack = 2;   // used to trace origin when calling into behavior nodes
+
+    string path = 3;                    // Path in global state storage
+
+    string trigger = 4;                 // Source that produced an event (when the source isn't a node)
+    string event = 5;                   // Name of event (used for event sources and targets)
+    repeated string scope = 6;          // Used for scoped event sites
+    string filter = 7;                  // A filter that can conditionally pass messages thru the site (filtered messages are dropped)
+
+    string graph = 8;                   // graph-id      - graph scripts and graph nodes can generate messages
+    string region = 9;                  // region-name   - region scripts can generate messages
+    string node = 10;                   // node-name     - node actions and node ports an generate messages
+    string port = 11;                   // port-name     - ports can generate and receive messages
+}
+
+message TideChartMessage {
+    int64 index = 1;                    // unique sequence number for all messages and sites (execution scope)
+    int64 timestamp = 2;                // timestamp when the message was routed from the source
+    
+    int64 origin = 4;                   // first index of this message (messages are immutable)
+    int64 previous = 5;                 // previous index of this message based on message routing thru graph
+    
+    int64 source = 7;                   // source producer the message came from (index for a producer site)
+    int64 target = 8;                   // target consumer the message is going to (index for a consumer site)
+    
+    int64 delayUntil = 9;               // timestamp when the message arrives at the target site
+    int64 holdToken = 10;               // index to a producer site that will release the message to the target site (use with site filter to create conditional blocking)
+    int64 cancelToken = 11;             // index to a producer site that will cancel the message (stop routing and remove from inports)
+
+    string type = 12;                   // type of message content 
+    int32 version = 13;                 // version incremented every time the message content changes for the same origin
+    oneof content {
+        string jsonContent = 14;        // string encoded message content
+        bytes msgContent = 15;          // binary encoded message content
+    }
+}
+
+//////////////////////////////////////////////////////////
+//
+//  Tide Chart
+//
+//////////////////////////////////////////////////////////
 
 message TideChart {
     string version = 1;         // unique id for this chart version
@@ -125,19 +378,43 @@ message TideChart {
     string commitDesc = 7;      // short commit comment
     string commitNotes = 8;     // longer commit notes
     
-    repeated TideChartGraph graphs = 9;
-    repeated TideChartProperty props = 10;
+    repeated TideChartGraph graphs = 9;         // graphs contained in the chart
+    repeated TideChartProperty props = 10;      // configuration properties for the entire chart
+    repeated TideChartNote notes = 11;          // note discussion for the entire chart
+
+    repeated TideChartLibrary library = 12;     // source of node templates that can be added to graphs
+    repeated TideChartProperty global = 13;     // global state variables shared by all graphs
 }
+
+// Read only the commit headers 
+message TideChartHeader {
+    string version = 1;         // unique id for this chart version
+    string branch = 2;          // branch this version is associated with
+    string source = 3;          // previous version
+    string merge = 4;           // last version id on branch merging into
+
+    string commitDate = 5;
+    string commitBy = 6;       
+    string commitDesc = 7;      // short commit comment
+    string commitNotes = 8;     // longer commit notes
+}
+
+
+//////////////////////////////////////////////////////////
+//
+//  Tide Chart File
+//
+//////////////////////////////////////////////////////////
 
 message TideChartFile {
     string id = 1;                          // unique id for this file
-    string filename = 2;                    // name for the file (virtual file system)
-    string folder = 3;                      // path for the file (virtual file system)
+    string name = 2;                        // name for the file (virtual file system)
+    string path = 3;                        // path for the file (virtual file system)
+    string origin = 4;                      // shared repository for tracking remote changes
 
-    string createdDate = 4;
-    string createdBy = 5;
-    string origin = 6;                       // shared repository this file syncs to
-
+    string createdDate = 5;
+    string createdBy = 6;
+    
     TideChart chart = 7;                      // the last committed version  
     repeated TideChartCommand working = 8;    // uncommitted local changes
     repeated TideChartCommand remote = 9;     // unmerged changes committed remotely
@@ -147,24 +424,24 @@ message TideChartFile {
 // Read only the file header information
 message TideChartFileHeader {
     string id = 1;                          // unique id for this file
-    string filename = 2;                    // name for the file (virtual file system)
-    string folder = 3;                      // path for the file (virtual file system)
+    string name = 2;                        // name for the file (virtual file system)
+    string path = 3;                        // path for the file (virtual file system)
+    string origin = 4;                      // shared repository for tracking remote changes
 
-    string createdDate = 4;
-    string createdBy = 5;
-    string origin = 6;                       // shared repository this file syncs to
+    string createdDate = 5;
+    string createdBy = 6;
 }
 
 // Read only the current version
 message TideChartFileCurrent {
     string id = 1;                          // unique id for this file
-    string filename = 2;                    // name for the file (virtual file system)
-    string folder = 3;                      // path for the file (virtual file system)
+    string name = 2;                        // name for the file (virtual file system)
+    string path = 3;                        // path for the file (virtual file system)
+    string origin = 4;                      // shared repository for tracking remote changes
 
-    string createdDate = 4;
-    string createdBy = 5;
-    string origin = 6;                      // shared repository this file syncs to
-
+    string createdDate = 5;
+    string createdBy = 6;
+    
     TideChart chart = 7;                    // the last committed version  
 }
 
