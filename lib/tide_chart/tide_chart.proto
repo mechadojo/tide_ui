@@ -8,6 +8,12 @@ message TideChartProperty {                     // a recursive data type that pr
     repeated TideChartProperty props = 4;       // create a heirarchy of properties (repeate names to make collections)
 }
 
+//////////////////////////////////////////////////////////
+//
+//  Tide Chart Graph Elements 
+//
+//////////////////////////////////////////////////////////
+
 message TideChartCommentBox {
     string id = 1;                              // unique id for the comment box
     string region = 2;                          // comment boxes can be relative to a region or to the graph
