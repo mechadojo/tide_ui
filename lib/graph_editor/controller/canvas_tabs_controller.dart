@@ -77,6 +77,8 @@ class CanvasTabsController with MouseController, KeyboardController {
         notify = true;
       }
     }
+    if (notify) print("dehover tabs");
+
     tabs.endUpdate(notify);
 
     setCursor(false);

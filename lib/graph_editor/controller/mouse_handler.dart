@@ -42,6 +42,7 @@ class MouseHandler {
         onTabs(evt, pt);
       }
     } else {
+      tabs.onMouseOut();
       pt = pt.translate(0, -GraphTabs.DefaultTabHeight);
       if (onCanvas != null) {
         onCanvas(evt, pt);
