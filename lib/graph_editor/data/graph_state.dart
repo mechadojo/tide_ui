@@ -48,8 +48,15 @@ class GraphState with ChangeNotifier {
     var result = referenced[name];
     if (result != null) return result;
 
-    result = nodes.firstWhere((x) => x.name == name,
-        orElse: () => GraphNode()..name = name);
+    result = nodes.firstWhere((x) => x.name == name, orElse: () => null);
+
+    if (result != null) {
+      referenced[name] = result;
+      return result;
+    }
+
+    print("Creating a new node for $name");
+    result = GraphNode()..name = name;
     referenced[name] = result;
     return result;
   }
@@ -68,7 +75,7 @@ class GraphState with ChangeNotifier {
 
   int findLink(NodePort fromPort, NodePort toPort) {
     return links.indexWhere(
-        (x) => x.fromPort.equalTo(fromPort) && x.toPort.equalTo(toPort));
+        (x) => x.outPort.equalTo(fromPort) && x.inPort.equalTo(toPort));
   }
 
   GraphLink removeLink(NodePort fromPort, NodePort toPort) {
@@ -79,8 +86,10 @@ class GraphState with ChangeNotifier {
     return GraphLink.none;
   }
 
-  GraphLink addLink(NodePort fromPort, NodePort toPort) {
+  GraphLink addLink(NodePort fromPort, NodePort toPort, [int group = -1]) {
     var link = GraphLink.link(fromPort, toPort);
+    if (group >= 0) link.group = group;
+
     links.add(link);
     return link;
   }

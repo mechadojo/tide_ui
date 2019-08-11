@@ -109,8 +109,11 @@ class GraphHistory {
   bool get canRedo => redoCmds.isNotEmpty;
   bool get canUndo => undoCmds.isNotEmpty;
 
-  void push(GraphCommand cmd) {
+  void push(GraphCommand cmd, [bool clear = true]) {
     undoCmds.add(cmd);
+    if (clear) {
+      redoCmds.clear();
+    }
   }
 
   GraphCommand undo() {

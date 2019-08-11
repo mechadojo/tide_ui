@@ -17,11 +17,9 @@ class PackedNodePort {
   }
 
   NodePort unpack(GetNodeByName lookup) {
-    return NodePort()
-      ..type = type
-      ..node = lookup(node.name)
-      ..name = name
-      ..ordinal = ordinal;
+    GraphNode target = lookup(node.name) as GraphNode;
+    NodePort result = target.getOrAddPort(name, type);
+    return result;
   }
 }
 
@@ -71,9 +69,7 @@ class NodePort extends GraphObject {
   bool equalTo(NodePort other) {
     if (node.name != other.node.name) return false;
     if (type != other.type) return false;
-    if (ordinal != other.ordinal) return false;
     if (name != other.name) return false;
-    if (pos != other.pos) return false;
 
     return true;
   }

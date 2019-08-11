@@ -1,4 +1,6 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/data/graph_node.dart';
+import 'package:tide_ui/graph_editor/painter/graph_link_painter.dart';
 
 import '../data/canvas_state.dart';
 import '../data/graph_state.dart';
@@ -14,6 +16,7 @@ class CanvasPainter extends CustomPainter {
 
   final CanvasGridPainter gridPainter = CanvasGridPainter();
   final GraphNodePainter nodePainter = GraphNodePainter();
+  final GraphLinkPainter linkPainter = GraphLinkPainter();
 
   CanvasPainter(this.state, this.graph);
 
@@ -33,6 +36,20 @@ class CanvasPainter extends CustomPainter {
     canvas.scale(state.scale, state.scale);
     canvas.translate(state.pos.dx, state.pos.dy);
 
+    for (var link in graph.links) {
+      linkPainter.paint(canvas, size, state.pos, state.scale, link);
+    }
+
+    if (graph.controller.linking) {
+      var p1 = graph.controller.linkStart.pos;
+      var p2 = graph.controller.moveEnd;
+      if (graph.controller.linkStart.type == NodePortType.outport) {
+        linkPainter.paintPoints(canvas, size, state.pos, state.scale, p1, p2);
+      } else {
+        linkPainter.paintPoints(canvas, size, state.pos, state.scale, p2, p1);
+      }
+    }
+
     for (var node in graph.nodes) {
       if (node.selected) continue;
       nodePainter.paint(canvas, size, state.pos, state.scale, node);
@@ -41,13 +58,6 @@ class CanvasPainter extends CustomPainter {
     for (var node in graph.nodes) {
       if (!node.selected) continue;
       nodePainter.paint(canvas, size, state.pos, state.scale, node);
-    }
-
-    if (graph.controller.linking) {
-      var p1 = graph.controller.linkStart.pos;
-      var p2 = graph.controller.moveEnd;
-
-      canvas.drawLine(p1, p2, Graph.redPen);
     }
 
     canvas.restore();

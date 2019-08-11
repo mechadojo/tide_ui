@@ -1,31 +1,37 @@
 import 'dart:math';
 
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'graph_node.dart';
 import 'graph_state.dart';
 import 'node_port.dart';
 
 class PackedGraphLink {
-  PackedNodePort fromPort;
-  PackedNodePort toPort;
+  PackedNodePort outPort;
+  PackedNodePort inPort;
+  int group = 0;
 
   PackedGraphLink.link(GraphLink link) {
-    fromPort = link.fromPort.pack();
-    toPort = link.toPort.pack();
+    outPort = link.outPort.pack();
+    inPort = link.inPort.pack();
+    group = link.group;
   }
 
   GraphLink unpack(GetNodeByName lookup) {
     return GraphLink()
-      ..fromPort = fromPort.unpack(lookup)
-      ..toPort = toPort.unpack(lookup);
+      ..outPort = outPort.unpack(lookup)
+      ..inPort = inPort.unpack(lookup)
+      ..group = group;
   }
 }
 
 class GraphLink extends GraphObject {
   static GraphLink none = GraphLink();
 
-  NodePort fromPort = NodePort.none;
-  NodePort toPort = NodePort.none;
+  NodePort outPort = NodePort.none;
+  NodePort inPort = NodePort.none;
+  int group = GraphNode.nodeRandom.nextInt(Graph.MaxGroupNumber);
+
   Path path;
 
   List<Offset> hitPath = [];
@@ -33,11 +39,14 @@ class GraphLink extends GraphObject {
 
   Offset pathStart;
   Offset pathEnd;
+  List<Offset> pathControl = [];
+
+  bool get changed => outPort.pos != pathStart || inPort.pos != pathEnd;
 
   GraphLink();
   GraphLink.link(NodePort fromPort, NodePort toPort) {
-    this.fromPort = fromPort;
-    this.toPort = toPort;
+    this.outPort = fromPort;
+    this.inPort = toPort;
   }
 
   PackedGraphLink pack() {
@@ -45,9 +54,73 @@ class GraphLink extends GraphObject {
   }
 
   bool equalTo(GraphLink other) {
-    if (fromPort.equalTo(other.fromPort)) return false;
-    if (toPort.equalTo(other.toPort)) return false;
+    if (outPort.equalTo(other.outPort)) return false;
+    if (inPort.equalTo(other.inPort)) return false;
     return true;
+  }
+
+  static List<Offset> getControlPoints(Offset p1, Offset p2) {
+    double x0 = p1.dx;
+    double y0 = p1.dy;
+    double x1 = p2.dx;
+    double y1 = p2.dy;
+
+    double cx0 = (x0 + x1) / 2;
+    double cy0 = y0;
+    double cx1 = cx0;
+    double cy1 = y1;
+
+    if (x1 - 5 < x0) {
+      var size = Graph.DefaultNodeSize;
+
+      var curve = (x0 - x1) * 100 / 200;
+
+      if ((y1 - y0).abs() < size) {
+        cx0 = x0 + curve;
+        cy0 = y0 - curve;
+        cx1 = x1 - curve;
+        cy1 = y1 - curve;
+      } else {
+        cx0 = x0 + curve;
+        cy0 = y0 + (y1 > y0 ? curve : -curve);
+        cx1 = x1 - curve;
+        cy1 = y1 + (y1 > y0 ? -curve : curve);
+      }
+    }
+
+    List<Offset> result = [Offset(cx0, cy0), Offset(cx1, cy1)];
+
+    return result;
+  }
+
+  static Path getPath(Offset p1, Offset p2, List<Offset> control) {
+    var result = Path();
+    result.moveTo(p1.dx, p1.dy);
+
+    if (control.isEmpty) {
+      result.lineTo(p2.dx, p2.dy);
+    } else if (control.length == 1) {
+      var c1 = control[0];
+      result.quadraticBezierTo(c1.dx, c1.dy, p2.dx, p2.dy);
+    } else {
+      var c1 = control[0];
+      var c2 = control[1];
+      result.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, p2.dx, p2.dy);
+    }
+    return result;
+  }
+
+  void update() {
+    pathStart = outPort.pos;
+    pathEnd = inPort.pos;
+    pathControl = getControlPoints(pathStart, pathEnd);
+
+    path = getPath(pathStart, pathEnd, pathControl);
+  }
+
+  @override
+  String toString() {
+    return "$outPort -> $inPort";
   }
 
   @override

@@ -74,6 +74,17 @@ class Graph {
     ..color = CanvasColor.color.withAlpha(200);
 
   //
+  // Link Styles
+  //
+  static const double LinkPathWidth = 5;
+  static Paint LinkShadowColor = Paint()
+    ..color = Color(0xFF333333).withAlpha(50)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 8;
+
+  static Color DefaultLinkColor = Color(0xFF333333);
+
+  //
   //  Other Styles
   //
   static var font = SourceSansProFont;
@@ -97,4 +108,30 @@ class Graph {
 
   static bool isZoomedIn(double scale) => scale > 2.0;
   static bool isZoomedOut(double scale) => scale < .5;
+
+  static Color getGroupColor(int group, [bool disabled = false]) {
+    return disabled
+        ? DisabledGroupColor
+        : GroupColors[group % GroupColors.length];
+  }
+
+  static int MaxGroupNumber = 2 ^ 32 - 1;
+
+  static List<Color> GroupColors = [
+    Color(0xFF001f3f),
+    Color(0xFF0074d9),
+    Color(0xFF7fdbff),
+    Color(0xFF39cccc),
+    Color(0xFF3d9970),
+    Color(0xFF2ecc40),
+    Color(0xFF01ff70),
+    Color(0xFFffdc00),
+    Color(0xFFff851b),
+    Color(0xFFff4136),
+    Color(0xFF85144b),
+    Color(0xFFf012be),
+    Color(0xFFb10dc9),
+  ];
+
+  static Color DisabledGroupColor = Color(0xFF777777);
 }

@@ -4,6 +4,7 @@ import 'package:flutter_web/material.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
@@ -32,6 +33,7 @@ class GraphController with MouseController, KeyboardController {
   Rect selectRect = Rect.zero;
 
   NodePort linkStart;
+  int nextGroup = 0;
 
   bool get selecting => moveMode == MouseMoveMode.selecting;
   bool get dragging => moveMode == MouseMoveMode.dragging;
@@ -54,13 +56,12 @@ class GraphController with MouseController, KeyboardController {
     }
 
     if (cmd is GraphLinkCommand) {
-      var fromPort = graph.unpackPort(cmd.link.fromPort);
-      var toPort = graph.unpackPort(cmd.link.toPort);
+      var link = graph.unpackLink(cmd.link);
 
       if (cmd.type == "add") {
-        addLink(fromPort, toPort, save: false);
+        addLink(link.outPort, link.inPort, group: link.group, save: false);
       } else if (cmd.type == "remove") {
-        removeLink(fromPort, toPort, save: false);
+        removeLink(link.outPort, link.inPort, save: false);
       }
     }
 
@@ -83,7 +84,7 @@ class GraphController with MouseController, KeyboardController {
     graph.beginUpdate();
     var cmd = graph.history.redo();
     applyCommand(cmd);
-    graph.history.push(cmd);
+    graph.history.push(cmd, false);
 
     clearSelection();
     graph.endUpdate(true);
@@ -119,6 +120,7 @@ class GraphController with MouseController, KeyboardController {
 
     graph.beginUpdate();
     var link = graph.links.removeAt(idx);
+
     graph.endUpdate(true);
 
     if (save) {
@@ -128,17 +130,18 @@ class GraphController with MouseController, KeyboardController {
   }
 
   void addLink(NodePort fromPort, NodePort toPort,
-      {bool replace = false, bool save = true}) {
+      {int group = -1, bool replace = false, bool save = true}) {
     var outport = fromPort.isOutport ? fromPort : toPort;
     var inport = fromPort.isInport ? fromPort : toPort;
 
     var idx = graph.findLink(outport, inport);
-    if (idx >= 0 && replace) return;
+    if (idx >= 0 || replace) return;
 
     graph.beginUpdate();
     if (idx >= 0) graph.links.removeAt(idx);
 
-    var link = graph.addLink(outport, inport);
+    var link = graph.addLink(outport, inport, group);
+
     graph.endUpdate(true);
 
     if (save) {
@@ -250,6 +253,7 @@ class GraphController with MouseController, KeyboardController {
     } else if (focus is NodePort) {
       linkStart = focus as NodePort;
       moveMode = MouseMoveMode.linking;
+      nextGroup = GraphNode.nodeRandom.nextInt(Graph.MaxGroupNumber);
     }
     return true;
   }
@@ -266,7 +270,7 @@ class GraphController with MouseController, KeyboardController {
     if (focus is NodePort) {
       var port = focus as NodePort;
       if (linkStart.canLinkTo(port)) {
-        addLink(linkStart, port);
+        addLink(linkStart, port, group: nextGroup);
       }
     }
     selectRect = Rect.zero;
