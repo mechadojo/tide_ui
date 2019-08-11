@@ -19,6 +19,13 @@ class CanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    var screen = Rect.fromLTRB(0, 0, size.width, size.height);
+
+    state.controller.setClip(
+      screen,
+      screen.inflate(-Graph.AutoPanMargin),
+    );
+
     gridPainter.paint(canvas, size, state.pos, state.scale);
 
     canvas.save();

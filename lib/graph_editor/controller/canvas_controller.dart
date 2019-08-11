@@ -11,18 +11,25 @@ class CanvasController with MouseController, KeyboardController {
 
   CanvasController(this.canvas);
 
+  /// The region of the graph that is visible
+  Rect clipRect = Rect.zero;
+
+  /// A region of the graph that pans while dragging
+  Rect panRect = Rect.zero;
+
   bool panning = false;
   Offset posStart = Offset.zero;
   Offset panStart = Offset.zero;
 
   String cursor = "default";
 
-  bool handleEvent(MouseEvent evt) {
-    if (canvas.touchMode) {
-      return evt.type.isEmpty;
-    } else {
-      return evt.type.isNotEmpty;
-    }
+  Rect setClip(Rect clip, Rect pan) {
+    clipRect = Rect.fromPoints(
+        toGraphCoord(clip.topLeft), toGraphCoord(clip.bottomRight));
+    panRect = Rect.fromPoints(
+        toGraphCoord(pan.topLeft), toGraphCoord(pan.bottomRight));
+
+    return clipRect;
   }
 
   void setCursor(String next) {

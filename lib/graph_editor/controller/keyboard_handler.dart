@@ -4,17 +4,19 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
 class KeyboardHandler {
-  CanvasTabsController tabs;
-  CanvasController canvas;
-  GraphController graph;
+  GraphEditorController editor;
+  CanvasTabsController get tabs => editor.tabs.controller;
+  CanvasController get canvas => editor.canvas.controller;
+  GraphController get graph => editor.graph.controller;
 
   bool ctrlKey = false;
   bool shiftKey = false;
   bool altKey = false;
 
-  KeyboardHandler(this.canvas, this.tabs, this.graph);
+  KeyboardHandler(this.editor);
 
   final reFuncKey = RegExp(r"F\d\d?");
 

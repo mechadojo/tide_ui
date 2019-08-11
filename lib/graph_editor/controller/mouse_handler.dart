@@ -4,6 +4,7 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
 import 'package:tide_ui/graph_editor/graph_tabs.dart';
 
@@ -11,12 +12,13 @@ typedef OnMouseEvent(MouseEvent evt, Offset pt);
 typedef OnWheelEvent(WheelEvent evt, Offset pt);
 
 class MouseHandler {
-  CanvasTabsController tabs;
-  CanvasController canvas;
-  GraphController graph;
-  KeyboardHandler keyboard;
+  GraphEditorController editor;
+  CanvasTabsController get tabs => editor.tabs.controller;
+  CanvasController get canvas => editor.canvas.controller;
+  GraphController get graph => editor.graph.controller;
+  KeyboardHandler get keyboard => editor.keyboardHandler;
 
-  MouseHandler(this.canvas, this.tabs, this.graph);
+  MouseHandler(this.editor);
 
   Offset globalToLocal(RenderBox rb, Offset pt) {
     try {
@@ -42,7 +44,6 @@ class MouseHandler {
         onTabs(evt, pt);
       }
     } else {
-      tabs.onMouseOut();
       pt = pt.translate(0, -GraphTabs.DefaultTabHeight);
       if (onCanvas != null) {
         onCanvas(evt, pt);
@@ -89,24 +90,19 @@ class MouseHandler {
     onMouseUp(mevt, context, true);
   }
 
-  void onPanStart(DragStartDetails evt, BuildContext context) {}
-  void onPanUpdate(DragUpdateDetails evt, BuildContext context) {}
-  void onPanEnd(DragEndDetails evt, BuildContext context) {}
-
-  void onScaleStart(ScaleStartDetails evt, BuildContext context) {}
-  void onScaleUpdate(ScaleUpdateDetails evt, BuildContext context) {}
-  void onScaleEnd(ScaleEndDetails evt, BuildContext context) {}
-
   void onMouseMoveTabs(MouseEvent evt, Offset pt) {
-    graph.onMouseOut();
+    onMouseOutCanvas();
     tabs.onMouseMove(evt, pt);
   }
 
   void onMouseMoveCanvas(MouseEvent evt, Offset pt) {
+    onMouseOutTabs();
+
     if (canvas.panning) {
       canvas.onMouseMove(evt, pt);
     } else {
       var gpt = canvas.toGraphCoord(pt);
+      editor.onMouseMove(evt, gpt);
       graph.onMouseMove(evt, gpt);
     }
   }
@@ -142,23 +138,17 @@ class MouseHandler {
   //
 
   void onMouseDownTabs(MouseEvent evt, Offset pt) {
-    //print("Mouse Down Tabs: $pt");
-
     evt = evt ?? keyboard.mouse;
-    if (!canvas.handleEvent(evt)) {
-      return;
-    }
 
+    onMouseOutCanvas();
     graph.onMouseOut();
     tabs.onMouseDown(evt, pt);
   }
 
   void onMouseDownCanvas(MouseEvent evt, Offset pt) {
     evt = evt ?? keyboard.mouse;
-    if (!canvas.handleEvent(evt)) return;
 
-    tabs.onMouseOut();
-
+    onMouseOutTabs();
     if (evt.shiftKey && !evt.ctrlKey) {
       canvas.startPanning(pt);
     } else {
@@ -185,18 +175,14 @@ class MouseHandler {
 
   void onMouseUpTabs(MouseEvent evt, Offset pt) {
     evt = evt ?? keyboard.mouse;
-    if (!canvas.handleEvent(evt)) {
-      return;
-    }
+    onMouseOutCanvas();
     graph.onMouseOut();
     tabs.onMouseUp(evt);
   }
 
   void onMouseUpCanvas(MouseEvent evt, [Offset pt = Offset.zero]) {
     evt = evt ?? keyboard.mouse;
-    if (!canvas.handleEvent(evt)) return;
-
-    tabs.onMouseOut();
+    onMouseOutTabs();
     canvas.stopPanning();
     graph.onMouseUp(evt);
   }
@@ -215,10 +201,12 @@ class MouseHandler {
   // Context Menu
   //
   void onContextMenuCanvas(MouseEvent evt, Offset pt) {
+    onMouseOutTabs();
     print("Open Radial Menu: $pt");
   }
 
   void onContextMenuTabs(MouseEvent evt, Offset pt) {
+    onMouseOutCanvas();
     print("Open Tabs Context Menu: $pt");
   }
 
@@ -236,14 +224,21 @@ class MouseHandler {
   }
 
   void onMouseDoubleTap() {
+    onMouseOutCanvas();
+    onMouseOutTabs();
+
     canvas.onMouseDoubleTap();
     tabs.onMouseDoubleTap();
     graph.onMouseDoubleTap();
   }
 
-  void onMouseWheelTabs(WheelEvent evt, Offset pt) {}
+  void onMouseWheelTabs(WheelEvent evt, Offset pt) {
+    onMouseOutCanvas();
+  }
 
   void onMouseWheelCanvas(WheelEvent evt, Offset pt) {
+    onMouseOutTabs();
+
     var gpt = canvas.toGraphCoord(pt);
     canvas.onMouseWheel(evt, gpt);
   }

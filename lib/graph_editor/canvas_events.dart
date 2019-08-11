@@ -73,7 +73,7 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
     final media = MediaQuery.of(context);
     print("Resize to ${media.size}");
 
-    if (!IsCurrentHandler && !canvas.touchMode) {
+    if (!IsCurrentHandler) {
       attachBrowserEvents(editor.mouseHandler, editor.keyboardHandler, canvas);
     }
 
@@ -140,7 +140,7 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
         mouseHandler.onMouseMove(evt, context, _isPageActive);
       }
     });
-
+/*
     window.onMouseDown.listen((evt) {
       if (IsCurrentHandler && !canvas.touchMode) {
         mouseHandler.onMouseDown(evt, context, _isPageActive);
@@ -152,5 +152,6 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
         mouseHandler.onMouseUp(evt, context, _isPageActive);
       }
     });
+    */
   }
 }
