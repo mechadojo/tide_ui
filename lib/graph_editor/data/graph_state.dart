@@ -18,7 +18,7 @@ class GraphState with ChangeNotifier {
   String title = "";
   int version = 0;
 
-  List<GraphNode> nodes = [...random(10)];
+  List<GraphNode> nodes = [];
   List<GraphLink> links = [];
 
   // access nodes by reference where nodes may not be fully defined
@@ -29,6 +29,22 @@ class GraphState with ChangeNotifier {
   int updating = 0;
   bool hasChanged = false;
 
+  GraphState() {
+    nodes.addAll(random(10));
+    var rand = Random();
+    for (int i = 0; i < 10; i++) {
+      var fromNode = nodes[rand.nextInt(nodes.length)];
+      var toNode = nodes[rand.nextInt(nodes.length)];
+      while (toNode == fromNode) {
+        toNode = nodes[rand.nextInt(nodes.length)];
+      }
+
+      var fromPort = fromNode.outports[rand.nextInt(fromNode.outports.length)];
+      var toPort = toNode.inports[rand.nextInt(toNode.inports.length)];
+
+      addLink(fromPort, toPort);
+    }
+  }
   void beginUpdate() {
     updating++;
   }
@@ -101,7 +117,7 @@ class GraphState with ChangeNotifier {
       yield GraphNode.action(
           inputs: List.filled(rnd.nextInt(6) + 1, ""),
           outputs: List.filled(rnd.nextInt(6) + 1, ""))
-        ..moveTo(rnd.nextInt(500) + 50.0, rnd.nextInt(500) + 50.0)
+        ..moveTo(rnd.nextInt(750) + 50.0, rnd.nextInt(750) + 50.0)
         ..logging = rnd.nextBool()
         ..debugging = rnd.nextBool()
         ..method = rnd.nextBool()

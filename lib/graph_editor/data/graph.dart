@@ -76,13 +76,31 @@ class Graph {
   //
   // Link Styles
   //
-  static const double LinkPathWidth = 5;
-  static Paint LinkShadowColor = Paint()
-    ..color = Color(0xFF333333).withAlpha(50)
+  static const double LinkPathWidth = 4;
+  static Paint LinkHoverShadowColor = Paint()
+    ..color = Colors.black.withAlpha(128)
     ..style = PaintingStyle.stroke
     ..strokeWidth = 8;
 
+  static Paint LinkArrowHoverShadowColor = Paint()
+    ..color = Colors.black.withAlpha(128)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 4;
+
+  static Paint LinkShadowColor = Paint()
+    ..color = CanvasColor.color.withAlpha(200)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 8;
+
+  static Paint LinkArrowShadowColor = Paint()
+    ..color = CanvasColor.color.withAlpha(200)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 4;
+
   static Color DefaultLinkColor = Color(0xFF333333);
+  static const double LinkArrowSize = 16;
+  static const double LinkArrowEpsilon = 0.01;
+  static const int LinkPathSteps = 10;
 
   //
   //  Other Styles
