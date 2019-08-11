@@ -2,6 +2,8 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/icons/font_awesome_icons.dart';
 import 'graph_editor/graph_editor.dart';
 
+const String AppVersion = "0.02";
+
 void main() => runApp(TheApp());
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();

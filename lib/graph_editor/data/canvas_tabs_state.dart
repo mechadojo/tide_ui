@@ -13,6 +13,7 @@ class CanvasTabsState with ChangeNotifier {
   List<CanvasTab> history = [];
 
   String selected;
+  String version;
   int nextTab = 1;
   int get length => tabs.length;
   bool requirePaint = false;

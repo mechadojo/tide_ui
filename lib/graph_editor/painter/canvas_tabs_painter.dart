@@ -2,6 +2,7 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tab.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
+import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
 import 'package:tide_ui/graph_editor/icons/icon_painter.dart';
 
 class CanvasTabsPainter extends CustomPainter {
@@ -11,7 +12,7 @@ class CanvasTabsPainter extends CustomPainter {
   List<CanvasTab> get tabs => state.tabs;
   List<MenuItem> get menu => state.menu;
 
-  final width = 193.0;
+  final width = 175.0;
   final height = 35.0;
   final padding = 2.0;
   final spacing = 25.0;
@@ -55,6 +56,8 @@ class CanvasTabsPainter extends CustomPainter {
   final iconsTab = IconPainter(color: Colors.grey[600]);
   final iconsDisabled = IconPainter(color: Colors.grey[400]);
   final iconsAlerted = IconPainter(color: Colors.blueAccent[700]);
+
+  final font = SourceSansProFont;
 
   CanvasTabsPainter(this.state);
 
@@ -231,7 +234,18 @@ class CanvasTabsPainter extends CustomPainter {
         Rect.fromLTRB(0, size.height - padding, size.width, size.height),
         paddingFill);
 
-    var btnPos = Offset(spacing / 2, size.height - padding - height / 2);
+    var btnPos = Offset(5, size.height - padding - height / 2);
+
+    if (state.version != null && state.version.isNotEmpty) {
+      var sz = font.limits("V${state.version}", btnPos, 8,
+          style: "Bold", alignment: Alignment.centerLeft);
+
+      font.paint(canvas, "V${state.version}", btnPos, 8,
+          fill: Paint()..color = Colors.black.withAlpha(100),
+          style: "Bold",
+          alignment: Alignment.centerLeft);
+      btnPos = btnPos.translate(sz.width + 12, 0);
+    }
 
     for (var item in menu) {
       if (item.name == "tab-new" ||

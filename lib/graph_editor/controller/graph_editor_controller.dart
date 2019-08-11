@@ -7,6 +7,7 @@ import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
+import 'package:tide_ui/main.dart' show AppVersion;
 
 import 'canvas_controller.dart';
 import 'graph_controller.dart';
@@ -46,6 +47,7 @@ class GraphEditorController with MouseController, KeyboardController {
         MouseHandler(canvas.controller, tabs.controller, graph.controller)
           ..keyboard = editor.keyboardHandler;
 
+    tabs.version = AppVersion;
     tabs.addListener(onChangeTabs);
     tabs.add(select: true);
   }
