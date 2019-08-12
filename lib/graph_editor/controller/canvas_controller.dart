@@ -12,8 +12,6 @@ class CanvasController with MouseController, KeyboardController {
   GraphEditorController editor;
   CanvasState get canvas => editor.canvas;
 
-  bool get touchMode => canvas.touchMode;
-
   CanvasController(this.editor);
 
   /// The region of the graph that is visible
@@ -34,9 +32,10 @@ class CanvasController with MouseController, KeyboardController {
   String cursor = "default";
 
   void setTouchMode(bool mode) {
-    if (mode == canvas.touchMode) return;
+    if (mode == editor.isTouchMode) return;
+
     canvas.beginUpdate();
-    canvas.touchMode = mode;
+    editor.setTouchMode(mode);
     canvas.endUpdate(true);
   }
 
@@ -90,13 +89,13 @@ class CanvasController with MouseController, KeyboardController {
         var ratio = 1 - (pt.dy - panStart.dy) / (rect.bottom - panStart.dy);
         var scale = scaleStart * ratio;
         if (scale < Graph.MinZoomScale) scale = Graph.MinZoomScale;
-
+        setCursor("zoom-out");
         canvas.zoomAt(scale, centerStart);
       } else {
         var ratio = (pt.dy - panStart.dy) / (rect.top - panStart.dy);
         var scale = scaleStart + Graph.MaxZoomScale * ratio;
         if (scale > Graph.MaxZoomScale) scale = Graph.MaxZoomScale;
-
+        setCursor("zoom-in");
         canvas.zoomAt(scale, centerStart);
       }
     }

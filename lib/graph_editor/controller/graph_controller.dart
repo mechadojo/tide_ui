@@ -307,7 +307,7 @@ class GraphController with MouseController, KeyboardController {
     }
 
     moveMode = MouseMoveMode.none;
-    if (editor.canvas.touchMode && focus != null) {
+    if (editor.isTouchMode && focus != null) {
       focus.hovered = false;
       focus = null;
     }

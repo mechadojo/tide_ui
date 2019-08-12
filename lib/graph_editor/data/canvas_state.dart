@@ -14,8 +14,6 @@ class CanvasState with ChangeNotifier {
   Offset pos = Offset(-10000, 10000);
   Offset get screenPos => toScreenCoord(pos);
   double scale = 1.0;
-  bool debugMode = true;
-  bool touchMode = false;
 
   void beginUpdate() {}
 
@@ -64,16 +62,10 @@ class CanvasState with ChangeNotifier {
     scrollTo(pos.translate(dx, dy));
   }
 
-  void log(Object object, [bool debug = true]) {
-    if (debugMode || !debug) {
-      print(object);
-    }
-  }
-
   void reset() {
     pos = Offset.zero;
     scale = 1.0;
-    log("Reset Canvas State");
+    print("Reset Canvas State");
     notifyListeners();
   }
 

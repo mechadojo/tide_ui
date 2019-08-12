@@ -98,7 +98,7 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
     });
 
     window.onTouchStart.listen((evt) {
-      if (IsCurrentHandler && !canvas.touchMode) {
+      if (IsCurrentHandler && !editor.touchMode) {
         print("Activating touch mode");
         canvas.controller.setTouchMode(true);
         editor.controller.setDragMode(GraphDragMode.panning);
@@ -114,16 +114,6 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
     window.onKeyUp.listen((evt) {
       if (IsCurrentHandler) {
         keyboardHandler.onKeyUp(evt, context, _isPageActive);
-      }
-    });
-
-    window.onContextMenu.listen((evt) {
-      if (IsCurrentHandler) {
-        if (canvas.touchMode) {
-          evt.preventDefault();
-        } else {
-          mouseHandler.onContextMenu(evt, context, _isPageActive);
-        }
       }
     });
 
@@ -145,14 +135,26 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
       }
     });
 
+    // some events we treat differently in touch mode
+
+    window.onContextMenu.listen((evt) {
+      if (IsCurrentHandler) {
+        if (editor.touchMode) {
+          evt.preventDefault();
+        } else {
+          mouseHandler.onContextMenu(evt, context, _isPageActive);
+        }
+      }
+    });
+
     window.onMouseDown.listen((evt) {
-      if (IsCurrentHandler && !canvas.touchMode) {
+      if (IsCurrentHandler && !editor.touchMode) {
         mouseHandler.onMouseDown(evt, context, _isPageActive);
       }
     });
 
     window.onMouseUp.listen((evt) {
-      if (IsCurrentHandler && !canvas.touchMode) {
+      if (IsCurrentHandler && !editor.touchMode) {
         mouseHandler.onMouseUp(evt, context, _isPageActive);
       }
     });

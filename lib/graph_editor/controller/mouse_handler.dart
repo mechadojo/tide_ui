@@ -21,7 +21,7 @@ class MouseHandler {
   MouseHandler(this.editor);
 
   bool allowEvent(MouseEvent evt) {
-    if (evt == null && !canvas.touchMode) return false;
+    if (evt == null && !editor.isTouchMode) return false;
     return true;
   }
   // ***************************************************************
@@ -164,13 +164,15 @@ class MouseHandler {
   }
 
   bool shouldAutoPan(MouseEvent evt) {
+    if (editor.isViewMode) return true;
+
     if (evt.ctrlKey) return false;
     if (evt.shiftKey) return true;
     if (graph.focus != null) return false;
 
-    if (canvas.touchMode) return editor.isPanMode;
+    if (editor.isTouchMode) return editor.isPanMode;
 
-    if (!canvas.touchMode && graph.selection.length > 1) {
+    if (!editor.isTouchMode && graph.selection.length > 1) {
       return false;
     }
 

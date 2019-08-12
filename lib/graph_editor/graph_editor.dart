@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:tide_ui/graph_editor/canvas_events.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/icons/font_awesome_icons.dart';
 import 'graph_canvas.dart';
 import 'graph_tabs.dart';
@@ -40,7 +41,7 @@ class _GraphEditorPageState extends State<GraphEditorPage>
                   Expanded(
                     child: Flow(
                       delegate: OverlayFlowDelegate(),
-                      children: [GraphCanvas(), ...getWidgets(context)],
+                      children: [GraphCanvas(), ...getWidgets()],
                     ),
                   )
                 ],
@@ -52,16 +53,28 @@ class _GraphEditorPageState extends State<GraphEditorPage>
     );
   }
 
-  Iterable<Widget> getWidgets(BuildContext context) sync* {
-    yield Container(
+  Iterable<Widget> getWidgets() sync* {
+    yield DragModeButton();
+  }
+}
+
+class DragModeButton extends StatelessWidget {
+  const DragModeButton({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
       alignment: Alignment.bottomLeft,
       margin: EdgeInsets.all(10),
       child: Consumer<GraphEditorState>(
         builder: (context, GraphEditorState editor, widget) {
           return FloatingActionButton(
+            backgroundColor: Graph.getGroupColor(editor.touchMode ? 4 : 10),
             child: Icon(editor.dragMode == GraphDragMode.panning
                 ? FontAwesomeIcons.arrowsAlt
-                : FontAwesomeIcons.expand),
+                : editor.dragMode == GraphDragMode.viewing
+                    ? FontAwesomeIcons.lock
+                    : FontAwesomeIcons.expand),
             onPressed: () {
               editor.controller.toggleDragMode();
             },

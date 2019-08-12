@@ -47,7 +47,9 @@ class GraphEditorController with MouseController, KeyboardController {
   MouseHandler get mouseHandler => editor.mouseHandler;
   bool get isPanMode => editor.dragMode == GraphDragMode.panning;
   bool get isSelectMode => editor.dragMode == GraphDragMode.selecting;
-  bool get isTouchMode => canvas.touchMode;
+  bool get isViewMode => editor.dragMode == GraphDragMode.viewing;
+
+  bool get isTouchMode => editor.touchMode;
 
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
@@ -120,7 +122,7 @@ class GraphEditorController with MouseController, KeyboardController {
   }
 
   Offset get edgePanOffset {
-    if (!graph.controller.dragging) return null;
+    if (!graph.controller.dragging && !graph.controller.selecting) return null;
 
     var pt = cursor; // last know cursor position
     var pan = canvas.controller.panRectScreen; // last known visible region
@@ -135,12 +137,9 @@ class GraphEditorController with MouseController, KeyboardController {
     if (pt.dy > pan.bottom) dy = pan.bottom - pt.dy;
 
     if (dx != 0 || dy != 0) {
-      return (canvas.controller.panning || canvas.controller.zooming)
-          ? Offset(-dx, -dy)
-          : Offset(dx, dy);
-    } else {
-      return null;
+      return Offset(dx, dy);
     }
+    return null;
   }
 
   void panAtEdges() {
@@ -162,7 +161,7 @@ class GraphEditorController with MouseController, KeyboardController {
   bool onMouseMove(MouseEvent evt, Offset pt) {
     cursor = pt;
 
-    if (graph.controller.dragging && !isAutoPanning) {
+    if ( (graph.controller.dragging || graph.controller.selecting) && !isAutoPanning) {
       panAtEdges();
     }
     return false;
@@ -200,9 +199,18 @@ class GraphEditorController with MouseController, KeyboardController {
   void toggleDragMode() {
     var next = editor.dragMode == GraphDragMode.panning
         ? GraphDragMode.selecting
-        : GraphDragMode.panning;
+        : editor.dragMode == GraphDragMode.selecting
+            ? GraphDragMode.viewing
+            : GraphDragMode.panning;
 
     setDragMode(next);
+  }
+
+  void setTouchMode(bool mode) {
+    if (editor.touchMode == mode) return;
+    editor.beginUpdate();
+    editor.touchMode = mode;
+    editor.endUpdate(true);
   }
 
   void setDragMode(GraphDragMode mode) {
