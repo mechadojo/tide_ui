@@ -110,6 +110,40 @@ class GraphState with ChangeNotifier {
     return link;
   }
 
+  Rect get extents {
+    double top = 0;
+    double left = 0;
+    double bottom = 0;
+    double right = 0;
+    bool first = true;
+    for (var node in nodes) {
+      for (var item in node.interactive()) {
+        if (first) {
+          top = item.hitbox.top;
+          left = item.hitbox.left;
+          bottom = item.hitbox.bottom;
+          right = item.hitbox.right;
+        } else {
+          if (item.hitbox.left < left) left = item.hitbox.left;
+          if (item.hitbox.top < top) top = item.hitbox.top;
+          if (item.hitbox.right > right) right = item.hitbox.right;
+          if (item.hitbox.bottom > bottom) bottom = item.hitbox.bottom;
+        }
+        first = false;
+      }
+    }
+
+    for (var link in links) {
+      if (link.hitbox.left < left) left = link.hitbox.left;
+      if (link.hitbox.top < top) top = link.hitbox.top;
+      if (link.hitbox.right > right) right = link.hitbox.right;
+      if (link.hitbox.bottom > bottom) bottom = link.hitbox.bottom;
+    }
+
+    var result = Rect.fromLTRB(left, top, right, bottom);
+    return result;
+  }
+
   static Iterable<GraphNode> random(int count) sync* {
     var rnd = Random();
 

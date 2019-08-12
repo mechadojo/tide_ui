@@ -8,7 +8,8 @@ class CanvasState with ChangeNotifier {
   final double maxScale = 5.0625;
   double get stepSize => 100 / scale;
 
-  Offset pos = Offset.zero;
+  Size size = Size.zero;
+  Offset pos = Offset(-10000, 10000);
   Offset get screenPos => toScreenCoord(pos);
   double scale = 1.0;
   bool debugMode = true;
@@ -71,6 +72,25 @@ class CanvasState with ChangeNotifier {
     pos = Offset.zero;
     scale = 1.0;
     log("Reset Canvas State");
+    notifyListeners();
+  }
+
+  void zoomToFit(Rect rect, Size size) {
+    var scaleX = size.width / rect.width;
+    var scaleY = size.height / rect.height;
+
+    if (scaleX < scaleY) {
+      scale = scaleX;
+    } else {
+      scale = scaleY;
+    }
+
+    var dx = ((size.width / scale) - rect.width) / 2;
+    var dy = ((size.height / scale) - rect.height) / 2;
+
+    pos = -rect.topLeft;
+    pos = pos.translate(dx, dy);
+
     notifyListeners();
   }
 

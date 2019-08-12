@@ -23,6 +23,7 @@ class CanvasPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     var screen = Rect.fromLTRB(0, 0, size.width, size.height);
+    state.size = size;
 
     state.controller.setClip(
       screen,

@@ -2,15 +2,20 @@ import 'dart:html';
 import 'dart:js' as js;
 
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 
-class CanvasTabsController with MouseController, KeyboardController {
-  CanvasTabsState tabs;
+import 'graph_editor_controller.dart';
 
-  CanvasTabsController(this.tabs);
+class CanvasTabsController with MouseController, KeyboardController {
+  GraphEditorController editor;
+
+  CanvasTabsState get tabs => editor.tabs;
+
+  CanvasTabsController(this.editor);
 
   bool hoverCanceled = false;
   Offset cursorPos = Offset.zero;
@@ -93,20 +98,8 @@ class CanvasTabsController with MouseController, KeyboardController {
 
     for (var item in tabs.menu) {
       if (item.hitbox.contains(pt) && !item.disabled) {
-        switch (item.name) {
-          case "tab-new":
-            tabs.add(select: true);
-            break;
-          case "tab-next":
-            scroll(1);
-            break;
-          case "tab-prev":
-            scroll(-1);
-            break;
-          default:
-            print("Select menu: ${item.name} [${item.group}]");
-
-            break;
+        if (item.command != null) {
+          editor.dispatch(item.command);
         }
 
         tabs.endUpdate(true);
@@ -166,17 +159,16 @@ class CanvasTabsController with MouseController, KeyboardController {
 
     // Ctrl+n = Open new tab
     if (key == "n" && evt.ctrlKey) {
-      print("Open new tab");
-      tabs.add(select: true);
+      editor.dispatch(GraphEditorCommand.newTab());
       return true;
     }
 
     // Ctrl+tab = Select next tab
     if (key == "tab" && evt.ctrlKey) {
       if (evt.shiftKey) {
-        tabs.selectPrev();
+        editor.dispatch(GraphEditorCommand.prevTab());
       } else {
-        tabs.selectNext();
+        editor.dispatch(GraphEditorCommand.nextTab());
       }
 
       return true;
@@ -186,15 +178,14 @@ class CanvasTabsController with MouseController, KeyboardController {
     if (key == "w" && evt.ctrlKey) {
       var tab = tabs.current;
       if (tab != null) {
-        print("Close tab ${tab.name}");
-        tabs.remove(tab.name);
+        editor.dispatch(GraphEditorCommand.closeTab(tab.name));
       }
       return true;
     }
 
     // Ctrl+Shift+t = Restore last closed tab
     if (key == "t" && evt.ctrlKey && evt.shiftKey) {
-      tabs.restore(true);
+      editor.dispatch(GraphEditorCommand.restoreTab());
       return true;
     }
 

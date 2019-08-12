@@ -1,6 +1,7 @@
 import 'dart:html';
 
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
@@ -18,13 +19,15 @@ enum MouseMoveMode {
 }
 
 class GraphController with MouseController, KeyboardController {
-  GraphState graph;
+  GraphEditorController editor;
+
+  GraphState get graph => editor.graph;
   GraphObject focus;
 
   List<GraphNode> selection = [];
   List<GraphNode> savedSelection = [];
 
-  GraphController(this.graph);
+  GraphController(this.editor);
 
   MouseMoveMode moveMode = MouseMoveMode.none;
   Offset moveStart = Offset.zero;

@@ -1,4 +1,5 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_handler.dart';
@@ -14,6 +15,10 @@ class GraphEditorState with ChangeNotifier {
   KeyboardHandler keyboardHandler;
 
   CanvasTab currentTab;
+
+  void dispatch(GraphEditorCommand cmd) {
+    controller.dispatch(cmd);
+  }
 
   void beginUpdate() {}
 

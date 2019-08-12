@@ -5,8 +5,20 @@ import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'graph_canvas.dart';
 import 'graph_tabs.dart';
 
-class GraphEditorPage extends StatelessWidget {
+class GraphEditorPage extends StatefulWidget {
+  @override
+  _GraphEditorPageState createState() => _GraphEditorPageState();
+}
+
+class _GraphEditorPageState extends State<GraphEditorPage>
+    with SingleTickerProviderStateMixin {
   final GraphEditorController editor = GraphEditorController();
+
+  @override
+  void initState() {
+    super.initState();
+    this.createTicker(editor.onTick).start();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,3 +1,5 @@
+import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
+
 import 'canvas_interactive.dart';
 
 class MenuItem with CanvasInteractive {
@@ -7,6 +9,7 @@ class MenuItem with CanvasInteractive {
   String shortcut;
   String group;
   String iconAlt;
+  GraphEditorCommand command;
 
   MenuItem(
       {this.icon,
@@ -14,5 +17,6 @@ class MenuItem with CanvasInteractive {
       this.name,
       this.shortcut,
       this.group,
-      this.iconAlt});
+      this.iconAlt,
+      this.command});
 }

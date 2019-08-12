@@ -63,6 +63,7 @@ class KeyboardHandler {
       return;
     }
 
+    if (editor.onKeyDown(evt)) return;
     if (canvas.onKeyDown(evt)) return;
     if (tabs.onKeyDown(evt)) return;
     if (graph.onKeyDown(evt)) return;
