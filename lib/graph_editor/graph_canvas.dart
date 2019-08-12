@@ -30,6 +30,7 @@ class GraphCanvas extends StatelessWidget {
     return GestureDetector(
       onTapDown: (evt) {
         var pt = globalToLocal(context, evt.globalPosition);
+
         editor.mouseHandler.onMouseMoveCanvas(null, pt);
         editor.mouseHandler.onMouseDownCanvas(null, pt);
       },

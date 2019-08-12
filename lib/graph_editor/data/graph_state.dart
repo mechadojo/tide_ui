@@ -5,6 +5,7 @@ import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
 import 'package:uuid/uuid.dart';
 
+import 'canvas_interactive.dart';
 import 'graph_link.dart';
 import 'graph_node.dart';
 import 'node_port.dart';
@@ -110,38 +111,42 @@ class GraphState with ChangeNotifier {
     return link;
   }
 
-  Rect get extents {
+  Rect getExtents(Iterable<CanvasInteractive> items) {
     double top = 0;
     double left = 0;
     double bottom = 0;
     double right = 0;
     bool first = true;
-    for (var node in nodes) {
-      for (var item in node.interactive()) {
-        if (first) {
-          top = item.hitbox.top;
-          left = item.hitbox.left;
-          bottom = item.hitbox.bottom;
-          right = item.hitbox.right;
-        } else {
-          if (item.hitbox.left < left) left = item.hitbox.left;
-          if (item.hitbox.top < top) top = item.hitbox.top;
-          if (item.hitbox.right > right) right = item.hitbox.right;
-          if (item.hitbox.bottom > bottom) bottom = item.hitbox.bottom;
-        }
-        first = false;
-      }
-    }
 
-    for (var link in links) {
-      if (link.hitbox.left < left) left = link.hitbox.left;
-      if (link.hitbox.top < top) top = link.hitbox.top;
-      if (link.hitbox.right > right) right = link.hitbox.right;
-      if (link.hitbox.bottom > bottom) bottom = link.hitbox.bottom;
+    for (var item in items) {
+      if (first) {
+        top = item.hitbox.top;
+        left = item.hitbox.left;
+        bottom = item.hitbox.bottom;
+        right = item.hitbox.right;
+      } else {
+        if (item.hitbox.left < left) left = item.hitbox.left;
+        if (item.hitbox.top < top) top = item.hitbox.top;
+        if (item.hitbox.right > right) right = item.hitbox.right;
+        if (item.hitbox.bottom > bottom) bottom = item.hitbox.bottom;
+      }
+      first = false;
     }
 
     var result = Rect.fromLTRB(left, top, right, bottom);
     return result;
+  }
+
+  Rect get selectionExtents {
+    if (controller.selection.isEmpty) {
+      return extents;
+    }
+
+    return getExtents(controller.walkSelection());
+  }
+
+  Rect get extents {
+    return getExtents(controller.walkGraph());
   }
 
   static Iterable<GraphNode> random(int count) sync* {

@@ -102,7 +102,7 @@ class MouseHandler {
 
     onMouseOutTabs();
 
-    if (canvas.panning) {
+    if (canvas.panning || canvas.zooming) {
       canvas.onMouseMove(evt, pt);
     } else {
       editor.onMouseMove(evt, pt);
@@ -151,6 +151,7 @@ class MouseHandler {
     canvas.onMouseDoubleTap();
     tabs.onMouseDoubleTap();
     graph.onMouseDoubleTap();
+    canvas.stopPanning();
   }
 
   void onMouseDownTabs(MouseEvent evt, Offset pt) {
@@ -165,8 +166,10 @@ class MouseHandler {
   bool shouldAutoPan(MouseEvent evt) {
     if (evt.ctrlKey) return false;
     if (evt.shiftKey) return true;
-
     if (graph.focus != null) return false;
+
+    if (canvas.touchMode) return editor.isPanMode;
+
     if (!canvas.touchMode && graph.selection.length > 1) {
       return false;
     }
@@ -182,7 +185,11 @@ class MouseHandler {
     onMouseOutTabs();
 
     if (shouldAutoPan(evt)) {
-      canvas.startPanning(pt);
+      var center = graph.selection.isEmpty
+          ? canvas.panRectGraph.center
+          : graph.graph.selectionExtents.center;
+
+      canvas.startPanning(pt, center);
     } else {
       var gpt = canvas.toGraphCoord(pt);
 

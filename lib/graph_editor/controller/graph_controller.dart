@@ -7,6 +7,7 @@ import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
+import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/node_port.dart';
@@ -201,6 +202,21 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
   }
 
+  Iterable<GraphObject> walkSelection() sync* {
+    for (GraphNode node in selection) {
+      yield* node.inports;
+      yield* node.outports;
+      yield node;
+    }
+
+    for (GraphLink link in graph.links) {
+      if (selection.contains(link.outPort.node) &&
+          selection.contains(link.inPort.node)) {
+        yield link;
+      }
+    }
+  }
+
   Iterable<GraphObject> walkGraph() sync* {
     for (var node in graph.nodes.reversed) {
       if (node.selected) continue;
@@ -243,13 +259,17 @@ class GraphController with MouseController, KeyboardController {
     if (focus is GraphNode) {
       var node = focus as GraphNode;
 
-      if (evt.shiftKey && evt.ctrlKey) {
+      if (evt.shiftKey || (editor.isTouchMode && !evt.ctrlKey)) {
         addSelection(node);
-      } else if (evt.ctrlKey) {
+      } else if ((evt.ctrlKey && !evt.shiftKey)) {
         toggleSelection(node);
       } else {
         if (selection.length == 1 || !selection.contains(node)) {
           setSelection(node);
+        } else {
+          if (!selection.contains(node)) {
+            addSelection(node);
+          }
         }
       }
 
@@ -287,6 +307,11 @@ class GraphController with MouseController, KeyboardController {
     }
 
     moveMode = MouseMoveMode.none;
+    if (editor.canvas.touchMode && focus != null) {
+      focus.hovered = false;
+      focus = null;
+    }
+
     graph.endUpdate(true);
     return true;
   }
@@ -381,11 +406,14 @@ class GraphController with MouseController, KeyboardController {
 
   @override
   bool onMouseDoubleTap() {
-    print("Double Tap");
     graph.beginUpdate();
     onMouseOut();
     clearSelection();
     moveMode = MouseMoveMode.none;
+    if (focus != null) {
+      focus.hovered = false;
+      focus = null;
+    }
     graph.endUpdate(true);
     return true;
   }
@@ -399,7 +427,6 @@ class GraphController with MouseController, KeyboardController {
     bool changed = false;
     if (focus != null) {
       changed = focus.hovered;
-
       focus.hovered = false;
     }
 

@@ -47,6 +47,7 @@ class GraphEditorController with MouseController, KeyboardController {
   MouseHandler get mouseHandler => editor.mouseHandler;
   bool get isPanMode => editor.dragMode == GraphDragMode.panning;
   bool get isSelectMode => editor.dragMode == GraphDragMode.selecting;
+  bool get isTouchMode => canvas.touchMode;
 
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
@@ -134,7 +135,9 @@ class GraphEditorController with MouseController, KeyboardController {
     if (pt.dy > pan.bottom) dy = pan.bottom - pt.dy;
 
     if (dx != 0 || dy != 0) {
-      return canvas.controller.panning ? Offset(-dx, -dy) : Offset(dx, dy);
+      return (canvas.controller.panning || canvas.controller.zooming)
+          ? Offset(-dx, -dy)
+          : Offset(dx, dy);
     } else {
       return null;
     }
@@ -172,7 +175,6 @@ class GraphEditorController with MouseController, KeyboardController {
     if (key == "h") {
       zoomHome();
     }
-    ;
 
     if (key == "f") {
       zoomToFit();

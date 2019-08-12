@@ -24,6 +24,8 @@ class CanvasController with MouseController, KeyboardController {
   Rect panRectScreen = Rect.zero;
 
   bool panning = false;
+  bool zooming = false;
+
   double scaleStart = 0;
   Offset centerStart = Offset.zero;
   Offset posStart = Offset.zero;
@@ -56,39 +58,34 @@ class CanvasController with MouseController, KeyboardController {
     }
   }
 
-  void startPanning(Offset pt) {
+  void startPanning(Offset pt, Offset center) {
     if (pt.dx > panRectScreen.right) {
       setCursor("zoom-in");
+      zooming = true;
     } else {
+      panning = true;
       setCursor("grab");
     }
 
     scaleStart = canvas.scale;
-    centerStart = canvas.toGraphCoord(panRectScreen.center);
+    centerStart = center;
 
-    panning = true;
     posStart = canvas.pos;
     panStart = pt;
   }
 
   void stopPanning() {
     setCursor("default");
+    zooming = false;
     panning = false;
   }
 
   @override
   bool onMouseMove(MouseEvent evt, Offset pt) {
-    // if (evt.buttons != 1 && editor.isSelectMode) {
-    //   stopPanning();
-    //   return true;
-    // }
-
-    var dx = posStart.dx + (pt.dx - panStart.dx) / canvas.scale;
-    var dy = posStart.dy + (pt.dy - panStart.dy) / canvas.scale;
-    var rect = panRectScreen;
-
-    if (pt.dx > rect.right) {
+    if (zooming) {
+      var rect = panRectScreen;
       rect = rect.inflate(Graph.AutoPanMargin); // convert to full canvas
+
       if (pt.dy > panStart.dy) {
         var ratio = 1 - (pt.dy - panStart.dy) / (rect.bottom - panStart.dy);
         var scale = scaleStart * ratio;
@@ -102,10 +99,14 @@ class CanvasController with MouseController, KeyboardController {
 
         canvas.zoomAt(scale, centerStart);
       }
-    } else {
-      canvas.scrollTo(Offset(dx, dy));
     }
 
+    if (panning) {
+      var dx = posStart.dx + (pt.dx - panStart.dx) / canvas.scale;
+      var dy = posStart.dy + (pt.dy - panStart.dy) / canvas.scale;
+
+      canvas.scrollTo(Offset(dx, dy));
+    }
     return true;
   }
 
