@@ -101,8 +101,9 @@ class MouseHandler {
     if (canvas.panning) {
       canvas.onMouseMove(evt, pt);
     } else {
+      editor.onMouseMove(evt, pt);
+
       var gpt = canvas.toGraphCoord(pt);
-      editor.onMouseMove(evt, gpt);
       graph.onMouseMove(evt, gpt);
     }
   }

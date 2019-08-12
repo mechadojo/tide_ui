@@ -10,6 +10,12 @@ class GraphEditorCommand {
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
 
+  GraphEditorCommand.autoPan() {
+    handler = (GraphEditorController editor) {
+      editor.panAtEdges();
+    };
+  }
+
   GraphEditorCommand.zoomToFit() {
     handler = (GraphEditorController editor) {
       editor.zoomToFit();

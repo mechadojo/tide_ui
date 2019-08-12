@@ -51,6 +51,9 @@ class GraphEditorController with MouseController, KeyboardController {
   Duration timer = Duration.zero;
   int ticks = 0;
 
+  bool isAutoPanning = false;
+  Offset cursor = Offset.zero;
+
   GraphEditorController() {
     editor.controller = this;
     tabs.controller = CanvasTabsController(this);
@@ -64,7 +67,7 @@ class GraphEditorController with MouseController, KeyboardController {
     tabs.addListener(onChangeTabs);
     tabs.add(select: true);
 
-    dispatch(GraphEditorCommand.zoomToFit(), afterTicks: 3);
+    dispatch(GraphEditorCommand.zoomToFit(), afterTicks: 10);
   }
 
   void onTick(Duration dt) {
@@ -113,31 +116,49 @@ class GraphEditorController with MouseController, KeyboardController {
     ];
   }
 
+  Offset get edgePanOffset {
+    if (!graph.controller.dragging) return null;
+
+    var pt = cursor; // last know cursor position
+    var pan = canvas.controller.panRectScreen; // last known visible region
+
+    double dx = 0;
+    double dy = 0;
+
+    if (pt.dx < pan.left) dx = pan.left - pt.dx;
+    if (pt.dx > pan.right) dx = pan.right - pt.dx;
+
+    if (pt.dy < pan.top) dy = pan.top - pt.dy;
+    if (pt.dy > pan.bottom) dy = pan.bottom - pt.dy;
+
+    if (dx != 0 || dy != 0) {
+      return Offset(dx, dy);
+    } else {
+      return null;
+    }
+  }
+
+  void panAtEdges() {
+    var pos = edgePanOffset;
+
+    if (pos == null) {
+      isAutoPanning = false;
+      return;
+    }
+
+    isAutoPanning = true;
+    var rx = (pos.dx / Graph.AutoPanMargin) * Graph.MaxAutoPan;
+    var ry = (pos.dy / Graph.AutoPanMargin) * Graph.MaxAutoPan;
+
+    canvas.scrollBy(rx / canvas.scale, ry / canvas.scale);
+    dispatch(GraphEditorCommand.autoPan(), delay: Duration(milliseconds: 20));
+  }
+
   bool onMouseMove(MouseEvent evt, Offset pt) {
-    if (graph.controller.dragging) {
-      var pan = canvas.controller.panRect;
-      double dx = 0;
-      double dy = 0;
+    cursor = pt;
 
-      if (pt.dx < pan.left) dx = pan.left - pt.dx;
-      if (pt.dx > pan.right) dx = pan.right - pt.dx;
-
-      if (pt.dy < pan.top) dy = pan.top - pt.dy;
-      if (pt.dy > pan.bottom) dy = pan.bottom - pt.dy;
-
-      var limit = Graph.MaxAutoPan;
-      if (dx.abs() > limit) {
-        dx = limit * dx.sign;
-      }
-
-      if (dy.abs() > limit) {
-        dy = limit * dy.sign;
-      }
-
-      if (dx != 0 || dy != 0) {
-        print("Scroll $dx, $dy");
-        canvas.scrollBy(dx, dy);
-      }
+    if (graph.controller.dragging && !isAutoPanning) {
+      panAtEdges();
     }
     return false;
   }

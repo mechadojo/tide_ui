@@ -10,7 +10,7 @@ import 'package:tide_ui/graph_editor/data/canvas_state.dart';
 class CanvasController with MouseController, KeyboardController {
   GraphEditorController editor;
   CanvasState get canvas => editor.canvas;
-  
+
   bool get touchMode => canvas.touchMode;
 
   CanvasController(this.editor);
@@ -19,7 +19,8 @@ class CanvasController with MouseController, KeyboardController {
   Rect clipRect = Rect.zero;
 
   /// A region of the graph that pans while dragging
-  Rect panRect = Rect.zero;
+  Rect panRectGraph = Rect.zero;
+  Rect panRectScreen = Rect.zero;
 
   bool panning = false;
   Offset posStart = Offset.zero;
@@ -28,9 +29,10 @@ class CanvasController with MouseController, KeyboardController {
   String cursor = "default";
 
   Rect setClip(Rect clip, Rect pan) {
+    panRectScreen = pan;
     clipRect = Rect.fromPoints(
         toGraphCoord(clip.topLeft), toGraphCoord(clip.bottomRight));
-    panRect = Rect.fromPoints(
+    panRectGraph = Rect.fromPoints(
         toGraphCoord(pan.topLeft), toGraphCoord(pan.bottomRight));
 
     return clipRect;

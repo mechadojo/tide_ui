@@ -122,7 +122,7 @@ class Graph {
   // Utlitity methods and properties
   //
   static const double AutoPanMargin = 50;
-  static const double MaxAutoPan = 5;
+  static const double MaxAutoPan = 15;
 
   static bool isZoomedIn(double scale) => scale > 2.0;
   static bool isZoomedOut(double scale) => scale < .5;

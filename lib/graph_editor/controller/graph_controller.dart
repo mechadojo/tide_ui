@@ -30,6 +30,7 @@ class GraphController with MouseController, KeyboardController {
   GraphController(this.editor);
 
   MouseMoveMode moveMode = MouseMoveMode.none;
+
   Offset moveStart = Offset.zero;
   Offset moveEnd = Offset.zero;
   Offset panOffset = Offset.zero;
