@@ -20,6 +20,10 @@ class MouseHandler {
 
   MouseHandler(this.editor);
 
+  bool allowEvent(MouseEvent evt) {
+    if (evt == null && !canvas.touchMode) return false;
+    return true;
+  }
   // ***************************************************************
   //
   //  Dispatch events to tabs or canvas based on screen location
@@ -85,7 +89,7 @@ class MouseHandler {
   // ***************************************************************
 
   void onMouseMoveTabs(MouseEvent evt, Offset pt) {
-    if (evt == null && !canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutCanvas();
@@ -93,7 +97,7 @@ class MouseHandler {
   }
 
   void onMouseMoveCanvas(MouseEvent evt, Offset pt) {
-    if (evt == null && !canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutTabs();
@@ -150,7 +154,7 @@ class MouseHandler {
   }
 
   void onMouseDownTabs(MouseEvent evt, Offset pt) {
-    if (evt == null && !canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutCanvas();
@@ -160,16 +164,18 @@ class MouseHandler {
 
   bool shouldAutoPan(MouseEvent evt) {
     if (evt.ctrlKey) return false;
+    if (evt.shiftKey) return true;
+
     if (graph.focus != null) return false;
     if (!canvas.touchMode && graph.selection.length > 1) {
       return false;
     }
 
-    return evt.shiftKey || editor.isPanMode;
+    return editor.isPanMode;
   }
 
   void onMouseDownCanvas(MouseEvent evt, Offset pt) {
-    if (evt == null && !canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
 
     evt = evt ?? keyboard.mouse;
 
@@ -202,7 +208,7 @@ class MouseHandler {
   // ***************************************************************
 
   void onMouseUpTabs(MouseEvent evt, Offset pt) {
-    if (evt == null && !canvas.canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutCanvas();
@@ -211,7 +217,7 @@ class MouseHandler {
   }
 
   void onMouseUpCanvas(MouseEvent evt, [Offset pt = Offset.zero]) {
-    if (evt == null && !canvas.canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutTabs();
@@ -236,7 +242,7 @@ class MouseHandler {
   // ***************************************************************
 
   void onContextMenuCanvas(MouseEvent evt, Offset pt) {
-    if (evt == null && !canvas.canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutTabs();
@@ -244,7 +250,7 @@ class MouseHandler {
   }
 
   void onContextMenuTabs(MouseEvent evt, Offset pt) {
-    if (evt == null && !canvas.canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutCanvas();
@@ -265,14 +271,14 @@ class MouseHandler {
   }
 
   void onMouseWheelTabs(WheelEvent evt, Offset pt) {
-    if (evt == null && !canvas.canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutCanvas();
   }
 
   void onMouseWheelCanvas(WheelEvent evt, Offset pt) {
-    if (evt == null && !canvas.canvas.touchMode) return;
+    if (!allowEvent(evt)) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutTabs();

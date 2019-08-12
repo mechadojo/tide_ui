@@ -134,7 +134,7 @@ class GraphEditorController with MouseController, KeyboardController {
     if (pt.dy > pan.bottom) dy = pan.bottom - pt.dy;
 
     if (dx != 0 || dy != 0) {
-      return Offset(dx, dy);
+      return canvas.controller.panning ? Offset(-dx, -dy) : Offset(dx, dy);
     } else {
       return null;
     }

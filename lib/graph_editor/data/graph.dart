@@ -4,6 +4,9 @@ import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
 class Graph {
   static const bool ShowHitBox = false;
 
+  static const double MaxZoomScale = 5.0625;
+  static const double MinZoomScale = 0.1316872427983539;
+
   static const double DefaultNodeSize = 80;
 
   static const double DefaultPortSpacing = 20;

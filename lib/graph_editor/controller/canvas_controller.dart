@@ -6,6 +6,7 @@ import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_state.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 
 class CanvasController with MouseController, KeyboardController {
   GraphEditorController editor;
@@ -23,6 +24,8 @@ class CanvasController with MouseController, KeyboardController {
   Rect panRectScreen = Rect.zero;
 
   bool panning = false;
+  double scaleStart = 0;
+  Offset centerStart = Offset.zero;
   Offset posStart = Offset.zero;
   Offset panStart = Offset.zero;
 
@@ -31,7 +34,7 @@ class CanvasController with MouseController, KeyboardController {
   void setTouchMode(bool mode) {
     if (mode == canvas.touchMode) return;
     canvas.beginUpdate();
-    canvas.touchMode = false;
+    canvas.touchMode = mode;
     canvas.endUpdate(true);
   }
 
@@ -54,7 +57,15 @@ class CanvasController with MouseController, KeyboardController {
   }
 
   void startPanning(Offset pt) {
-    setCursor("grab");
+    if (pt.dx > panRectScreen.right) {
+      setCursor("zoom-in");
+    } else {
+      setCursor("grab");
+    }
+
+    scaleStart = canvas.scale;
+    centerStart = canvas.toGraphCoord(panRectScreen.center);
+
     panning = true;
     posStart = canvas.pos;
     panStart = pt;
@@ -67,15 +78,34 @@ class CanvasController with MouseController, KeyboardController {
 
   @override
   bool onMouseMove(MouseEvent evt, Offset pt) {
-    if (evt.buttons != 1) {
-      stopPanning();
-      return true;
-    }
+    // if (evt.buttons != 1 && editor.isSelectMode) {
+    //   stopPanning();
+    //   return true;
+    // }
 
     var dx = posStart.dx + (pt.dx - panStart.dx) / canvas.scale;
     var dy = posStart.dy + (pt.dy - panStart.dy) / canvas.scale;
+    var rect = panRectScreen;
 
-    canvas.scrollTo(Offset(dx, dy));
+    if (pt.dx > rect.right) {
+      rect = rect.inflate(Graph.AutoPanMargin); // convert to full canvas
+      if (pt.dy > panStart.dy) {
+        var ratio = 1 - (pt.dy - panStart.dy) / (rect.bottom - panStart.dy);
+        var scale = scaleStart * ratio;
+        if (scale < Graph.MinZoomScale) scale = Graph.MinZoomScale;
+
+        canvas.zoomAt(scale, centerStart);
+      } else {
+        var ratio = (pt.dy - panStart.dy) / (rect.top - panStart.dy);
+        var scale = scaleStart + Graph.MaxZoomScale * ratio;
+        if (scale > Graph.MaxZoomScale) scale = Graph.MaxZoomScale;
+
+        canvas.zoomAt(scale, centerStart);
+      }
+    } else {
+      canvas.scrollTo(Offset(dx, dy));
+    }
+
     return true;
   }
 

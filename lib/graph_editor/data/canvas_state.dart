@@ -1,11 +1,13 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
 
+import 'package:tide_ui/graph_editor/data/graph.dart';
+
 class CanvasState with ChangeNotifier {
   CanvasController controller;
 
-  final double minScale = 0.1316872427983539;
-  final double maxScale = 5.0625;
+  double get minScale => Graph.MinZoomScale;
+  double get maxScale => Graph.MaxZoomScale;
   double get stepSize => 100 / scale;
 
   Size size = Size.zero;
