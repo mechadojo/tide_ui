@@ -123,6 +123,7 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
         }
       }
     });
+    
     window.onMouseWheel.listen((evt) {
       if (IsCurrentHandler) {
         mouseHandler.onMouseWheel(evt, context, _isPageActive);
@@ -140,7 +141,7 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
         mouseHandler.onMouseMove(evt, context, _isPageActive);
       }
     });
-/*
+
     window.onMouseDown.listen((evt) {
       if (IsCurrentHandler && !canvas.touchMode) {
         mouseHandler.onMouseDown(evt, context, _isPageActive);
@@ -152,6 +153,6 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
         mouseHandler.onMouseUp(evt, context, _isPageActive);
       }
     });
-    */
+    
   }
 }

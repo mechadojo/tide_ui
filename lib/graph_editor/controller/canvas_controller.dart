@@ -10,6 +10,8 @@ import 'package:tide_ui/graph_editor/data/canvas_state.dart';
 class CanvasController with MouseController, KeyboardController {
   GraphEditorController editor;
   CanvasState get canvas => editor.canvas;
+  
+  bool get touchMode => canvas.touchMode;
 
   CanvasController(this.editor);
 

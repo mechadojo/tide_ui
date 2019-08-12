@@ -20,6 +20,12 @@ class MouseHandler {
 
   MouseHandler(this.editor);
 
+  // ***************************************************************
+  //
+  //  Dispatch events to tabs or canvas based on screen location
+  //
+  // ***************************************************************
+
   Offset globalToLocal(RenderBox rb, Offset pt) {
     try {
       return rb.globalToLocal(pt);
@@ -72,30 +78,24 @@ class MouseHandler {
     }
   }
 
-  void onTapDown(TapDownDetails evt, BuildContext context) {
-    int dx = evt.globalPosition.dx.toInt();
-    int dy = evt.globalPosition.dy.toInt();
-    print("Tap down $dx,$dy");
-    var mevt = MouseEvent("", screenX: dx, screenY: dy);
-
-    onMouseDown(mevt, context, true);
-  }
-
-  void onTapUp(TapUpDetails evt, BuildContext context) {
-    int dx = evt.globalPosition.dx.toInt();
-    int dy = evt.globalPosition.dy.toInt();
-    print("Tap Up $dx,$dy");
-    var mevt = MouseEvent("", screenX: dx, screenY: dy);
-
-    onMouseUp(mevt, context, true);
-  }
+  // ***************************************************************
+  //
+  //  Mouse Move Events
+  //
+  // ***************************************************************
 
   void onMouseMoveTabs(MouseEvent evt, Offset pt) {
+    if (evt == null && !canvas.touchMode) return;
+    evt = evt ?? keyboard.mouse;
+
     onMouseOutCanvas();
     tabs.onMouseMove(evt, pt);
   }
 
   void onMouseMoveCanvas(MouseEvent evt, Offset pt) {
+    if (evt == null && !canvas.touchMode) return;
+    evt = evt ?? keyboard.mouse;
+
     onMouseOutTabs();
 
     if (canvas.panning) {
@@ -133,11 +133,23 @@ class MouseHandler {
     graph.onMouseOut();
   }
 
+  // ***************************************************************
   //
-  // Mouse Down
+  //  Mouse Down Events
   //
+  // ***************************************************************
+
+  void onMouseDoubleTap() {
+    onMouseOutCanvas();
+    onMouseOutTabs();
+
+    canvas.onMouseDoubleTap();
+    tabs.onMouseDoubleTap();
+    graph.onMouseDoubleTap();
+  }
 
   void onMouseDownTabs(MouseEvent evt, Offset pt) {
+    if (evt == null && !canvas.touchMode) return;
     evt = evt ?? keyboard.mouse;
 
     onMouseOutCanvas();
@@ -146,6 +158,8 @@ class MouseHandler {
   }
 
   void onMouseDownCanvas(MouseEvent evt, Offset pt) {
+    if (evt == null && !canvas.touchMode) return;
+
     evt = evt ?? keyboard.mouse;
 
     onMouseOutTabs();
@@ -169,19 +183,25 @@ class MouseHandler {
     );
   }
 
+  // ***************************************************************
   //
-  // Mouse Up
+  //  Mouse Up Events
   //
+  // ***************************************************************
 
   void onMouseUpTabs(MouseEvent evt, Offset pt) {
+    if (evt == null && !canvas.canvas.touchMode) return;
     evt = evt ?? keyboard.mouse;
+
     onMouseOutCanvas();
     graph.onMouseOut();
     tabs.onMouseUp(evt);
   }
 
   void onMouseUpCanvas(MouseEvent evt, [Offset pt = Offset.zero]) {
+    if (evt == null && !canvas.canvas.touchMode) return;
     evt = evt ?? keyboard.mouse;
+
     onMouseOutTabs();
     canvas.stopPanning();
     graph.onMouseUp(evt);
@@ -197,22 +217,31 @@ class MouseHandler {
     );
   }
 
+  // ***************************************************************
   //
-  // Context Menu
+  //  Context Menu Events
   //
+  // ***************************************************************
+
   void onContextMenuCanvas(MouseEvent evt, Offset pt) {
+    if (evt == null && !canvas.canvas.touchMode) return;
+    evt = evt ?? keyboard.mouse;
+
     onMouseOutTabs();
     print("Open Radial Menu: $pt");
   }
 
   void onContextMenuTabs(MouseEvent evt, Offset pt) {
+    if (evt == null && !canvas.canvas.touchMode) return;
+    evt = evt ?? keyboard.mouse;
+
     onMouseOutCanvas();
     print("Open Tabs Context Menu: $pt");
   }
 
   void onContextMenu(MouseEvent evt, BuildContext context, bool isActive) {
-    // Stop the default context menu
     evt.preventDefault();
+
     if (!isActive) return;
 
     dispatchEvent(
@@ -223,20 +252,17 @@ class MouseHandler {
     );
   }
 
-  void onMouseDoubleTap() {
-    onMouseOutCanvas();
-    onMouseOutTabs();
-
-    canvas.onMouseDoubleTap();
-    tabs.onMouseDoubleTap();
-    graph.onMouseDoubleTap();
-  }
-
   void onMouseWheelTabs(WheelEvent evt, Offset pt) {
+    if (evt == null && !canvas.canvas.touchMode) return;
+    evt = evt ?? keyboard.mouse;
+
     onMouseOutCanvas();
   }
 
   void onMouseWheelCanvas(WheelEvent evt, Offset pt) {
+    if (evt == null && !canvas.canvas.touchMode) return;
+    evt = evt ?? keyboard.mouse;
+
     onMouseOutTabs();
 
     var gpt = canvas.toGraphCoord(pt);
