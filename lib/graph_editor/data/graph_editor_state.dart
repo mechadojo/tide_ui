@@ -8,13 +8,16 @@ import 'package:tide_ui/graph_editor/data/graph_state.dart';
 
 import 'canvas_tab.dart';
 
+enum GraphDragMode { panning, selecting }
+
 class GraphEditorState with ChangeNotifier {
   final Map<String, CanvasTab> tabs = Map<String, CanvasTab>();
   GraphEditorController controller;
   MouseHandler mouseHandler;
   KeyboardHandler keyboardHandler;
-
   CanvasTab currentTab;
+
+  GraphDragMode dragMode = GraphDragMode.panning;
 
   void dispatch(GraphEditorCommand cmd) {
     controller.dispatch(cmd);
@@ -23,7 +26,9 @@ class GraphEditorState with ChangeNotifier {
   void beginUpdate() {}
 
   void endUpdate(bool changed) {
-    if (changed) {}
+    if (changed) {
+      notifyListeners();
+    }
   }
 
   void onChangeTab(CanvasTab tab, CanvasState canvas, GraphState graph) {

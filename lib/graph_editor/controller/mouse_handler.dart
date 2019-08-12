@@ -158,13 +158,24 @@ class MouseHandler {
     tabs.onMouseDown(evt, pt);
   }
 
+  bool shouldAutoPan(MouseEvent evt) {
+    if (evt.ctrlKey) return false;
+    if (graph.focus != null) return false;
+    if (!canvas.touchMode && graph.selection.length > 1) {
+      return false;
+    }
+
+    return evt.shiftKey || editor.isPanMode;
+  }
+
   void onMouseDownCanvas(MouseEvent evt, Offset pt) {
     if (evt == null && !canvas.touchMode) return;
 
     evt = evt ?? keyboard.mouse;
 
     onMouseOutTabs();
-    if (evt.shiftKey && !evt.ctrlKey) {
+
+    if (shouldAutoPan(evt)) {
       canvas.startPanning(pt);
     } else {
       var gpt = canvas.toGraphCoord(pt);

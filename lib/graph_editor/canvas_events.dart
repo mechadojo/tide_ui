@@ -74,7 +74,8 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
     print("Resize to ${media.size}");
 
     if (!IsCurrentHandler) {
-      attachBrowserEvents(editor.mouseHandler, editor.keyboardHandler, canvas);
+      attachBrowserEvents(
+          editor.mouseHandler, editor.keyboardHandler, canvas, editor);
     }
 
     return Container(
@@ -82,8 +83,11 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
     );
   }
 
-  void attachBrowserEvents(MouseHandler mouseHandler,
-      KeyboardHandler keyboardHandler, CanvasState canvas) {
+  void attachBrowserEvents(
+      MouseHandler mouseHandler,
+      KeyboardHandler keyboardHandler,
+      CanvasState canvas,
+      GraphEditorState editor) {
     js.context["Window"]["eventmaster"] = _eventkey;
     print("Adding new window event listener with key: $_eventkey");
 
@@ -96,9 +100,8 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
     window.onTouchStart.listen((evt) {
       if (IsCurrentHandler && !canvas.touchMode) {
         print("Activating touch mode");
-        canvas.beginUpdate();
-        canvas.touchMode = true;
-        canvas.endUpdate(true);
+        canvas.controller.setTouchMode(true);
+        editor.controller.setDragMode(GraphDragMode.panning);
       }
     });
 
@@ -123,7 +126,7 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
         }
       }
     });
-    
+
     window.onMouseWheel.listen((evt) {
       if (IsCurrentHandler) {
         mouseHandler.onMouseWheel(evt, context, _isPageActive);
@@ -153,6 +156,5 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
         mouseHandler.onMouseUp(evt, context, _isPageActive);
       }
     });
-    
   }
 }

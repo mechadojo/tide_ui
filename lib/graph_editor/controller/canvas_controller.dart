@@ -28,6 +28,13 @@ class CanvasController with MouseController, KeyboardController {
 
   String cursor = "default";
 
+  void setTouchMode(bool mode) {
+    if (mode == canvas.touchMode) return;
+    canvas.beginUpdate();
+    canvas.touchMode = false;
+    canvas.endUpdate(true);
+  }
+
   Rect setClip(Rect clip, Rect pan) {
     panRectScreen = pan;
     clipRect = Rect.fromPoints(

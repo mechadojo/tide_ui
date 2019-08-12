@@ -271,7 +271,7 @@ class GraphController with MouseController, KeyboardController {
       return true;
     }
 
-    if (focus is NodePort) {
+    if (focus is NodePort && linkStart != null) {
       var port = focus as NodePort;
       if (linkStart.canLinkTo(port)) {
         addLink(linkStart, port, group: nextGroup);

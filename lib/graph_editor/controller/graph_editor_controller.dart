@@ -45,6 +45,8 @@ class GraphEditorController with MouseController, KeyboardController {
   final CanvasState canvas = CanvasState();
   KeyboardHandler get keyboardHandler => editor.keyboardHandler;
   MouseHandler get mouseHandler => editor.mouseHandler;
+  bool get isPanMode => editor.dragMode == GraphDragMode.panning;
+  bool get isSelectMode => editor.dragMode == GraphDragMode.selecting;
 
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
@@ -191,5 +193,21 @@ class GraphEditorController with MouseController, KeyboardController {
 
   void zoomHome() {
     canvas.reset();
+  }
+
+  void toggleDragMode() {
+    var next = editor.dragMode == GraphDragMode.panning
+        ? GraphDragMode.selecting
+        : GraphDragMode.panning;
+
+    setDragMode(next);
+  }
+
+  void setDragMode(GraphDragMode mode) {
+    if (editor.dragMode == mode) return;
+
+    editor.beginUpdate();
+    editor.dragMode = mode;
+    editor.endUpdate(true);
   }
 }
