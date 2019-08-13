@@ -56,6 +56,7 @@ class KeyboardHandler {
       }
       return;
     }
+    if (editor.isModalActive) return;
 
     // Ctrl+? switches to the about / help page
     if (evt.key == "?" && evt.ctrlKey) {
