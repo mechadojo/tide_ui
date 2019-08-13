@@ -62,6 +62,7 @@ class VectorIcons {
 
   static void paint(Canvas canvas, String name, Offset pos, double size,
       {Paint fill, Paint stroke}) {
+    if (name == null || name.isEmpty) return;
     var icon = iconDefinitions[name];
     if (icon == null) return;
 

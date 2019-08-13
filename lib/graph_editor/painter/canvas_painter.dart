@@ -1,5 +1,6 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
+import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/graph_editor/painter/graph_link_painter.dart';
 
 import '../data/canvas_state.dart';
@@ -9,16 +10,19 @@ import '../data/graph.dart';
 
 import 'canvas_grid_painter.dart';
 import 'graph_node_painter.dart';
+import 'radial_menu_painter.dart';
 
 class CanvasPainter extends CustomPainter {
   final CanvasState state;
   final GraphState graph;
+  final RadialMenuState menu;
 
   final CanvasGridPainter gridPainter = CanvasGridPainter();
   final GraphNodePainter nodePainter = GraphNodePainter();
   final GraphLinkPainter linkPainter = GraphLinkPainter();
+  final RadialMenuPainter menuPainter = RadialMenuPainter();
 
-  CanvasPainter(this.state, this.graph);
+  CanvasPainter(this.state, this.graph, this.menu);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -71,6 +75,8 @@ class CanvasPainter extends CustomPainter {
 
       drawSelectBorder(canvas, Rect.fromPoints(p1, p2));
     }
+
+    menuPainter.paint(canvas, menu);
   }
 
   void drawSelectBorder(Canvas canvas, Rect rect) {

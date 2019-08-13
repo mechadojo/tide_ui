@@ -3,7 +3,9 @@ import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
 
 import 'package:tide_ui/graph_editor/data/graph.dart';
 
-class CanvasState with ChangeNotifier {
+import 'update_notifier.dart';
+
+class CanvasState extends UpdateNotifier {
   CanvasController controller;
 
   double get minScale => Graph.MinZoomScale;
@@ -14,12 +16,6 @@ class CanvasState with ChangeNotifier {
   Offset pos = Offset(-10000, 10000);
   Offset get screenPos => toScreenCoord(pos);
   double scale = 1.0;
-
-  void beginUpdate() {}
-
-  void endUpdate(bool changed) {
-    if (changed) notifyListeners();
-  }
 
   bool copy(CanvasState other) {
     bool changed = false;

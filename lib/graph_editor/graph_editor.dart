@@ -41,7 +41,10 @@ class _GraphEditorPageState extends State<GraphEditorPage>
                   Expanded(
                     child: Flow(
                       delegate: OverlayFlowDelegate(),
-                      children: [GraphCanvas(), ...getWidgets()],
+                      children: [
+                        GraphCanvas(),
+                        DragModeButton(),
+                      ],
                     ),
                   )
                 ],
@@ -51,10 +54,6 @@ class _GraphEditorPageState extends State<GraphEditorPage>
         ),
       ),
     );
-  }
-
-  Iterable<Widget> getWidgets() sync* {
-    yield DragModeButton();
   }
 }
 

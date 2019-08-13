@@ -106,6 +106,39 @@ class Graph {
   static const int LinkPathSteps = 10;
 
   //
+  //  Radial Menu Styles
+  //
+
+  static const double RadialMenuSize = 100;
+  static const double RadialMenuCenter = 40;
+  static const double RadialMenuIconPos = 70;
+  static const double RadialMenuIconSize = RadialMenuCenter * .75;
+
+  static Paint RadialMenuColor = Paint()
+    ..color = Color(0xefefef).withAlpha(250);
+  static Paint RadialMenuHoverColor = Paint()..color = Colors.cyan[50];
+  static Paint RadialMenuIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(190);
+  static Paint RadialMenuHoverIconColor = Paint()..color = Colors.black;
+
+  static Paint RadialMenuDisabledIconColor = Paint()..color = Color(0xffaaaaaa);
+
+  static Paint RadialMenuCenterColor = Paint()..color = Color(0xfff8f8f8);
+  static Paint RadialMenuBorder = Paint()
+    ..color = Colors.black.withAlpha(200)
+    ..strokeWidth = 1
+    ..style = PaintingStyle.stroke;
+
+  static Paint RadialMenuSectorBorder = Paint()
+    ..color = Colors.black.withAlpha(90)
+    ..strokeWidth = 1
+    ..style = PaintingStyle.stroke;
+
+  static Paint RaidalMenuCenterBorder = Paint()
+    ..color = Colors.black.withAlpha(90)
+    ..strokeWidth = 2
+    ..style = PaintingStyle.stroke;
+  //
   //  Other Styles
   //
   static var font = SourceSansProFont;

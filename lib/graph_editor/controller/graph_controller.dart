@@ -1,6 +1,7 @@
 import 'dart:html';
 
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
@@ -225,7 +226,7 @@ class GraphController with MouseController, KeyboardController {
       yield node;
     }
 
-    yield* graph.links;
+    yield* graph.links.reversed;
 
     for (var node in graph.nodes.reversed) {
       if (!node.selected) continue;
@@ -233,6 +234,42 @@ class GraphController with MouseController, KeyboardController {
       yield* node.outports;
       yield node;
     }
+  }
+
+  bool onContextMenu(MouseEvent evt, Offset gpt) {
+    if (!editor.isTouchMode && moveMode != MouseMoveMode.none) return false;
+    var pt = editor.canvas.toScreenCoord(gpt);
+
+    for (var node in graph.nodes.reversed) {
+      for (var port in node.inports) {
+        if (port.isHovered(gpt)) {
+          editor.dispatch(GraphEditorCommand.showPortMenu(port, pt));
+          return true;
+        }
+      }
+
+      for (var port in node.outports) {
+        if (port.isHovered(gpt)) {
+          editor.dispatch(GraphEditorCommand.showPortMenu(port, pt));
+          return true;
+        }
+      }
+
+      if (node.isHovered(gpt)) {
+        editor.dispatch(GraphEditorCommand.showNodeMenu(node, pt));
+        return true;
+      }
+    }
+
+    for (var link in graph.links.reversed) {
+      if (link.isHovered(gpt)) {
+        editor.dispatch(GraphEditorCommand.showLinkMenu(link, pt));
+        return true;
+      }
+    }
+
+    editor.dispatch(GraphEditorCommand.showGraphMenu(graph, pt));
+    return true;
   }
 
   @override

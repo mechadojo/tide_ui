@@ -6,6 +6,7 @@ import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
+import 'package:tide_ui/graph_editor/controller/radial_menu_controller.dart';
 import 'package:tide_ui/graph_editor/graph_tabs.dart';
 
 typedef OnMouseEvent(MouseEvent evt, Offset pt);
@@ -17,6 +18,7 @@ class MouseHandler {
   CanvasController get canvas => editor.canvas.controller;
   GraphController get graph => editor.graph.controller;
   KeyboardHandler get keyboard => editor.keyboardHandler;
+  RadialMenuController get menu => editor.menu.controller;
 
   MouseHandler(this.editor);
 
@@ -102,6 +104,13 @@ class MouseHandler {
 
     onMouseOutTabs();
 
+    if (editor.isModalActive) {
+      if (editor.menu.visible) {
+        menu.onMouseMove(evt, pt);
+      }
+      return;
+    }
+
     if (canvas.panning || canvas.zooming) {
       canvas.onMouseMove(evt, pt);
     } else {
@@ -152,6 +161,7 @@ class MouseHandler {
     tabs.onMouseDoubleTap();
     graph.onMouseDoubleTap();
     canvas.stopPanning();
+    editor.hideMenu();
   }
 
   void onMouseDownTabs(MouseEvent evt, Offset pt) {
@@ -186,6 +196,13 @@ class MouseHandler {
 
     onMouseOutTabs();
 
+    if (editor.isModalActive) {
+      if (editor.menu.visible) {
+        menu.onMouseDown(evt, pt);
+      }
+      return;
+    }
+
     if (shouldAutoPan(evt)) {
       var center = graph.selection.isEmpty
           ? canvas.panRectGraph.center
@@ -201,6 +218,8 @@ class MouseHandler {
 
   void onMouseDown(MouseEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
+
+    if (evt.buttons == 2) return;
 
     dispatchEvent(
       evt,
@@ -230,12 +249,22 @@ class MouseHandler {
     evt = evt ?? keyboard.mouse;
 
     onMouseOutTabs();
+
+    if (editor.isModalActive) {
+      if (editor.menu.visible) {
+        menu.onMouseUp(evt);
+      }
+      return;
+    }
+
     canvas.stopPanning();
     graph.onMouseUp(evt);
   }
 
   void onMouseUp(MouseEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
+    if (evt.buttons == 2) return;
+
     dispatchEvent(
       evt,
       context,
@@ -255,7 +284,14 @@ class MouseHandler {
     evt = evt ?? keyboard.mouse;
 
     onMouseOutTabs();
-    print("Open Radial Menu: $pt");
+    if (editor.isViewMode) return;
+
+    if (editor.isModalActive && !editor.menu.visible) {
+      return;
+    }
+
+    var gpt = canvas.toGraphCoord(pt);
+    graph.onContextMenu(evt, gpt);
   }
 
   void onContextMenuTabs(MouseEvent evt, Offset pt) {
@@ -291,6 +327,10 @@ class MouseHandler {
     evt = evt ?? keyboard.mouse;
 
     onMouseOutTabs();
+
+    if (editor.isModalActive) {
+      return;
+    }
 
     var gpt = canvas.toGraphCoord(pt);
     canvas.onMouseWheel(evt, gpt);

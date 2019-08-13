@@ -6,13 +6,15 @@ import 'package:tide_ui/graph_editor/data/graph_history.dart';
 import 'package:uuid/uuid.dart';
 
 import 'canvas_interactive.dart';
+import 'update_notifier.dart';
 import 'graph_link.dart';
 import 'graph_node.dart';
 import 'node_port.dart';
 
+
 typedef GetNodeByName(String name);
 
-class GraphState with ChangeNotifier {
+class GraphState extends UpdateNotifier {
   GraphController controller;
 
   String id = Uuid().v1().toString();
@@ -26,9 +28,6 @@ class GraphState with ChangeNotifier {
   // allows reconstructing the recursively defined graph objects
   Map<String, GraphNode> referenced = {};
   GraphHistory history = GraphHistory();
-
-  int updating = 0;
-  bool hasChanged = false;
 
   GraphState() {
     nodes.addAll(random(10));
@@ -44,20 +43,6 @@ class GraphState with ChangeNotifier {
       var toPort = toNode.inports[rand.nextInt(toNode.inports.length)];
 
       addLink(fromPort, toPort);
-    }
-  }
-  void beginUpdate() {
-    updating++;
-  }
-
-  void endUpdate(bool changed) {
-    updating--;
-    hasChanged |= changed;
-
-    if (updating <= 0 && hasChanged) {
-      notifyListeners();
-      hasChanged = false;
-      updating = 0;
     }
   }
 

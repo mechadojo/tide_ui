@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_web/material.dart';
 
 import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
+import 'package:tide_ui/graph_editor/controller/radial_menu_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_state.dart';
 
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
@@ -10,6 +11,7 @@ import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
+import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/main.dart' show AppVersion;
 
 import 'canvas_controller.dart';
@@ -41,6 +43,8 @@ class GraphEditorController with MouseController, KeyboardController {
         command: GraphEditorCommand.newTab()),
   ]);
 
+  final RadialMenuState menu = RadialMenuState();
+
   final GraphState graph = GraphState();
   final CanvasState canvas = CanvasState();
   KeyboardHandler get keyboardHandler => editor.keyboardHandler;
@@ -50,6 +54,7 @@ class GraphEditorController with MouseController, KeyboardController {
   bool get isViewMode => editor.dragMode == GraphDragMode.viewing;
 
   bool get isTouchMode => editor.touchMode;
+  bool get isModalActive => menu.visible;
 
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
@@ -57,13 +62,14 @@ class GraphEditorController with MouseController, KeyboardController {
   int ticks = 0;
 
   bool isAutoPanning = false;
-  Offset cursor = Offset.zero;
+  Offset cursor = Offset.zero; // last position of cursor in screen coord
 
   GraphEditorController() {
     editor.controller = this;
     tabs.controller = CanvasTabsController(this);
     graph.controller = GraphController(this);
     canvas.controller = CanvasController(this);
+    menu.controller = RadialMenuController(this);
 
     editor.keyboardHandler = KeyboardHandler(this);
     editor.mouseHandler = MouseHandler(this);
@@ -118,6 +124,7 @@ class GraphEditorController with MouseController, KeyboardController {
       ChangeNotifierProvider(builder: (_) => canvas),
       ChangeNotifierProvider(builder: (_) => tabs),
       ChangeNotifierProvider(builder: (_) => graph),
+      ChangeNotifierProvider(builder: (_) => menu),
     ];
   }
 
@@ -161,7 +168,8 @@ class GraphEditorController with MouseController, KeyboardController {
   bool onMouseMove(MouseEvent evt, Offset pt) {
     cursor = pt;
 
-    if ( (graph.controller.dragging || graph.controller.selecting) && !isAutoPanning) {
+    if ((graph.controller.dragging || graph.controller.selecting) &&
+        !isAutoPanning) {
       panAtEdges();
     }
     return false;
@@ -220,4 +228,28 @@ class GraphEditorController with MouseController, KeyboardController {
     editor.dragMode = mode;
     editor.endUpdate(true);
   }
+
+  void showMenu(Offset pt) {
+    graph.controller.moveMode = MouseMoveMode.none;
+    graph.controller.clearSelection();
+
+    menu.beginUpdate();
+    menu.moveTo(pt);
+    menu.reset();
+    menu.controller.allowClose = false;
+    menu.visible = true;
+    menu.endUpdate(true);
+  }
+
+  void hideMenu() {
+    graph.controller.moveMode = MouseMoveMode.none;
+
+    menu.beginUpdate();
+    menu.visible = false;
+    menu.endUpdate(true);
+
+    canvas.controller.stopPanning();
+  }
+
+  void changeMenu() {}
 }

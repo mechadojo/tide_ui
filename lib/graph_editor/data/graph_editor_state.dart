@@ -1,4 +1,3 @@
-import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
@@ -7,10 +6,11 @@ import 'package:tide_ui/graph_editor/data/canvas_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 
 import 'canvas_tab.dart';
+import 'update_notifier.dart';
 
 enum GraphDragMode { panning, selecting, viewing }
 
-class GraphEditorState with ChangeNotifier {
+class GraphEditorState extends UpdateNotifier {
   final Map<String, CanvasTab> tabs = Map<String, CanvasTab>();
   GraphEditorController controller;
   MouseHandler mouseHandler;
@@ -22,14 +22,6 @@ class GraphEditorState with ChangeNotifier {
 
   void dispatch(GraphEditorCommand cmd) {
     controller.dispatch(cmd);
-  }
-
-  void beginUpdate() {}
-
-  void endUpdate(bool changed) {
-    if (changed) {
-      notifyListeners();
-    }
   }
 
   void onChangeTab(CanvasTab tab, CanvasState canvas, GraphState graph) {

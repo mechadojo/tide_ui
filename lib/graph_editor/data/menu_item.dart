@@ -19,4 +19,14 @@ class MenuItem with CanvasInteractive {
       this.group,
       this.iconAlt,
       this.command});
+
+  void copy(MenuItem other) {
+    icon = other.icon;
+    title = other.title;
+    name = other.name;
+    shortcut = other.shortcut;
+    group = other.group;
+    iconAlt = other.iconAlt;
+    command = other.command;
+  }
 }

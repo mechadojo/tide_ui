@@ -4,6 +4,7 @@ import 'package:tide_ui/graph_editor/painter/canvas_painter.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'data/canvas_state.dart';
 import 'data/graph_editor_state.dart';
+import 'data/radial_menu_state.dart';
 
 class GraphCanvas extends StatelessWidget {
   GraphCanvas();
@@ -23,6 +24,7 @@ class GraphCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     final canvas = Provider.of<CanvasState>(context, listen: true);
     final graph = Provider.of<GraphState>(context, listen: true);
+    final menu = Provider.of<RadialMenuState>(context, listen: true);
 
     final editor = Provider.of<GraphEditorState>(context, listen: false);
 
@@ -38,18 +40,18 @@ class GraphCanvas extends StatelessWidget {
         editor.mouseHandler.onMouseUpCanvas(null);
         editor.mouseHandler.onMouseOutCanvas();
       },
-      // onPanEnd: (evt) {
-      //   editor.mouseHandler.onMouseUpCanvas(null);
-      //   editor.mouseHandler.onMouseOutCanvas();
-      // },
-      // onPanUpdate: (evt) {
-      //   var pt = globalToLocal(context, evt.globalPosition);
-      //   editor.mouseHandler.onMouseMoveCanvas(null, pt);
-      // },
       onDoubleTap: () {
         editor.mouseHandler.onMouseDoubleTap();
       },
-
+      onLongPressStart: (evt) {
+        var pt = globalToLocal(context, evt.globalPosition);
+        editor.mouseHandler.onMouseMoveCanvas(null, pt);
+        editor.mouseHandler.onContextMenuCanvas(null, pt);
+      },
+      onLongPressEnd: (evt) {
+        editor.mouseHandler.onMouseUpCanvas(null);
+        editor.mouseHandler.onMouseOutCanvas();
+      },
       onScaleStart: (evt) {},
       onScaleUpdate: (evt) {
         var pt = globalToLocal(context, evt.focalPoint);
@@ -63,7 +65,6 @@ class GraphCanvas extends StatelessWidget {
           canvas.endUpdate(true);
         }
       },
-
       onScaleEnd: (evt) {
         editor.mouseHandler.onMouseUpCanvas(null);
         editor.mouseHandler.onMouseOutCanvas();
@@ -73,6 +74,7 @@ class GraphCanvas extends StatelessWidget {
           painter: CanvasPainter(
             canvas,
             graph,
+            menu,
           ),
           child: Container(
             alignment: Alignment.topLeft,
