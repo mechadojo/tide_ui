@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter_web/material.dart';
-import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 import '../controller/radial_menu_controller.dart';
 import 'graph.dart';
@@ -70,35 +69,41 @@ class RadialMenuState extends UpdateNotifier {
   Offset pos = Offset.zero;
   bool visible = false;
 
+  MenuItemSet getMenuItems() {
+    var result = MenuItemSet()..copy(center);
+    result.items = sectors.map((item) => MenuItem()..copy(item));
+    return result;
+  }
+
+  void setMenuItems(MenuItemSet items) {
+    center = RadialMenuItem.center()..copy(items);
+    if (!center.hasIcon) {
+      center.icon = VectorIcons.getRandomName();
+    }
+
+    sectors.clear();
+
+    for (int i = 0; i < items.length; i++) {
+      var next = RadialMenuItem.sector(i, items.length)..copy(items.get(i));
+
+      if (!next.hasIcon) {
+        next.icon = VectorIcons.getRandomName();
+      }
+
+      sectors.add(next);
+    }
+  }
+
   factory RadialMenuState() {
     return RadialMenuState.sectors(
         [for (int i = 0; i < 4; i++) MenuItem(name: "Item $i")]);
   }
 
   RadialMenuState.sectors(List<MenuItem> sectors, [MenuItem center]) {
-    if (center == null) {
-      center = MenuItem(name: "menu-back");
-    }
-
-    this.center = RadialMenuItem.center()
-      ..copy(center)
-      ..icon = VectorIcons.nameOf(Random().nextInt(VectorIcons.names.length));
-
-    this.center.command = GraphEditorCommand.print("Click Center!");
-
-    double origin = 0;
-
-    for (int i = 0; i < sectors.length; i++) {
-      var next = RadialMenuItem.sector(i, sectors.length, origin)
-        ..copy(sectors[i])
-        ..icon = VectorIcons.nameOf(Random().nextInt(VectorIcons.names.length));
-      next.command =
-          GraphEditorCommand.print("Selected Menu Item: ${next.name}");
-      this.sectors.add(next);
-    }
+    setMenuItems(MenuItemSet([...sectors])..copy(center));
   }
 
-  void reset() {
+  void clearInteractive() {
     for (var sector in sectors) {
       sector.hovered = false;
     }

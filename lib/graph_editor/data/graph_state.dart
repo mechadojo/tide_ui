@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
+import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 import 'package:uuid/uuid.dart';
 
 import 'canvas_interactive.dart';
@@ -11,14 +12,16 @@ import 'graph_link.dart';
 import 'graph_node.dart';
 import 'node_port.dart';
 
-
 typedef GetNodeByName(String name);
 
 class GraphState extends UpdateNotifier {
   GraphController controller;
 
   String id = Uuid().v1().toString();
+  String name = GraphNode.randomName();
   String title = "";
+  String icon = VectorIcons.getRandomName();
+
   int version = 0;
 
   List<GraphNode> nodes = [];
@@ -156,6 +159,10 @@ class GraphState extends UpdateNotifier {
 
   bool equalTo(GraphState other) {
     if (id != other.id) return false;
+    if (name != other.name) return false;
+    if (title != other.title) return false;
+    if (icon != other.icon) return false;
+
     if (version != other.version) return false;
     if (nodes.length != other.nodes.length) return false;
     if (links.length != other.links.length) return false;
@@ -172,11 +179,15 @@ class GraphState extends UpdateNotifier {
   }
 
   bool copy(GraphState other) {
-    bool changed = !equalTo(other);
+    bool changed = true;
 
     beginUpdate();
 
     id = other.id;
+    title = other.title;
+    icon = other.icon;
+    name = other.name;
+
     version = other.version;
     nodes = [...other.nodes];
     links = [...other.links];

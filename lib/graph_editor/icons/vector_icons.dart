@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_web/material.dart';
 
 import 'vector_icon_definitions.dart';
@@ -54,6 +56,14 @@ class VectorIcons {
 
   static VectorIcon getIconByIndex(int index) {
     return getIcon(nameOf(index));
+  }
+
+  static String getRandomName() {
+    return nameOf(Random().nextInt(names.length));
+  }
+
+  static VectorIcon getRandom() {
+    return getIcon(getRandomName());
   }
 
   static VectorIcon getIcon(String name) {

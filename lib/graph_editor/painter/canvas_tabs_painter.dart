@@ -4,6 +4,7 @@ import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
 import 'package:tide_ui/graph_editor/icons/icon_painter.dart';
+import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 class CanvasTabsPainter extends CustomPainter {
   CanvasTabsState state;
@@ -56,6 +57,7 @@ class CanvasTabsPainter extends CustomPainter {
   final iconsTab = IconPainter(color: Colors.grey[600]);
   final iconsDisabled = IconPainter(color: Colors.grey[400]);
   final iconsAlerted = IconPainter(color: Colors.blueAccent[700]);
+  final iconsTabPaint = Paint()..color = Colors.grey[600];
 
   final font = SourceSansProFont;
 
@@ -118,8 +120,10 @@ class CanvasTabsPainter extends CustomPainter {
         path, selected ? selectedOutlineStroke : unselectOutlineStroke);
 
     if (tab.icon != null) {
-      iconsTab.paint(
-          canvas, tab.icon, Offset(cx - (width / 2) + 20, cy), tabIconSize);
+      var iconPos = Offset(cx - (width / 2) + 20, cy);
+
+      VectorIcons.paint(canvas, tab.icon, iconPos, tabIconSize,
+          fill: iconsTabPaint);
     }
 
     tab.closeBtn.pos = Offset(cx + (width / 2) - 20, cy);
@@ -182,7 +186,7 @@ class CanvasTabsPainter extends CustomPainter {
     // Recalculate tab starting position of each tab
     for (var tab in tls) {
       tab.pos = Offset(offset, 0);
-      tab.icon = tab.icon ?? IconPainter.random;
+      //tab.icon = tab.icon ?? IconPainter.random;
       offset += width;
     }
 

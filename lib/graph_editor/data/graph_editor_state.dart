@@ -46,6 +46,7 @@ class GraphEditorState extends UpdateNotifier {
 
       canvas.copy(next.canvas);
       graph.copy(next.graph);
+      controller.hideMenu();
       currentTab = next;
     } else {
       canvas.reset();

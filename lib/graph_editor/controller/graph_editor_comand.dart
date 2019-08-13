@@ -2,6 +2,7 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
+import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/node_port.dart';
 import 'graph_editor_controller.dart';
 
@@ -15,6 +16,28 @@ class GraphEditorCommand {
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
 
+  //
+  //  Radial Menu Commands
+  //
+
+  GraphEditorCommand.openMenu(MenuItemSet items, [Offset pt]) {
+    handler = (GraphEditorController editor) {
+      editor.openMenu(items, pt);
+    };
+  }
+
+  GraphEditorCommand.pushMenu(MenuItemSet items, [Offset pt]) {
+    handler = (GraphEditorController editor) {
+      editor.pushMenu(items, pt);
+    };
+  }
+
+  GraphEditorCommand.popMenu() {
+    handler = (GraphEditorController editor) {
+      editor.popMenu();
+    };
+  }
+
   GraphEditorCommand.hideMenu() {
     handler = (GraphEditorController editor) {
       editor.hideMenu();
@@ -25,11 +48,11 @@ class GraphEditorCommand {
       print(text);
     };
   }
-  GraphEditorCommand.showGraphMenu(GraphState graph, Offset pt) {
-    print("show graph menu: ${graph.id}");
 
+  GraphEditorCommand.showGraphMenu(GraphState graph, Offset pt) {
     handler = (GraphEditorController editor) {
-      editor.showMenu(pt);
+      var menu = editor.getGraphMenu(graph)..icon = graph.icon;
+      editor.openMenu(menu, pt);
     };
   }
 
@@ -48,9 +71,9 @@ class GraphEditorCommand {
   }
 
   GraphEditorCommand.showNodeMenu(GraphNode node, Offset pt) {
-    print("show node menu: $node");
     handler = (GraphEditorController editor) {
-      editor.showMenu(pt);
+      var menu = editor.getNodeMenu(node)..icon = node.icon;
+      editor.openMenu(menu, pt);
     };
   }
 

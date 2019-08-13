@@ -21,6 +21,7 @@ class CanvasState extends UpdateNotifier {
     bool changed = false;
 
     beginUpdate();
+
     if (this.scale != other.scale) {
       this.scale = other.scale;
       changed = true;

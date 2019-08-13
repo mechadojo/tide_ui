@@ -113,6 +113,7 @@ class Graph {
   static const double RadialMenuCenter = 40;
   static const double RadialMenuIconPos = 70;
   static const double RadialMenuIconSize = RadialMenuCenter * .75;
+  static const double RadialMenuMargin = 10;
 
   static Paint RadialMenuColor = Paint()
     ..color = Color(0xefefef).withAlpha(250);

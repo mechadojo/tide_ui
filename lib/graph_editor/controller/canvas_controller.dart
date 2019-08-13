@@ -20,6 +20,7 @@ class CanvasController with MouseController, KeyboardController {
   /// A region of the graph that pans while dragging
   Rect panRectGraph = Rect.zero;
   Rect panRectScreen = Rect.zero;
+  Rect menuLimits = Rect.zero;
 
   bool panning = false;
   bool zooming = false;
@@ -40,6 +41,8 @@ class CanvasController with MouseController, KeyboardController {
   }
 
   Rect setClip(Rect clip, Rect pan) {
+    menuLimits = clip.deflate(Graph.RadialMenuMargin);
+
     panRectScreen = pan;
     clipRect = Rect.fromPoints(
         toGraphCoord(clip.topLeft), toGraphCoord(clip.bottomRight));

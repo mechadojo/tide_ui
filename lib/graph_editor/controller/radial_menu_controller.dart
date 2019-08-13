@@ -6,6 +6,7 @@ import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
+import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 
 class RadialMenuController with MouseController, KeyboardController {
@@ -13,7 +14,31 @@ class RadialMenuController with MouseController, KeyboardController {
   RadialMenuState get menu => editor.menu;
 
   RadialMenuController(this.editor);
+
+  List<MenuItemSet> menuStack = [];
+
   bool allowClose = false;
+
+  void openMenu(MenuItemSet items) {
+    menu.beginUpdate();
+    menu.setMenuItems(items);
+    menu.endUpdate(true);
+  }
+
+  MenuItemSet pushMenu(MenuItemSet items) {
+    var last = menu.getMenuItems();
+    menuStack.add(last);
+    openMenu(items);
+    return last;
+  }
+
+  MenuItemSet popMenu() {
+    if (menuStack.isEmpty) return null;
+    var next = menuStack.removeLast();
+    var last = menu.getMenuItems();
+    openMenu(next);
+    return last;
+  }
 
   @override
   bool onMouseDown(MouseEvent evt, Offset pt) {
