@@ -12,13 +12,14 @@ typedef CommandCondition(GraphEditorController editor);
 class GraphEditorCommand {
   ExecuteCommand handler;
   CommandCondition condition;
-
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
 
+  // ************************************************************
   //
   //  Radial Menu Commands
   //
+  // ************************************************************
 
   GraphEditorCommand.openMenu(MenuItemSet items, [Offset pt]) {
     handler = (GraphEditorController editor) {
@@ -77,6 +78,12 @@ class GraphEditorCommand {
     };
   }
 
+  // ************************************************************
+  //
+  //  Pan and Zoom Commands
+  //
+  // ************************************************************
+
   GraphEditorCommand.autoPan() {
     handler = (GraphEditorController editor) {
       editor.panAtEdges();
@@ -88,6 +95,12 @@ class GraphEditorCommand {
       editor.zoomToFit();
     };
   }
+
+  // ************************************************************
+  //
+  //  Tab Commands
+  //
+  // ************************************************************
 
   GraphEditorCommand.newTab() {
     handler = (GraphEditorController editor) {

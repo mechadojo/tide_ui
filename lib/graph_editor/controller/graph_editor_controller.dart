@@ -9,7 +9,6 @@ import 'package:tide_ui/graph_editor/data/canvas_state.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
-import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
@@ -18,12 +17,13 @@ import 'package:tide_ui/main.dart' show AppVersion;
 import 'canvas_controller.dart';
 import 'graph_controller.dart';
 import 'graph_editor_comand.dart';
+import 'graph_editor_menus.dart';
 import 'keyboard_controller.dart';
 import 'keyboard_handler.dart';
 import 'mouse_controller.dart';
 import 'mouse_handler.dart';
 
-class GraphEditorController with MouseController, KeyboardController {
+class GraphEditorControllerBase {
   final GraphEditorState editor = GraphEditorState();
   final CanvasTabsState tabs = CanvasTabsState(menu: [
     MenuItem(name: "app-menu", icon: "ellipsisV"),
@@ -45,7 +45,6 @@ class GraphEditorController with MouseController, KeyboardController {
   ]);
 
   final RadialMenuState menu = RadialMenuState();
-
   final GraphState graph = GraphState();
   final CanvasState canvas = CanvasState();
   KeyboardHandler get keyboardHandler => editor.keyboardHandler;
@@ -64,7 +63,10 @@ class GraphEditorController with MouseController, KeyboardController {
 
   bool isAutoPanning = false;
   Offset cursor = Offset.zero; // last position of cursor in screen coord
+}
 
+class GraphEditorController extends GraphEditorControllerBase
+    with MouseController, KeyboardController, GraphEditorMenus {
   GraphEditorController() {
     editor.controller = this;
     tabs.controller = CanvasTabsController(this);
@@ -228,122 +230,5 @@ class GraphEditorController with MouseController, KeyboardController {
     editor.beginUpdate();
     editor.dragMode = mode;
     editor.endUpdate(true);
-  }
-
-  void showMenu([Offset pt]) {
-    graph.controller.moveMode = MouseMoveMode.none;
-    graph.controller.clearSelection();
-
-    menu.beginUpdate();
-    menu.clearInteractive(); // clears ui interactive states
-
-    moveMenu(pt);
-
-    menu.controller.allowClose = false;
-    menu.visible = true;
-    menu.endUpdate(true);
-  }
-
-  void moveMenu(Offset pt) {
-    tabs.beginUpdate();
-
-    if (pt != null) {
-      var sz = Graph.RadialMenuSize * 2;
-
-      var rect = Rect.fromCenter(center: pt, width: sz, height: sz);
-      var limits = canvas.controller.menuLimits;
-
-      var dx = rect.left < limits.left ? limits.left - rect.left : 0;
-      var dy = rect.top < limits.top ? limits.top - rect.top : 0;
-      dx = rect.right > limits.right ? limits.right - rect.right : dx;
-      dy = rect.bottom > limits.bottom ? limits.bottom - rect.bottom : dy;
-
-      menu.moveTo(pt.translate(dx, dy));
-    }
-
-    tabs.endUpdate(true);
-  }
-
-  void hideMenu({bool resetMoveMode = true, bool resetPanning = true}) {
-    if (resetMoveMode) {
-      graph.controller.moveMode = MouseMoveMode.none;
-    }
-
-    menu.beginUpdate();
-    menu.visible = false;
-    menu.endUpdate(true);
-
-    if (resetPanning) {
-      canvas.controller.stopPanning();
-    }
-  }
-
-  void openMenu(MenuItemSet items, [Offset pt, bool resetStack = true]) {
-    menu.beginUpdate();
-    if (resetStack) {
-      menu.controller.menuStack.clear();
-    }
-
-    menu.controller.openMenu(items);
-    if (!menu.visible) {
-      showMenu(pt);
-    } else if (pt != null) {
-      moveMenu(pt);
-    }
-
-    menu.endUpdate(true);
-  }
-
-  void pushMenu(MenuItemSet items, [Offset pt]) {
-    menu.beginUpdate();
-    menu.controller.pushMenu(items);
-    if (!menu.visible) {
-      showMenu(pt);
-    } else if (pt != null) {
-      moveMenu(pt);
-    }
-    menu.endUpdate(true);
-  }
-
-  void popMenu([bool autoClose = false]) {
-    menu.beginUpdate();
-    var last = menu.controller.popMenu();
-    if (last == null) {
-      if (autoClose) {
-        hideMenu();
-      }
-    } else {
-      if (!menu.visible) {
-        showMenu();
-      }
-    }
-
-    menu.endUpdate(true);
-  }
-
-  MenuItemSet getNodeMenu(GraphNode node) {
-    switch (node.type) {
-      case GraphNodeType.action:
-        return MenuItemSet([
-          MenuItem(icon: "edit"),
-          MenuItem(icon: "chevron-circle-right"),
-          MenuItem(icon: "trash-alt"),
-          MenuItem(icon: "chevron-circle-left"),
-        ]);
-      default:
-        return MenuItemSet([
-          MenuItem(icon: "edit"),
-          MenuItem(icon: "trash-alt"),
-        ]);
-    }
-  }
-
-  MenuItemSet getGraphMenu(GraphState graph) {
-    return MenuItemSet([
-      MenuItem(icon: "edit"),
-      MenuItem(icon: "save"),
-      MenuItem(icon: "upload"),
-      MenuItem(icon: "mobile-alt"),
-    ]);
   }
 }
