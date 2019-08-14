@@ -52,15 +52,15 @@ class GraphEditorCommand {
 
   GraphEditorCommand.showGraphMenu(GraphState graph, Offset pt) {
     handler = (GraphEditorController editor) {
-      var menu = editor.getGraphMenu(graph)..icon = graph.icon;
+      var menu = editor.getGraphMenu(graph)..icon = "cogs";
       editor.openMenu(menu, pt);
     };
   }
 
   GraphEditorCommand.showLinkMenu(GraphLink link, Offset pt) {
-    print("show link menu: $link");
     handler = (GraphEditorController editor) {
-      editor.showMenu(pt);
+      var menu = editor.getLinkMenu(link)..icon = "share-alt";
+      editor.openMenu(menu, pt);
     };
   }
 

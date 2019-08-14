@@ -17,6 +17,10 @@ class VectorIcon {
     path = parseSvgPathData(svg);
   }
 
+  VectorIcon.named(this.name, this.width, this.height, this.svg) {
+    path = parseSvgPathData(svg);
+  }
+
   void paint(Canvas canvas, Offset pos, double size,
       {Paint fill, Paint stroke}) {
     canvas.save();

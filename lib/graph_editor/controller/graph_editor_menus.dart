@@ -1,5 +1,6 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
+import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
@@ -23,6 +24,13 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
           MenuItem(icon: "trash-alt"),
         ]);
     }
+  }
+
+  MenuItemSet getLinkMenu(GraphLink link) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(icon: "trash-alt"),
+    ]);
   }
 
   MenuItemSet getGraphMenu(GraphState graph) {
