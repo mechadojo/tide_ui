@@ -1,5 +1,5 @@
 import 'dart:html';
-import 'dart:js' as js;
+
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
@@ -7,6 +7,8 @@ import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
+
+import 'graph_editor_comand.dart';
 
 class CanvasController with MouseController, KeyboardController {
   GraphEditorController editor;
@@ -30,8 +32,6 @@ class CanvasController with MouseController, KeyboardController {
   Offset posStart = Offset.zero;
   Offset panStart = Offset.zero;
 
-  String cursor = "default";
-
   void setTouchMode(bool mode) {
     if (mode == editor.isTouchMode) return;
 
@@ -52,21 +52,13 @@ class CanvasController with MouseController, KeyboardController {
     return clipRect;
   }
 
-  void setCursor(String next) {
-    if (cursor != next) {
-      var result = js.context["window"];
-      cursor = next;
-      result.document.body.style.cursor = cursor;
-    }
-  }
-
   void startPanning(Offset pt, Offset center) {
     if (pt.dx > panRectScreen.right) {
-      setCursor("zoom-in");
+      editor.dispatch(GraphEditorCommand.setCursor("zoom-in"));
       zooming = true;
     } else {
       panning = true;
-      setCursor("grab");
+      editor.dispatch(GraphEditorCommand.setCursor("grab"));
     }
 
     scaleStart = canvas.scale;
@@ -77,7 +69,7 @@ class CanvasController with MouseController, KeyboardController {
   }
 
   void stopPanning() {
-    setCursor("default");
+    editor.dispatch(GraphEditorCommand.setCursor("default"));
     zooming = false;
     panning = false;
   }
@@ -92,13 +84,13 @@ class CanvasController with MouseController, KeyboardController {
         var ratio = 1 - (pt.dy - panStart.dy) / (rect.bottom - panStart.dy);
         var scale = scaleStart * ratio;
         if (scale < Graph.MinZoomScale) scale = Graph.MinZoomScale;
-        setCursor("zoom-out");
+        editor.dispatch(GraphEditorCommand.setCursor("zoom-out"));
         canvas.zoomAt(scale, centerStart);
       } else {
         var ratio = (pt.dy - panStart.dy) / (rect.top - panStart.dy);
         var scale = scaleStart + Graph.MaxZoomScale * ratio;
         if (scale > Graph.MaxZoomScale) scale = Graph.MaxZoomScale;
-        setCursor("zoom-in");
+        editor.dispatch(GraphEditorCommand.setCursor("zoom-in"));
         canvas.zoomAt(scale, centerStart);
       }
     }

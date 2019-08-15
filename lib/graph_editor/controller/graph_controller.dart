@@ -334,6 +334,13 @@ class GraphController with MouseController, KeyboardController {
         addLink(linkStart, port, group: nextGroup);
       }
     }
+
+    if (focus is GraphLink && linkStart != null) {
+      var link = focus as GraphLink;
+      var target = linkStart.isInport ? link.outPort : link.inPort;
+      addLink(linkStart, target, group: nextGroup);
+    }
+
     selectRect = Rect.zero;
 
     graph.beginUpdate();

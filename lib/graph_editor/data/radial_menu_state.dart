@@ -71,7 +71,9 @@ class RadialMenuState extends UpdateNotifier {
 
   MenuItemSet getMenuItems() {
     var result = MenuItemSet()..copy(center);
-    result.items = sectors.map((item) => MenuItem()..copy(item));
+    for (var sector in sectors) {
+      result.items.add(MenuItem()..copy(sector));
+    }
     return result;
   }
 

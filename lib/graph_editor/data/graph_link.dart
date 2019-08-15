@@ -111,7 +111,7 @@ class GraphLink extends GraphObject {
     if (!hitbox.contains(pt)) return false;
     if (hitPath.length < 2) return false;
 
-    double delta = Graph.LinkPathWidth;
+    double delta = Graph.LinkPathHitWidth;
     double hitSize = delta / 2;
 
     var last = hitPath[0];

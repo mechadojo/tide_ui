@@ -15,6 +15,64 @@ class GraphEditorCommand {
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
 
+  GraphEditorCommand.undoHistory() {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.undoHistory();
+    };
+  }
+
+  GraphEditorCommand.redoHistory() {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.redoHistory();
+    };
+  }
+
+  GraphEditorCommand.thenCloseMenu(GraphEditorCommand cmd) {
+    handler = (GraphEditorController editor) {
+      var result = cmd.handler(editor);
+
+      if (result == null) {
+        editor.dispatch(GraphEditorCommand.hideMenu());
+      }
+    };
+  }
+
+  GraphEditorCommand.refreshWindow() {
+    handler = (GraphEditorController editor) {
+      editor.refreshWindow();
+    };
+  }
+
+  GraphEditorCommand.setCursor(String cursor) {
+    handler = (GraphEditorController editor) {
+      editor.setCursor(cursor);
+    };
+  }
+
+  GraphEditorCommand.saveFile() {
+    handler = (GraphEditorController editor) {
+      print("Save File");
+    };
+  }
+
+  GraphEditorCommand.openFile() {
+    handler = (GraphEditorController editor) {
+      print("Open File");
+    };
+  }
+
+  // ************************************************************
+  //
+  //  Graph Commands
+  //
+  // ************************************************************
+
+  GraphEditorCommand.removeLink(GraphLink link) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.removeLink(link.outPort, link.inPort);
+    };
+  }
+
   // ************************************************************
   //
   //  Radial Menu Commands
@@ -28,14 +86,18 @@ class GraphEditorCommand {
   }
 
   GraphEditorCommand.pushMenu(MenuItemSet items, [Offset pt]) {
+    items.command = GraphEditorCommand.popMenu();
+
     handler = (GraphEditorController editor) {
       editor.pushMenu(items, pt);
+      return false;
     };
   }
 
   GraphEditorCommand.popMenu() {
     handler = (GraphEditorController editor) {
       editor.popMenu();
+      return false;
     };
   }
 
@@ -47,6 +109,13 @@ class GraphEditorCommand {
   GraphEditorCommand.print(String text) {
     handler = (GraphEditorController editor) {
       print(text);
+    };
+  }
+
+  GraphEditorCommand.showAppMenu() {
+    handler = (GraphEditorController editor) {
+      var menu = editor.getAppMenu();
+      editor.openMenu(menu, Offset(0, 0));
     };
   }
 

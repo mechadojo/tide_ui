@@ -1,5 +1,4 @@
 import 'dart:html';
-import 'dart:js' as js;
 
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
@@ -19,7 +18,6 @@ class CanvasTabsController with MouseController, KeyboardController {
 
   bool hoverCanceled = false;
   Offset cursorPos = Offset.zero;
-  String cursor = "default";
 
   Offset swipeStart = Offset.zero;
   Offset swipeLast = Offset.zero;
@@ -38,15 +36,6 @@ class CanvasTabsController with MouseController, KeyboardController {
       direction = swipeLast.dx - swipeStart.dx;
     }
     scroll(direction);
-  }
-
-  void setCursor(bool hovered) {
-    var next = hovered ? "pointer" : "default";
-    if (cursor != next) {
-      var result = js.context["window"];
-      cursor = next;
-      result.document.body.style.cursor = cursor;
-    }
   }
 
   void scroll(double velocity) {
@@ -82,11 +71,11 @@ class CanvasTabsController with MouseController, KeyboardController {
         notify = true;
       }
     }
-    if (notify) print("dehover tabs");
 
     tabs.endUpdate(notify);
 
-    setCursor(false);
+    editor.dispatch(GraphEditorCommand.setCursor("default"));
+
     hoverCanceled = true;
     return true;
   }
@@ -149,7 +138,9 @@ class CanvasTabsController with MouseController, KeyboardController {
 
     tabs.endUpdate(notify);
 
-    setCursor(hovered);
+    editor.dispatch(
+        GraphEditorCommand.setCursor(hovered ? "pointer" : "default"));
+
     return true;
   }
 

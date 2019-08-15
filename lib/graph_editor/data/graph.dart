@@ -18,6 +18,8 @@ class Graph {
   static const double DefaultGamepadWidth = 250;
   static const double DefaultGamepadHeight = 100;
 
+  static const double DefaultTabReloadMargin = 35; // clicking version #
+
   //
   // Canvas Styling
 
@@ -80,6 +82,7 @@ class Graph {
   // Link Styles
   //
   static const double LinkPathWidth = 4;
+  static double LinkPathHitWidth = 6;
   static Paint LinkHoverShadowColor = Paint()
     ..color = Colors.black.withAlpha(128)
     ..style = PaintingStyle.stroke

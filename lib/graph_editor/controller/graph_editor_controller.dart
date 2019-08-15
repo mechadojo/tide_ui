@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_web/material.dart';
 
 import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_browser.dart';
 import 'package:tide_ui/graph_editor/controller/radial_menu_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_state.dart';
 
@@ -26,7 +27,10 @@ import 'mouse_handler.dart';
 class GraphEditorControllerBase {
   final GraphEditorState editor = GraphEditorState();
   final CanvasTabsState tabs = CanvasTabsState(menu: [
-    MenuItem(name: "app-menu", icon: "ellipsisV"),
+    MenuItem(
+        name: "app-menu",
+        icon: "ellipsisV",
+        command: GraphEditorCommand.showAppMenu()),
     MenuItem(name: "save", icon: "solidSave", iconAlt: "save"),
     MenuItem(name: "open", icon: "solidFolderOpen", iconAlt: "folderOpen"),
     MenuItem(
@@ -66,7 +70,11 @@ class GraphEditorControllerBase {
 }
 
 class GraphEditorController extends GraphEditorControllerBase
-    with MouseController, KeyboardController, GraphEditorMenus {
+    with
+        MouseController,
+        KeyboardController,
+        GraphEditorMenus,
+        GraphEditorBrowser {
   GraphEditorController() {
     editor.controller = this;
     tabs.controller = CanvasTabsController(this);
@@ -132,7 +140,7 @@ class GraphEditorController extends GraphEditorControllerBase
   }
 
   Offset get edgePanOffset {
-    if (!graph.controller.dragging && !graph.controller.selecting) return null;
+    if (graph.controller.moveMode == MouseMoveMode.none) return null;
 
     var pt = cursor; // last know cursor position
     var pan = canvas.controller.panRectScreen; // last known visible region
@@ -171,8 +179,7 @@ class GraphEditorController extends GraphEditorControllerBase
   bool onMouseMove(MouseEvent evt, Offset pt) {
     cursor = pt;
 
-    if ((graph.controller.dragging || graph.controller.selecting) &&
-        !isAutoPanning) {
+    if ((graph.controller.moveMode != MouseMoveMode.none) && !isAutoPanning) {
       panAtEdges();
     }
     return false;

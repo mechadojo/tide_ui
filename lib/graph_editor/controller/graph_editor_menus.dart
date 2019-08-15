@@ -1,4 +1,5 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
@@ -9,6 +10,29 @@ import 'graph_controller.dart';
 import 'graph_editor_controller.dart';
 
 mixin GraphEditorMenus on GraphEditorControllerBase {
+  MenuItemSet getAppMenu() {
+    return MenuItemSet([
+      MenuItem(icon: "history"),
+      MenuItem(icon: "sync-alt", command: GraphEditorCommand.refreshWindow()),
+      MenuItem(icon: "code-branch"),
+      MenuItem(icon: "print"),
+      MenuItem(
+          icon: "upload",
+          command: GraphEditorCommand.pushMenu(getUploadMenu())),
+    ])
+      ..icon = "tools";
+  }
+
+  MenuItemSet getUploadMenu() {
+    return MenuItemSet([
+      MenuItem(icon: "mobile-alt"),
+      MenuItem(icon: "edit"),
+      MenuItem(icon: "link"),
+      MenuItem(icon: "trash-alt"),
+    ])
+      ..icon = "upload";
+  }
+
   MenuItemSet getNodeMenu(GraphNode node) {
     switch (node.type) {
       case GraphNodeType.action:
@@ -29,7 +53,8 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
   MenuItemSet getLinkMenu(GraphLink link) {
     return MenuItemSet([
       MenuItem(icon: "edit"),
-      MenuItem(icon: "trash-alt"),
+      MenuItem(icon: "link"),
+      MenuItem(icon: "trash-alt", command: GraphEditorCommand.removeLink(link)),
     ]);
   }
 
@@ -37,8 +62,14 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
     return MenuItemSet([
       MenuItem(icon: "edit"),
       MenuItem(icon: "save"),
-      MenuItem(icon: "upload"),
-      MenuItem(icon: "mobile-alt"),
+      MenuItem(
+          icon: "redo",
+          command:
+              graph.history.canRedo ? GraphEditorCommand.redoHistory() : null),
+      MenuItem(
+          icon: "undo",
+          command:
+              graph.history.canUndo ? GraphEditorCommand.undoHistory() : null),
     ]);
   }
 
@@ -113,6 +144,8 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
   }
 
   void pushMenu(MenuItemSet items, [Offset pt]) {
+    pt = pt ?? menu.pos;
+
     menu.beginUpdate();
     menu.controller.pushMenu(items);
     if (!menu.visible) {
@@ -132,7 +165,9 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       }
     } else {
       if (!menu.visible) {
-        showMenu();
+        showMenu(menu.pos);
+      } else {
+        moveMenu(menu.pos);
       }
     }
 

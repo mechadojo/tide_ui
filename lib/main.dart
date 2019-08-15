@@ -22,7 +22,6 @@ class _TheAppState extends State<TheApp> {
   void initState() {
     _editorPage = GraphEditorPage();
     _aboutPage = AboutPage();
-    print("Creating New App Pages");
     super.initState();
   }
 

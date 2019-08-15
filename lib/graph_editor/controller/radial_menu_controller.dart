@@ -29,6 +29,7 @@ class RadialMenuController with MouseController, KeyboardController {
     var last = menu.getMenuItems();
     menuStack.add(last);
     openMenu(items);
+    editor.setCursor("default");
     return last;
   }
 
@@ -37,6 +38,7 @@ class RadialMenuController with MouseController, KeyboardController {
     var next = menuStack.removeLast();
     var last = menu.getMenuItems();
     openMenu(next);
+    editor.setCursor("default");
     return last;
   }
 
@@ -50,14 +52,19 @@ class RadialMenuController with MouseController, KeyboardController {
   bool onMouseMove(MouseEvent evt, Offset pt) {
     menu.beginUpdate();
     bool changed = false;
+    bool pointer = false;
 
     changed != menu.center.checkHovered(pt);
+    pointer |= (menu.center.hovered && menu.center.command != null);
+
     for (var sector in menu.sectors) {
-      if (sector.disabled) {
-        sector.hovered = false;
-        continue;
-      }
       changed |= sector.checkHovered(pt);
+      pointer |= (sector.hovered && sector.command != null);
+    }
+
+    if (changed) {
+      editor.dispatch(
+          GraphEditorCommand.setCursor(pointer ? "pointer" : "default"));
     }
     menu.endUpdate(changed);
     return true;
@@ -76,9 +83,12 @@ class RadialMenuController with MouseController, KeyboardController {
             menu.sectors.firstWhere((x) => x.hovered, orElse: () => null);
       }
 
-      editor.dispatch(GraphEditorCommand.hideMenu());
+      if (selected == null) {
+        editor.dispatch(GraphEditorCommand.hideMenu());
+      }
       if (selected != null && selected.command != null) {
-        editor.dispatch(selected.command, afterTicks: 5);
+        editor.dispatch(GraphEditorCommand.thenCloseMenu(selected.command),
+            afterTicks: 5);
       }
     }
     return true;
