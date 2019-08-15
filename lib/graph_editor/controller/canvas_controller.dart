@@ -1,5 +1,3 @@
-import 'dart:html';
-
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
@@ -9,6 +7,7 @@ import 'package:tide_ui/graph_editor/data/canvas_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 
 import 'graph_editor_comand.dart';
+import 'graph_event.dart';
 
 class CanvasController with MouseController, KeyboardController {
   GraphEditorController editor;
@@ -75,7 +74,25 @@ class CanvasController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseMove(MouseEvent evt, Offset pt) {
+  bool onMouseUp(GraphEvent evt) {
+    stopPanning();
+    return true;
+  }
+
+  @override
+  bool onMouseDown(GraphEvent evt) {
+    var center = editor.graph.controller.selection.isEmpty
+        ? panRectGraph.center
+        : editor.graph.selectionExtents.center;
+
+    startPanning(evt.pos, center);
+    return true;
+  }
+
+  @override
+  bool onMouseMove(GraphEvent evt) {
+    var pt = getPos(evt.pos);
+
     if (zooming) {
       var rect = panRectScreen;
       rect = rect.inflate(Graph.AutoPanMargin); // convert to full canvas
@@ -105,7 +122,7 @@ class CanvasController with MouseController, KeyboardController {
   }
 
   @override
-  bool onKeyDown(KeyboardEvent evt) {
+  bool onKeyDown(GraphEvent evt) {
     if (evt.key == "h") {
       canvas.reset();
       return true;
@@ -114,7 +131,9 @@ class CanvasController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseWheel(WheelEvent evt, Offset pt) {
+  bool onMouseWheel(GraphEvent evt) {
+    var pt = getPos(evt.pos);
+
     // Control Scroll = Zoom at Cursor
     if (evt.ctrlKey) {
       if (evt.deltaY > 0) {

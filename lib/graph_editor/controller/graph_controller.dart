@@ -1,5 +1,3 @@
-import 'dart:html';
-
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
@@ -12,6 +10,8 @@ import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/node_port.dart';
+
+import 'graph_event.dart';
 
 enum MouseMoveMode {
   none,
@@ -236,7 +236,15 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
-  bool onContextMenu(MouseEvent evt, Offset gpt) {
+  @override
+  Offset getPos(Offset pt) {
+    return editor.canvas.toGraphCoord(pt);
+  }
+
+  @override
+  bool onContextMenu(GraphEvent evt) {
+    var gpt = getPos(evt.pos);
+
     if (!editor.isTouchMode && moveMode != MouseMoveMode.none) return false;
     var pt = editor.canvas.toScreenCoord(gpt);
 
@@ -273,7 +281,9 @@ class GraphController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseDown(MouseEvent evt, Offset pt) {
+  bool onMouseDown(GraphEvent evt) {
+    var pt = getPos(evt.pos);
+
     moveStart = pt;
 
     if (focus == null) {
@@ -320,7 +330,7 @@ class GraphController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseUp(MouseEvent evt) {
+  bool onMouseUp(GraphEvent evt) {
     if (moveMode == MouseMoveMode.none) return true;
 
     if (focus == null && dragging && moveStart == moveEnd) {
@@ -361,7 +371,8 @@ class GraphController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseMove(MouseEvent evt, Offset pt) {
+  bool onMouseMove(GraphEvent evt) {
+    var pt = getPos(evt.pos);
     hoverCanceled = false;
     moveEnd = pt;
     graph.beginUpdate();
@@ -369,19 +380,19 @@ class GraphController with MouseController, KeyboardController {
     var changed = false;
     switch (moveMode) {
       case MouseMoveMode.none:
-        changed = onMouseHover(evt, pt);
+        changed = onMouseHover(evt);
         break;
       case MouseMoveMode.dragging:
-        changed = onMouseDrag(evt, pt);
-        changed |= onMouseHover(evt, pt);
+        changed = onMouseDrag(evt);
+        changed |= onMouseHover(evt);
         break;
       case MouseMoveMode.linking:
-        changed = onMouseLink(evt, pt);
-        changed |= onMouseHover(evt, pt);
+        changed = onMouseLink(evt);
+        changed |= onMouseHover(evt);
         break;
       case MouseMoveMode.selecting:
-        changed = onMouseSelect(evt, pt);
-        changed |= onMouseHover(evt, pt);
+        changed = onMouseSelect(evt);
+        changed |= onMouseHover(evt);
         break;
     }
 
@@ -397,7 +408,8 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
-  bool onMouseDrag(MouseEvent evt, Offset pt) {
+  bool onMouseDrag(GraphEvent evt) {
+    var pt = getPos(evt.pos);
     if (selection.isEmpty) return false;
 
     var dx = pt.dx;
@@ -411,16 +423,17 @@ class GraphController with MouseController, KeyboardController {
     return true;
   }
 
-  bool onMouseSelect(MouseEvent evt, Offset pt) {
+  bool onMouseSelect(GraphEvent evt) {
     lassoSelection(Rect.fromPoints(moveStart, moveEnd));
     return true;
   }
 
-  bool onMouseLink(MouseEvent evt, Offset pt) {
+  bool onMouseLink(GraphEvent evt) {
     return true;
   }
 
-  bool onMouseHover(MouseEvent evt, Offset pt) {
+  bool onMouseHover(GraphEvent evt) {
+    var pt = getPos(evt.pos);
     bool changed = false;
     bool isHovering = false;
 
@@ -480,7 +493,7 @@ class GraphController with MouseController, KeyboardController {
   }
 
   @override
-  bool onKeyDown(KeyboardEvent evt) {
+  bool onKeyDown(GraphEvent evt) {
     var key = evt.key.toLowerCase();
 
     if (key == "z" && evt.ctrlKey) {

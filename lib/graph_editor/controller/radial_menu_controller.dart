@@ -1,5 +1,3 @@
-import 'dart:html';
-import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
@@ -8,6 +6,8 @@ import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
+
+import 'graph_event.dart';
 
 class RadialMenuController with MouseController, KeyboardController {
   GraphEditorController editor;
@@ -43,13 +43,14 @@ class RadialMenuController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseDown(MouseEvent evt, Offset pt) {
+  bool onMouseDown(GraphEvent evt) {
     allowClose = true;
     return true;
   }
 
   @override
-  bool onMouseMove(MouseEvent evt, Offset pt) {
+  bool onMouseMove(GraphEvent evt) {
+    var pt = getPos(evt.pos);
     menu.beginUpdate();
     bool changed = false;
     bool pointer = false;
@@ -71,7 +72,7 @@ class RadialMenuController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseUp(MouseEvent evt) {
+  bool onMouseUp(GraphEvent evt) {
     if (allowClose) {
       RadialMenuItem selected;
 

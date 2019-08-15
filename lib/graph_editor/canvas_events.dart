@@ -14,6 +14,8 @@ import 'dart:html';
 import 'dart:js' as js;
 import 'package:uuid/uuid.dart';
 
+import 'controller/graph_event.dart';
+
 class CanvasEventContainer extends StatefulWidget {
   final Widget child;
 
@@ -93,45 +95,64 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
     window.onKeyDown.listen((evt) {
       if (IsCurrentHandler) {
-        keyboardHandler.onKeyDown(evt, context, _isPageActive);
-      }
-    });
-
-    window.onTouchStart.listen((evt) {
-      if (IsCurrentHandler && !editor.touchMode) {
-        print("Activating touch mode");
-        canvas.controller.setTouchMode(true);
-        editor.controller.setDragMode(GraphDragMode.panning);
+        keyboardHandler.onKeyDown(GraphEvent.key(evt), context, _isPageActive);
       }
     });
 
     window.onKeyPress.listen((evt) {
       if (IsCurrentHandler) {
-        keyboardHandler.onKeyPress(evt, context, _isPageActive);
+        keyboardHandler.onKeyPress(GraphEvent.key(evt), context, _isPageActive);
       }
     });
 
     window.onKeyUp.listen((evt) {
       if (IsCurrentHandler) {
-        keyboardHandler.onKeyUp(evt, context, _isPageActive);
+        keyboardHandler.onKeyUp(GraphEvent.key(evt), context, _isPageActive);
+      }
+    });
+
+    window.onTouchStart.listen((evt) {
+      if (IsCurrentHandler) {
+        editor.controller.setTouchMode(true);
+        mouseHandler.onTouchStart(
+            GraphEvent.touch(evt), context, _isPageActive);
+        evt.preventDefault();
+      }
+    });
+
+    window.onTouchMove.listen((evt) {
+      if (IsCurrentHandler) {
+        editor.controller.setTouchMode(true);
+        mouseHandler.onTouchMove(GraphEvent.touch(evt), context, _isPageActive);
+        evt.preventDefault();
+      }
+    });
+
+    window.onTouchEnd.listen((evt) {
+      if (IsCurrentHandler) {
+        canvas.controller.setTouchMode(true);
+        mouseHandler.onTouchEnd(GraphEvent.touch(evt), context, _isPageActive);
+        evt.preventDefault();
       }
     });
 
     window.onMouseWheel.listen((evt) {
       if (IsCurrentHandler) {
-        mouseHandler.onMouseWheel(evt, context, _isPageActive);
+        mouseHandler.onMouseWheel(
+            GraphEvent.wheel(evt), context, _isPageActive);
       }
     });
 
     window.onMouseOut.listen((evt) {
       if (IsCurrentHandler) {
-        mouseHandler.onMouseOut(evt, context, _isPageActive);
+        mouseHandler.onMouseOut(GraphEvent.mouse(evt), context, _isPageActive);
       }
     });
 
     window.onMouseMove.listen((evt) {
       if (IsCurrentHandler) {
-        mouseHandler.onMouseMove(evt, context, _isPageActive);
+        editor.controller.setTouchMode(false);
+        mouseHandler.onMouseMove(GraphEvent.mouse(evt), context, _isPageActive);
       }
     });
 
@@ -139,23 +160,23 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
     window.onContextMenu.listen((evt) {
       if (IsCurrentHandler) {
-        if (editor.touchMode) {
-          evt.preventDefault();
-        } else {
-          mouseHandler.onContextMenu(evt, context, _isPageActive);
-        }
+        editor.controller.setTouchMode(false);
+        mouseHandler.onContextMenu(
+            GraphEvent.mouse(evt), context, _isPageActive);
       }
     });
 
     window.onMouseDown.listen((evt) {
-      if (IsCurrentHandler && !editor.touchMode) {
-        mouseHandler.onMouseDown(evt, context, _isPageActive);
+      if (IsCurrentHandler) {
+        editor.controller.setTouchMode(false);
+        mouseHandler.onMouseDown(GraphEvent.mouse(evt), context, _isPageActive);
       }
     });
 
     window.onMouseUp.listen((evt) {
-      if (IsCurrentHandler && !editor.touchMode) {
-        mouseHandler.onMouseUp(evt, context, _isPageActive);
+      if (IsCurrentHandler) {
+        editor.controller.setTouchMode(false);
+        mouseHandler.onMouseUp(GraphEvent.mouse(evt), context, _isPageActive);
       }
     });
   }

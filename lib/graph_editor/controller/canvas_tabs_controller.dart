@@ -1,5 +1,3 @@
-import 'dart:html';
-
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 
@@ -8,6 +6,7 @@ import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 
 import 'graph_editor_controller.dart';
+import 'graph_event.dart';
 
 class CanvasTabsController with MouseController, KeyboardController {
   GraphEditorController editor;
@@ -81,7 +80,9 @@ class CanvasTabsController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseDown(MouseEvent evt, Offset pt) {
+  bool onMouseDown(GraphEvent evt) {
+    var pt = getPos(evt.pos);
+
     cursorPos = pt;
     tabs.beginUpdate();
 
@@ -114,16 +115,10 @@ class CanvasTabsController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseUp(MouseEvent evt) {
-    // This helps with tabs that get removed on mouse down
-    // Its not perfect but we cannot call state changes from inside the re-paint
-    return onMouseMove(evt, cursorPos);
-  }
-
-  @override
-  bool onMouseMove(MouseEvent evt, Offset pt) {
+  bool onMouseMove(GraphEvent evt) {
     if (tabs.requirePaint) return false;
 
+    var pt = getPos(evt.pos);
     cursorPos = pt;
 
     bool notify = false;
@@ -145,7 +140,7 @@ class CanvasTabsController with MouseController, KeyboardController {
   }
 
   @override
-  bool onKeyDown(KeyboardEvent evt) {
+  bool onKeyDown(GraphEvent evt) {
     var key = evt.key.toLowerCase();
 
     // Ctrl+n = Open new tab

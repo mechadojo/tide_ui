@@ -1,5 +1,3 @@
-import 'dart:html';
-
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
@@ -9,8 +7,10 @@ import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
 import 'package:tide_ui/graph_editor/controller/radial_menu_controller.dart';
 import 'package:tide_ui/graph_editor/graph_tabs.dart';
 
-typedef OnMouseEvent(MouseEvent evt, Offset pt);
-typedef OnWheelEvent(WheelEvent evt, Offset pt);
+import 'graph_event.dart';
+import 'mouse_controller.dart';
+
+typedef OnMouseEvent(GraphEvent evt);
 
 class MouseHandler {
   GraphEditorController editor;
@@ -22,10 +22,6 @@ class MouseHandler {
 
   MouseHandler(this.editor);
 
-  bool allowEvent(MouseEvent evt) {
-    if (evt == null && !editor.isTouchMode) return false;
-    return true;
-  }
   // ***************************************************************
   //
   //  Dispatch events to tabs or canvas based on screen location
@@ -41,11 +37,11 @@ class MouseHandler {
     }
   }
 
-  void dispatchEvent(MouseEvent evt, BuildContext context,
+  void dispatchEvent(GraphEvent evt, BuildContext context,
       {OnMouseEvent onTabs, OnMouseEvent onCanvas}) {
     RenderBox rb = context.findRenderObject();
 
-    var pt = globalToLocal(rb, Offset(evt.client.x, evt.client.y));
+    var pt = globalToLocal(rb, evt.pos);
     if (pt == null) return;
 
     if (pt.dx < 0 || pt.dy < 0) return;
@@ -53,35 +49,119 @@ class MouseHandler {
 
     if (pt.dy < GraphTabs.DefaultTabHeight) {
       if (onTabs != null) {
-        onTabs(evt, pt);
+        evt.pos = pt;
+        onTabs(evt);
       }
     } else {
       pt = pt.translate(0, -GraphTabs.DefaultTabHeight);
+      evt.pos = pt;
       if (onCanvas != null) {
-        onCanvas(evt, pt);
+        onCanvas(evt);
       }
     }
   }
 
-  void dispatchWheelEvent(WheelEvent evt, BuildContext context,
-      {OnWheelEvent onTabs, OnWheelEvent onCanvas}) {
-    RenderBox rb = context.findRenderObject();
-    var pt = globalToLocal(rb, Offset(evt.client.x, evt.client.y));
-    if (pt == null) return;
-
-    if (pt.dx < 0 || pt.dy < 0) return;
-    if (pt.dx > rb.size.width || pt.dy > rb.size.height) return;
-
-    if (pt.dy < GraphTabs.DefaultTabHeight) {
-      if (onTabs != null) {
-        onTabs(evt, pt);
+  Iterable<MouseController> getActiveControllers(GraphEvent evt,
+      [bool clicking = false]) sync* {
+    if (editor.isModalActive) {
+      if (editor.menu.visible) {
+        yield menu;
       }
     } else {
-      pt = pt.translate(0, -GraphTabs.DefaultTabHeight);
-      if (onCanvas != null) {
-        onCanvas(evt, pt);
+      var useCanvas =
+          clicking && shouldAutoPan(evt) || canvas.panning || canvas.zooming;
+
+      if (useCanvas) {
+        yield canvas;
+      } else {
+        yield editor;
+        yield graph;
       }
     }
+  }
+
+  // ***************************************************************
+  //
+  //  Touch Events
+  //
+  // ***************************************************************
+
+  void onTouchStartTabs(GraphEvent evt) {
+    onMouseMoveTabs(evt);
+    onMouseDownTabs(evt);
+  }
+
+  void onTouchStartCanvas(GraphEvent evt) {
+    onMouseMoveCanvas(evt);
+    onMouseDownCanvas(evt);
+  }
+
+  void onTouchMoveTabs(GraphEvent evt) {
+    onMouseMoveTabs(evt);
+  }
+
+  void onTouchMoveCanvas(GraphEvent evt) {
+    onMouseMoveCanvas(evt);
+  }
+
+  void onTouchEndTabs(GraphEvent evt) {
+    onMouseUpTabs(evt);
+    onMouseOutTabs();
+  }
+
+  void onTouchEndCanvas(GraphEvent evt) {
+    onMouseUpCanvas(evt);
+    onMouseOutCanvas();
+  }
+
+  void onTouchStart(GraphEvent evt, BuildContext context, bool isActive) {
+    if (!isActive) return;
+
+    var touch = evt.touches[0];
+    if (touch == null) return;
+    evt.pos = touch.pos;
+    GraphEvent.last.pos = evt.pos;
+    print("Touch: ${evt.pos}, Mouse: ${GraphEvent.last.pos}");
+
+    dispatchEvent(
+      evt,
+      context,
+      onTabs: onTouchStartTabs,
+      onCanvas: onTouchStartCanvas,
+    );
+  }
+
+  void onTouchMove(GraphEvent evt, BuildContext context, bool isActive) {
+    if (!isActive) return;
+
+    var touch = evt.touches[0];
+    if (touch == null) return;
+    evt.pos = touch.pos;
+    GraphEvent.last.pos = evt.pos;
+
+    dispatchEvent(
+      evt,
+      context,
+      onTabs: onTouchMoveTabs,
+      onCanvas: onTouchMoveCanvas,
+    );
+  }
+
+  void onTouchEnd(GraphEvent evt, BuildContext context, bool isActive) {
+    if (!isActive) return;
+
+    var touch = evt.touches[0];
+    if (touch != null) {
+      return;
+    }
+    evt.pos = GraphEvent.last.pos;
+
+    dispatchEvent(
+      evt,
+      context,
+      onTabs: onTouchEndTabs,
+      onCanvas: onTouchEndCanvas,
+    );
   }
 
   // ***************************************************************
@@ -90,38 +170,20 @@ class MouseHandler {
   //
   // ***************************************************************
 
-  void onMouseMoveTabs(MouseEvent evt, Offset pt) {
-    if (!allowEvent(evt)) return;
-    evt = evt ?? keyboard.mouse;
-
+  void onMouseMoveTabs(GraphEvent evt) {
     onMouseOutCanvas();
-    tabs.onMouseMove(evt, pt);
+    tabs.onMouseMove(evt);
   }
 
-  void onMouseMoveCanvas(MouseEvent evt, Offset pt) {
-    if (!allowEvent(evt)) return;
-    evt = evt ?? keyboard.mouse;
-
+  void onMouseMoveCanvas(GraphEvent evt) {
     onMouseOutTabs();
 
-    if (editor.isModalActive) {
-      if (editor.menu.visible) {
-        menu.onMouseMove(evt, pt);
-      }
-      return;
-    }
-
-    if (canvas.panning || canvas.zooming) {
-      canvas.onMouseMove(evt, pt);
-    } else {
-      editor.onMouseMove(evt, pt);
-
-      var gpt = canvas.toGraphCoord(pt);
-      graph.onMouseMove(evt, gpt);
+    for (var active in getActiveControllers(evt)) {
+      active.onMouseMove(evt);
     }
   }
 
-  void onMouseMove(MouseEvent evt, BuildContext context, bool isActive) {
+  void onMouseMove(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
 
     dispatchEvent(
@@ -138,13 +200,15 @@ class MouseHandler {
 
   void onMouseOutCanvas() {
     graph.onMouseOut();
+    canvas.onMouseOut();
+    menu.onMouseOut();
   }
 
-  void onMouseOut(MouseEvent evt, BuildContext context, bool isActive) {
+  void onMouseOut(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
 
-    tabs.onMouseOut();
-    graph.onMouseOut();
+    onMouseOutTabs();
+    onMouseOutCanvas();
   }
 
   // ***************************************************************
@@ -164,16 +228,12 @@ class MouseHandler {
     editor.hideMenu();
   }
 
-  void onMouseDownTabs(MouseEvent evt, Offset pt) {
-    if (!allowEvent(evt)) return;
-    evt = evt ?? keyboard.mouse;
-
+  void onMouseDownTabs(GraphEvent evt) {
     onMouseOutCanvas();
-    graph.onMouseOut();
-    tabs.onMouseDown(evt, pt);
+    tabs.onMouseDown(evt);
   }
 
-  bool shouldAutoPan(MouseEvent evt) {
+  bool shouldAutoPan(GraphEvent evt) {
     if (editor.isViewMode) return true;
 
     if (evt.ctrlKey) return false;
@@ -189,36 +249,16 @@ class MouseHandler {
     return editor.isPanMode;
   }
 
-  void onMouseDownCanvas(MouseEvent evt, Offset pt) {
-    if (!allowEvent(evt)) return;
-
-    evt = evt ?? keyboard.mouse;
-
+  void onMouseDownCanvas(GraphEvent evt) {
     onMouseOutTabs();
 
-    if (editor.isModalActive) {
-      if (editor.menu.visible) {
-        menu.onMouseDown(evt, pt);
-      }
-      return;
-    }
-
-    if (shouldAutoPan(evt)) {
-      var center = graph.selection.isEmpty
-          ? canvas.panRectGraph.center
-          : graph.graph.selectionExtents.center;
-
-      canvas.startPanning(pt, center);
-    } else {
-      var gpt = canvas.toGraphCoord(pt);
-
-      graph.onMouseDown(evt, gpt);
+    for (var active in getActiveControllers(evt, true)) {
+      active.onMouseDown(evt);
     }
   }
 
-  void onMouseDown(MouseEvent evt, BuildContext context, bool isActive) {
+  void onMouseDown(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
-
     if (evt.buttons == 2) return;
 
     dispatchEvent(
@@ -235,33 +275,21 @@ class MouseHandler {
   //
   // ***************************************************************
 
-  void onMouseUpTabs(MouseEvent evt, Offset pt) {
-    if (!allowEvent(evt)) return;
-    evt = evt ?? keyboard.mouse;
-
+  void onMouseUpTabs(GraphEvent evt) {
     onMouseOutCanvas();
     graph.onMouseOut();
     tabs.onMouseUp(evt);
   }
 
-  void onMouseUpCanvas(MouseEvent evt, [Offset pt = Offset.zero]) {
-    if (!allowEvent(evt)) return;
-    evt = evt ?? keyboard.mouse;
-
+  void onMouseUpCanvas(GraphEvent evt) {
     onMouseOutTabs();
 
-    if (editor.isModalActive) {
-      if (editor.menu.visible) {
-        menu.onMouseUp(evt);
-      }
-      return;
+    for (var active in getActiveControllers(evt)) {
+      active.onMouseUp(evt);
     }
-
-    canvas.stopPanning();
-    graph.onMouseUp(evt);
   }
 
-  void onMouseUp(MouseEvent evt, BuildContext context, bool isActive) {
+  void onMouseUp(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
     if (evt.buttons == 2) return;
 
@@ -279,10 +307,7 @@ class MouseHandler {
   //
   // ***************************************************************
 
-  void onContextMenuCanvas(MouseEvent evt, Offset pt) {
-    if (!allowEvent(evt)) return;
-    evt = evt ?? keyboard.mouse;
-
+  void onContextMenuCanvas(GraphEvent evt) {
     onMouseOutTabs();
     if (editor.isViewMode) return;
 
@@ -290,19 +315,14 @@ class MouseHandler {
       return;
     }
 
-    var gpt = canvas.toGraphCoord(pt);
-    graph.onContextMenu(evt, gpt);
+    graph.onContextMenu(evt);
   }
 
-  void onContextMenuTabs(MouseEvent evt, Offset pt) {
-    if (!allowEvent(evt)) return;
-    evt = evt ?? keyboard.mouse;
-
+  void onContextMenuTabs(GraphEvent evt) {
     onMouseOutCanvas();
-    print("Open Tabs Context Menu: $pt");
   }
 
-  void onContextMenu(MouseEvent evt, BuildContext context, bool isActive) {
+  void onContextMenu(GraphEvent evt, BuildContext context, bool isActive) {
     evt.preventDefault();
 
     if (!isActive) return;
@@ -315,31 +335,24 @@ class MouseHandler {
     );
   }
 
-  void onMouseWheelTabs(WheelEvent evt, Offset pt) {
-    if (!allowEvent(evt)) return;
-    evt = evt ?? keyboard.mouse;
-
+  void onMouseWheelTabs(GraphEvent evt) {
     onMouseOutCanvas();
   }
 
-  void onMouseWheelCanvas(WheelEvent evt, Offset pt) {
-    if (!allowEvent(evt)) return;
-    evt = evt ?? keyboard.mouse;
-
+  void onMouseWheelCanvas(GraphEvent evt) {
     onMouseOutTabs();
 
     if (editor.isModalActive) {
       return;
     }
 
-    var gpt = canvas.toGraphCoord(pt);
-    canvas.onMouseWheel(evt, gpt);
+    canvas.onMouseWheel(evt);
   }
 
-  void onMouseWheel(WheelEvent evt, BuildContext context, bool isActive) {
+  void onMouseWheel(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
 
-    dispatchWheelEvent(
+    dispatchEvent(
       evt,
       context,
       onTabs: onMouseWheelTabs,

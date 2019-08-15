@@ -1,4 +1,3 @@
-import 'dart:html';
 import 'package:provider/provider.dart';
 import 'package:flutter_web/material.dart';
 
@@ -19,6 +18,7 @@ import 'canvas_controller.dart';
 import 'graph_controller.dart';
 import 'graph_editor_comand.dart';
 import 'graph_editor_menus.dart';
+import 'graph_event.dart';
 import 'keyboard_controller.dart';
 import 'keyboard_handler.dart';
 import 'mouse_controller.dart';
@@ -176,7 +176,8 @@ class GraphEditorController extends GraphEditorControllerBase
     dispatch(GraphEditorCommand.autoPan(), delay: Duration(milliseconds: 20));
   }
 
-  bool onMouseMove(MouseEvent evt, Offset pt) {
+  bool onMouseMove(GraphEvent evt) {
+    var pt = getPos(evt.pos);
     cursor = pt;
 
     if ((graph.controller.moveMode != MouseMoveMode.none) && !isAutoPanning) {
@@ -186,7 +187,7 @@ class GraphEditorController extends GraphEditorControllerBase
   }
 
   @override
-  bool onKeyDown(KeyboardEvent evt) {
+  bool onKeyDown(GraphEvent evt) {
     var key = evt.key.toLowerCase();
 
     if (key == "h") {

@@ -1,16 +1,21 @@
-import 'dart:html';
 import 'package:flutter_web/material.dart';
 
+import 'graph_event.dart';
+
 mixin MouseController {
-  bool onMouseMove(MouseEvent evt, Offset pt) {
+  Offset getPos(Offset pt) {
+    return pt;
+  }
+
+  bool onMouseMove(GraphEvent evt) {
     return false;
   }
 
-  bool onMouseUp(MouseEvent evt) {
+  bool onMouseUp(GraphEvent evt) {
     return false;
   }
 
-  bool onMouseDown(MouseEvent evt, Offset pt) {
+  bool onMouseDown(GraphEvent evt) {
     return false;
   }
 
@@ -22,19 +27,19 @@ mixin MouseController {
     return false;
   }
 
-  bool onMouseWheel(WheelEvent evt, Offset pt) {
+  bool onMouseWheel(GraphEvent evt) {
     return false;
   }
 
-  bool onContextMenu(MouseEvent evt, Offset pt) {
+  bool onContextMenu(GraphEvent evt) {
     return false;
   }
 
-  bool onDoubleClick(Offset pt) {
+  bool onDoubleClick(GraphEvent evt) {
     return false;
   }
 
-  bool onLongPress(Offset pt) {
+  bool onLongPress(GraphEvent evt) {
     return false;
   }
 }
