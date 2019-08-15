@@ -19,6 +19,9 @@ class GraphEditorState extends UpdateNotifier {
 
   GraphDragMode dragMode = GraphDragMode.panning;
   bool touchMode = false;
+  bool multiMode = false;
+  
+  int moveCounter = 0; // number of mouse moves since last reset
 
   void dispatch(GraphEditorCommand cmd) {
     controller.dispatch(cmd);

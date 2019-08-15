@@ -22,6 +22,8 @@ class MouseHandler {
 
   MouseHandler(this.editor);
 
+  Duration lastTap = Duration.zero;
+
   // ***************************************************************
   //
   //  Dispatch events to tabs or canvas based on screen location
@@ -91,7 +93,37 @@ class MouseHandler {
     onMouseDownTabs(evt);
   }
 
+  void handleMultiTouch(GraphEvent evt) {
+    // prevent multitouch in menu mode and other complex scenarios
+    if (editor.isModalActive) return;
+
+    var mode = evt.touches.length > 1;
+    if (editor.setMultiMode(mode)) {
+      print("Changed Multi: $mode");
+      editor.cancelEditing();
+    }
+
+    // first touch is the control point ... if it is stable then we
+    // we use the second touch point and modify its ctrl/shift keys
+    var meta = evt.touches[1];
+
+    if (meta != null) {
+      evt.pos = meta.pos;
+      // need to save this value for the mouseup/touchup events
+
+      GraphEvent.last.pos = evt.pos;
+      if (editor.isPanMode) evt.ctrlKey = true;
+      if (editor.isSelectMode) evt.shiftKey = true;
+
+      // aside from modal mode the only options are pan/zoom or editing
+      if (canvas.panning || canvas.zooming) {
+        canvas.stopPanning();
+      }
+    }
+  }
+
   void onTouchStartCanvas(GraphEvent evt) {
+    handleMultiTouch(evt);
     onMouseMoveCanvas(evt);
     onMouseDownCanvas(evt);
   }
@@ -101,6 +133,7 @@ class MouseHandler {
   }
 
   void onTouchMoveCanvas(GraphEvent evt) {
+    handleMultiTouch(evt);
     onMouseMoveCanvas(evt);
   }
 
@@ -110,6 +143,7 @@ class MouseHandler {
   }
 
   void onTouchEndCanvas(GraphEvent evt) {
+    handleMultiTouch(evt);
     onMouseUpCanvas(evt);
     onMouseOutCanvas();
   }
@@ -226,6 +260,7 @@ class MouseHandler {
     graph.onMouseDoubleTap();
     canvas.stopPanning();
     editor.hideMenu();
+    editor.cancelEditing();
   }
 
   void onMouseDownTabs(GraphEvent evt) {
@@ -252,6 +287,14 @@ class MouseHandler {
   void onMouseDownCanvas(GraphEvent evt) {
     onMouseOutTabs();
 
+    var dt = editor.timer - lastTap;
+    if (dt < Duration(milliseconds: 500) &&
+        GraphEvent.last.touches.length <= 1) {
+      onMouseDoubleTap();
+      return;
+    }
+    lastTap = editor.timer;
+
     for (var active in getActiveControllers(evt, true)) {
       active.onMouseDown(evt);
     }
@@ -259,7 +302,15 @@ class MouseHandler {
 
   void onMouseDown(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
-    if (evt.buttons == 2) return;
+    if (evt.buttons == 2) {
+      dispatchEvent(
+        evt,
+        context,
+        onTabs: onContextMenuTabs,
+        onCanvas: onContextMenuCanvas,
+      );
+      return;
+    }
 
     dispatchEvent(
       evt,

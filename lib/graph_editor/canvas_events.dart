@@ -136,6 +136,13 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
       }
     });
 
+    window.onTouchCancel.listen((evt) {
+      if (IsCurrentHandler) {
+        print("Touch Cancel Event");
+        evt.preventDefault();
+      }
+    });
+
     window.onMouseWheel.listen((evt) {
       if (IsCurrentHandler) {
         mouseHandler.onMouseWheel(
@@ -151,8 +158,12 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
     window.onMouseMove.listen((evt) {
       if (IsCurrentHandler) {
-        editor.controller.setTouchMode(false);
-        mouseHandler.onMouseMove(GraphEvent.mouse(evt), context, _isPageActive);
+        if (editor.moveCounter > 2) {
+          editor.controller.setTouchMode(false);
+          mouseHandler.onMouseMove(
+              GraphEvent.mouse(evt), context, _isPageActive);
+        }
+        editor.moveCounter++;
       }
     });
 
@@ -160,14 +171,26 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
     window.onContextMenu.listen((evt) {
       if (IsCurrentHandler) {
+        evt.preventDefault();
+        return;
+      }
+      /*
+      print("context menu: ${editor.controller.isTouchMode} ${evt.buttons}");
+      if (IsCurrentHandler) {
+        if (editor.controller.isTouchMode) {
+          evt.preventDefault();
+          return;
+        }
+
         editor.controller.setTouchMode(false);
         mouseHandler.onContextMenu(
             GraphEvent.mouse(evt), context, _isPageActive);
-      }
+      }*/
     });
 
     window.onMouseDown.listen((evt) {
       if (IsCurrentHandler) {
+        print("Mouse Down");
         editor.controller.setTouchMode(false);
         mouseHandler.onMouseDown(GraphEvent.mouse(evt), context, _isPageActive);
       }
@@ -175,6 +198,7 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
     window.onMouseUp.listen((evt) {
       if (IsCurrentHandler) {
+        print("Mouse Up");
         editor.controller.setTouchMode(false);
         mouseHandler.onMouseUp(GraphEvent.mouse(evt), context, _isPageActive);
       }

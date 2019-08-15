@@ -58,11 +58,15 @@ class GraphEditorControllerBase {
   bool get isViewMode => editor.dragMode == GraphDragMode.viewing;
 
   bool get isTouchMode => editor.touchMode;
+  bool get isMultiMode => editor.multiMode;
+
   bool get isModalActive => menu.visible;
+  int get moveCounter => editor.moveCounter;
 
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
   Duration timer = Duration.zero;
+
   int ticks = 0;
 
   bool isAutoPanning = false;
@@ -225,18 +229,38 @@ class GraphEditorController extends GraphEditorControllerBase
     setDragMode(next);
   }
 
-  void setTouchMode(bool mode) {
-    if (editor.touchMode == mode) return;
+  bool setMultiMode(bool mode) {
+    if (editor.multiMode == mode) return false;
     editor.beginUpdate();
-    editor.touchMode = mode;
+    editor.multiMode = mode;
     editor.endUpdate(true);
+    return true;
   }
 
-  void setDragMode(GraphDragMode mode) {
-    if (editor.dragMode == mode) return;
+  bool setTouchMode(bool mode) {
+    if (editor.touchMode == mode) return false;
+    editor.beginUpdate();
+    editor.touchMode = mode;
+    editor.moveCounter = 0;
+    editor.endUpdate(true);
+    return true;
+  }
+
+  bool setDragMode(GraphDragMode mode) {
+    if (editor.dragMode == mode) return false;
 
     editor.beginUpdate();
     editor.dragMode = mode;
+    editor.endUpdate(true);
+    return true;
+  }
+
+  void cancelEditing() {
+    editor.beginUpdate();
+    graph.beginUpdate();
+    graph.controller.moveMode = MouseMoveMode.none;
+    graph.controller.selectRect = Rect.zero;
+    graph.endUpdate(true);
     editor.endUpdate(true);
   }
 }

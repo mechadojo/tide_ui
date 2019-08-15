@@ -68,7 +68,8 @@ class DragModeButton extends StatelessWidget {
       child: Consumer<GraphEditorState>(
         builder: (context, GraphEditorState editor, widget) {
           return FloatingActionButton(
-            backgroundColor: Graph.getGroupColor(editor.touchMode ? 4 : 10),
+            backgroundColor: Graph.getGroupColor(
+                editor.multiMode ? 1 : editor.touchMode ? 4 : 10),
             child: Icon(editor.dragMode == GraphDragMode.panning
                 ? FontAwesomeIcons.arrowsAlt
                 : editor.dragMode == GraphDragMode.viewing

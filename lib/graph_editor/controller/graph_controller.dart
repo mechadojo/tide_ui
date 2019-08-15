@@ -20,6 +20,8 @@ enum MouseMoveMode {
   linking,
 }
 
+enum MouseSelectMode { none, add, replace, toggle }
+
 class GraphController with MouseController, KeyboardController {
   GraphEditorController editor;
 
@@ -306,18 +308,18 @@ class GraphController with MouseController, KeyboardController {
     if (focus is GraphNode) {
       var node = focus as GraphNode;
 
-      if (evt.shiftKey || (editor.isTouchMode && !evt.ctrlKey)) {
-        addSelection(node);
-      } else if ((evt.ctrlKey && !evt.shiftKey)) {
-        toggleSelection(node);
-      } else {
-        if (selection.length == 1 || !selection.contains(node)) {
+      switch (getSelectMode(evt, node)) {
+        case MouseSelectMode.none:
+          break;
+        case MouseSelectMode.add:
+          addSelection(node);
+          break;
+        case MouseSelectMode.toggle:
+          toggleSelection(node);
+          break;
+        case MouseSelectMode.replace:
           setSelection(node);
-        } else {
-          if (!selection.contains(node)) {
-            addSelection(node);
-          }
-        }
+          break;
       }
 
       startDragging(pt);
@@ -327,6 +329,21 @@ class GraphController with MouseController, KeyboardController {
       nextGroup = GraphNode.nodeRandom.nextInt(Graph.MaxGroupNumber);
     }
     return true;
+  }
+
+  MouseSelectMode getSelectMode(GraphEvent evt, GraphNode node) {
+    if (editor.isTouchMode) {
+      return evt.ctrlKey ? MouseSelectMode.toggle : MouseSelectMode.add;
+    } else {
+      if (evt.shiftKey) return MouseSelectMode.add;
+      if (evt.ctrlKey) return MouseSelectMode.toggle;
+
+      if (selection.length == 1 || !selection.contains(node)) {
+        return MouseSelectMode.replace;
+      } else {
+        return MouseSelectMode.add;
+      }
+    }
   }
 
   @override
