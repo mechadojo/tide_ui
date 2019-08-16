@@ -177,6 +177,7 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
     window.onMouseDown.listen((evt) {
       if (IsCurrentHandler) {
         editor.controller.setTouchMode(false);
+
         mouseHandler.onMouseDown(GraphEvent.mouse(evt), context, _isPageActive);
       }
     });

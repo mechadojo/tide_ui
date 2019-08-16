@@ -330,6 +330,7 @@ class MouseHandler {
       );
       return;
     }
+
     dispatchEvent(
       evt,
       context,

@@ -52,7 +52,7 @@ class CanvasController with MouseController, KeyboardController {
   }
 
   void startPanning(Offset pt, Offset center) {
-    if (pt.dx > panRectScreen.right) {
+    if (pt.dy > panRectScreen.bottom) {
       editor.dispatch(GraphEditorCommand.setCursor("zoom-in"));
       zooming = true;
     } else {
@@ -97,19 +97,19 @@ class CanvasController with MouseController, KeyboardController {
       var rect = panRectScreen;
       rect = rect.inflate(Graph.AutoPanMargin); // convert to full canvas
 
-      if (pt.dy > panStart.dy) {
-        var ratio = 1 - (pt.dy - panStart.dy) / (rect.bottom - panStart.dy);
-        var scale = scaleStart * ratio;
-        if (scale < Graph.MinZoomScale) scale = Graph.MinZoomScale;
-        editor.dispatch(GraphEditorCommand.setCursor("zoom-out"));
-        canvas.zoomAt(scale, centerStart);
-      } else {
-        var ratio = (pt.dy - panStart.dy) / (rect.top - panStart.dy);
-        var scale = scaleStart + Graph.MaxZoomScale * ratio;
-        if (scale > Graph.MaxZoomScale) scale = Graph.MaxZoomScale;
-        editor.dispatch(GraphEditorCommand.setCursor("zoom-in"));
-        canvas.zoomAt(scale, centerStart);
-      }
+      var delta = Graph.MaxZoomScale - Graph.MinZoomScale;
+
+      var width =
+          rect.width - Graph.ZoomSliderLeftMargin - Graph.ZoomSliderRightMargin;
+      var cx = (evt.pos.dx - Graph.ZoomSliderLeftMargin) / width;
+      var scale = cx * delta + Graph.MinZoomScale;
+
+      if (scale < Graph.MinZoomScale) scale = Graph.MinZoomScale;
+      if (scale > Graph.MaxZoomScale) scale = Graph.MaxZoomScale;
+
+      editor.dispatch(GraphEditorCommand.setCursor(
+          scale < canvas.scale ? "zoom-out" : "zoom-in"));
+      canvas.zoomAt(scale, centerStart);
     }
 
     if (panning) {
@@ -132,7 +132,7 @@ class CanvasController with MouseController, KeyboardController {
 
   @override
   bool onMouseWheel(GraphEvent evt) {
-    var pt = getPos(evt.pos);
+    var pt = toGraphCoord(evt.pos);
 
     // Control Scroll = Zoom at Cursor
     if (evt.ctrlKey) {

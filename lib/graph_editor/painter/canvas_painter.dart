@@ -1,6 +1,7 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
+import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 import 'package:tide_ui/graph_editor/painter/graph_link_painter.dart';
 
 import '../data/canvas_state.dart';
@@ -76,11 +77,37 @@ class CanvasPainter extends CustomPainter {
       drawSelectBorder(canvas, Rect.fromPoints(p1, p2));
     }
 
+    drawZoomSlider(canvas, size);
+
     if (graph.controller.longPressRadius > 0) {
       canvas.drawCircle(graph.controller.longPressPos,
           graph.controller.longPressRadius, Graph.LongPressHighlight);
     }
+
     menuPainter.paint(canvas, menu);
+  }
+
+  void drawZoomSlider(Canvas canvas, Size size) {
+    var delta = Graph.MaxZoomScale - Graph.MinZoomScale;
+    var pos = (state.scale - Graph.MinZoomScale) / delta;
+
+    var cx =
+        size.width - Graph.ZoomSliderLeftMargin - Graph.ZoomSliderRightMargin;
+    cx *= pos;
+    cx += Graph.ZoomSliderLeftMargin;
+
+    var cy = size.height - Graph.ZoomSliderBottomMargin;
+    var p0 = Offset(cx, cy);
+    var p1 = Offset(Graph.ZoomSliderLeftMargin, cy);
+    var p2 = Offset(size.width - Graph.ZoomSliderRightMargin, cy);
+
+    canvas.drawLine(p1, p0, Graph.ZoomSliderLeftLine);
+    canvas.drawLine(p0, p2, Graph.ZoomSliderRightLine);
+    canvas.drawCircle(p0, Graph.ZoomSliderSize, Graph.ZoomSliderColor);
+    canvas.drawCircle(p0, Graph.ZoomSliderSize, Graph.ZoomSliderOutline);
+
+    VectorIcons.paint(canvas, "search", p0, Graph.ZoomSliderSize,
+        fill: Graph.ZoomSliderIconColor);
   }
 
   void drawSelectBorder(Canvas canvas, Rect rect) {

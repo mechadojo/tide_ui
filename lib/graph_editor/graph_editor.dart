@@ -48,8 +48,8 @@ class _GraphEditorPageState extends State<GraphEditorPage>
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              ZoomActionButton(),
                               DragModeButton(),
+                              ZoomActionButton(),
                             ])
                       ],
                     ),
@@ -70,7 +70,7 @@ class ZoomActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 10),
+      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Consumer<GraphEditorState>(
         builder: (context, GraphEditorState editor, widget) {
           return FloatingActionButton(
@@ -92,7 +92,7 @@ class DragModeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(10),
+      margin: EdgeInsets.symmetric(horizontal: 10),
       child: Consumer<GraphEditorState>(
         builder: (context, GraphEditorState editor, widget) {
           return FloatingActionButton(

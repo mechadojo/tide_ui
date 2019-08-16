@@ -311,7 +311,8 @@ class GraphController with MouseController, KeyboardController {
 
       switch (getSelectMode(evt, node)) {
         case MouseSelectMode.none:
-          break;
+          return true;
+
         case MouseSelectMode.add:
           addSelection(node);
           break;
@@ -333,17 +334,12 @@ class GraphController with MouseController, KeyboardController {
   }
 
   MouseSelectMode getSelectMode(GraphEvent evt, GraphNode node) {
-    if (editor.isTouchMode) {
-      return evt.ctrlKey ? MouseSelectMode.toggle : MouseSelectMode.add;
-    } else {
-      if (evt.shiftKey) return MouseSelectMode.add;
-      if (evt.ctrlKey) return MouseSelectMode.toggle;
+    if (evt.ctrlKey) return MouseSelectMode.toggle;
 
-      if (selection.length == 1 || !selection.contains(node)) {
-        return MouseSelectMode.replace;
-      } else {
-        return MouseSelectMode.add;
-      }
+    if (selection.length == 1 || !selection.contains(node)) {
+      return MouseSelectMode.replace;
+    } else {
+      return MouseSelectMode.add;
     }
   }
 
@@ -352,7 +348,10 @@ class GraphController with MouseController, KeyboardController {
     if (moveMode == MouseMoveMode.none) return true;
 
     if (focus == null && dragging && moveStart == moveEnd) {
+      print("Cancel Selection and Editing");
+
       clearSelection();
+      editor.cancelEditing();
       return true;
     }
 
@@ -435,7 +434,6 @@ class GraphController with MouseController, KeyboardController {
 
     for (var node in selection) {
       node.moveTo(node.dragOffset.dx + dx, node.dragOffset.dy + dy);
-      //node.moveTo(node.dragStart.dx + dx, node.dragStart.dy + dy);
     }
 
     return true;

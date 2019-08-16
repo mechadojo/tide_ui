@@ -22,8 +22,44 @@ class Graph {
 
   //
   // Canvas Styling
+  //
 
   static Paint CanvasColor = Paint()..color = Color(0xfffffff0);
+
+  //
+  // Zoom Slider Styling
+  //
+
+  static const double ZoomSliderLeftMargin = 100;
+  static const double ZoomSliderRightMargin = 35;
+  static const double ZoomSliderBottomMargin = 15;
+
+  static const double ZoomSliderSize = 10;
+  static Paint ZoomSliderLeftLine = Paint()
+    ..color = Color(0xff333300).withAlpha(100)
+    ..color = Color(0xff000000).withAlpha(100)
+    ..strokeCap = StrokeCap.round
+    ..strokeWidth = 4
+    ..style = PaintingStyle.stroke;
+
+  static Paint ZoomSliderIconColor = Paint()
+    ..color = Color(0xff333300).withAlpha(50);
+
+  static Paint ZoomSliderRightLine = Paint()
+    //..color = Color(0xffbaba6c).withAlpha(100)
+    ..color = Color(0xff333300).withAlpha(50)
+    ..strokeWidth = 4
+    ..strokeCap = StrokeCap.round
+    ..style = PaintingStyle.stroke;
+
+  static Paint ZoomSliderColor = Paint()..color = Color(0xfffffff0);
+  static Paint ZoomSliderShadow = Paint()
+    ..color = Color(0xff333333).withAlpha(25);
+
+  static Paint ZoomSliderOutline = Paint()
+    ..color = Color(0xff333300).withAlpha(100)
+    ..strokeWidth = .5
+    ..style = PaintingStyle.stroke;
 
   //
   //
