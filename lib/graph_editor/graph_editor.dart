@@ -1,6 +1,7 @@
 import 'package:flutter_web/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tide_ui/graph_editor/canvas_events.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
@@ -43,7 +44,13 @@ class _GraphEditorPageState extends State<GraphEditorPage>
                       delegate: OverlayFlowDelegate(),
                       children: [
                         GraphCanvas(),
-                        DragModeButton(),
+                        Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ZoomActionButton(),
+                              DragModeButton(),
+                            ])
                       ],
                     ),
                   )
@@ -57,13 +64,34 @@ class _GraphEditorPageState extends State<GraphEditorPage>
   }
 }
 
+class ZoomActionButton extends StatelessWidget {
+  const ZoomActionButton({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 10),
+      child: Consumer<GraphEditorState>(
+        builder: (context, GraphEditorState editor, widget) {
+          return FloatingActionButton(
+            backgroundColor: Graph.getGroupColor(1),
+            child: Icon(FontAwesomeIcons.search),
+            onPressed: () {
+              editor.dispatch(GraphEditorCommand.zoomToFit(true));
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
 class DragModeButton extends StatelessWidget {
   const DragModeButton({Key key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      alignment: Alignment.bottomLeft,
       margin: EdgeInsets.all(10),
       child: Consumer<GraphEditorState>(
         builder: (context, GraphEditorState editor, widget) {

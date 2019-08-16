@@ -4,6 +4,7 @@ import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 
 import 'graph_editor_controller.dart';
 import 'graph_event.dart';
@@ -38,7 +39,6 @@ class CanvasTabsController with MouseController, KeyboardController {
   }
 
   void scroll(double velocity) {
-    print(velocity);
     if (tabs.length < 1) return;
 
     var idx = tabs.selectedIndex;
@@ -80,10 +80,27 @@ class CanvasTabsController with MouseController, KeyboardController {
   }
 
   @override
+  bool onMouseUp(GraphEvent evt) {
+    var delta = evt.pos.dx - GraphEvent.start.pos.dx;
+    var dist = delta.abs();
+
+    if (dist > Graph.TabSwipeDelta) {
+      editor.dispatch(GraphEditorCommand.scrollTab(delta));
+    }
+    return true;
+  }
+
+  @override
   bool onMouseDown(GraphEvent evt) {
     var pt = getPos(evt.pos);
 
     cursorPos = pt;
+
+    if (pt.dx < Graph.DefaultTabReloadMargin) {
+      editor.dispatch(GraphEditorCommand.showAppMenu());
+      return true;
+    }
+
     tabs.beginUpdate();
 
     for (var item in tabs.menu) {

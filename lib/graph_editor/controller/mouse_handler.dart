@@ -5,6 +5,7 @@ import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
 import 'package:tide_ui/graph_editor/controller/radial_menu_controller.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/graph_tabs.dart';
 
 import 'graph_event.dart';
@@ -21,8 +22,6 @@ class MouseHandler {
   RadialMenuController get menu => editor.menu.controller;
 
   MouseHandler(this.editor);
-
-  Duration lastTap = Duration.zero;
 
   // ***************************************************************
   //
@@ -43,6 +42,8 @@ class MouseHandler {
       {OnMouseEvent onTabs, OnMouseEvent onCanvas}) {
     RenderBox rb = context.findRenderObject();
 
+    evt.timer = editor.timer;
+
     var pt = globalToLocal(rb, evt.pos);
     if (pt == null) return;
 
@@ -56,6 +57,9 @@ class MouseHandler {
       }
     } else {
       pt = pt.translate(0, -GraphTabs.DefaultTabHeight);
+      for (var touch in evt.touches.values) {
+        touch.pos = touch.pos.translate(0, -GraphTabs.DefaultTabHeight);
+      }
       evt.pos = pt;
       if (onCanvas != null) {
         onCanvas(evt);
@@ -99,7 +103,6 @@ class MouseHandler {
 
     var mode = evt.touches.length > 1;
     if (editor.setMultiMode(mode)) {
-      print("Changed Multi: $mode");
       editor.cancelEditing();
     }
 
@@ -148,6 +151,13 @@ class MouseHandler {
     onMouseOutCanvas();
   }
 
+  void onTouchCancel(GraphEvent evt, BuildContext context, bool isActive) {
+    if (!isActive) return;
+
+    onMouseOut(evt, context, isActive);
+    editor.cancelEditing();
+  }
+
   void onTouchStart(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
 
@@ -155,7 +165,6 @@ class MouseHandler {
     if (touch == null) return;
     evt.pos = touch.pos;
     GraphEvent.last.pos = evt.pos;
-    print("Touch: ${evt.pos}, Mouse: ${GraphEvent.last.pos}");
 
     dispatchEvent(
       evt,
@@ -212,6 +221,13 @@ class MouseHandler {
   void onMouseMoveCanvas(GraphEvent evt) {
     onMouseOutTabs();
 
+    if (editor.longPressTimeout != null) {
+      var dist = (evt.pos - editor.longPressStart.pos).distance;
+      if (dist > Graph.LongPressDistance) {
+        editor.cancelLongPress();
+      }
+    }
+
     for (var active in getActiveControllers(evt)) {
       active.onMouseMove(evt);
     }
@@ -233,6 +249,7 @@ class MouseHandler {
   }
 
   void onMouseOutCanvas() {
+    editor.cancelLongPress();
     graph.onMouseOut();
     canvas.onMouseOut();
     menu.onMouseOut();
@@ -264,6 +281,7 @@ class MouseHandler {
   }
 
   void onMouseDownTabs(GraphEvent evt) {
+    GraphEvent.start = evt;
     onMouseOutCanvas();
     tabs.onMouseDown(evt);
   }
@@ -287,13 +305,14 @@ class MouseHandler {
   void onMouseDownCanvas(GraphEvent evt) {
     onMouseOutTabs();
 
-    var dt = editor.timer - lastTap;
+    var dt = editor.timer - GraphEvent.start.timer;
     if (dt < Duration(milliseconds: 500) &&
         GraphEvent.last.touches.length <= 1) {
       onMouseDoubleTap();
       return;
     }
-    lastTap = editor.timer;
+    GraphEvent.start = evt;
+    editor.startLongPress(evt);
 
     for (var active in getActiveControllers(evt, true)) {
       active.onMouseDown(evt);
@@ -311,7 +330,6 @@ class MouseHandler {
       );
       return;
     }
-
     dispatchEvent(
       evt,
       context,
@@ -334,7 +352,7 @@ class MouseHandler {
 
   void onMouseUpCanvas(GraphEvent evt) {
     onMouseOutTabs();
-
+    editor.cancelLongPress();
     for (var active in getActiveControllers(evt)) {
       active.onMouseUp(evt);
     }

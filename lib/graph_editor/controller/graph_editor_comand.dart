@@ -159,9 +159,9 @@ class GraphEditorCommand {
     };
   }
 
-  GraphEditorCommand.zoomToFit() {
+  GraphEditorCommand.zoomToFit([bool selected = true]) {
     handler = (GraphEditorController editor) {
-      editor.zoomToFit();
+      editor.zoomToFit(selected);
     };
   }
 

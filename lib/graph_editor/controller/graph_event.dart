@@ -36,6 +36,7 @@ class GraphTouch {
 
 class GraphEvent {
   static GraphEvent last = GraphEvent();
+  static GraphEvent start = GraphEvent();
 
   PreventDefault preventDefault;
 
@@ -52,6 +53,7 @@ class GraphEvent {
 
   String key = "";
   int keyCode = 0;
+  Duration timer = Duration.zero;
 
   Map<int, GraphTouch> touches = {};
 

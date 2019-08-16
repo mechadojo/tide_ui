@@ -47,6 +47,9 @@ class GraphController with MouseController, KeyboardController {
   bool get dragging => moveMode == MouseMoveMode.dragging;
   bool get linking => moveMode == MouseMoveMode.linking;
 
+  double longPressRadius = 0;
+  Offset longPressPos = Offset.zero;
+
   bool hoverCanceled = false; // tracks if hovering needs to be canceled
   bool updating = false;
 
@@ -246,8 +249,6 @@ class GraphController with MouseController, KeyboardController {
   @override
   bool onContextMenu(GraphEvent evt) {
     var gpt = getPos(evt.pos);
-
-    if (!editor.isTouchMode && moveMode != MouseMoveMode.none) return false;
     var pt = editor.canvas.toScreenCoord(gpt);
 
     for (var node in graph.nodes.reversed) {

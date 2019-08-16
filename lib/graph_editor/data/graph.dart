@@ -161,6 +161,19 @@ class Graph {
   //
   // Utlitity methods and properties
   //
+  static double TabSwipeDelta = 25;
+
+  static Duration DoubleClickDuration = Duration(milliseconds: 500);
+  static Duration LongPressDuration = Duration(milliseconds: 500);
+  static Duration LongPressUpdatePeriod = Duration(milliseconds: 20);
+
+  static const double LongPressDistance = 10;
+  static const double LongPressRadius = 50;
+  static const double LongPressStartRadius = 15;
+
+  static Paint LongPressHighlight = Paint()
+    ..color = Colors.blue[200].withAlpha(100);
+
   static const double AutoPanMargin = 50;
   static const double MaxAutoPan = 15;
 

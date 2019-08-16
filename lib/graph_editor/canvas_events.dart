@@ -138,7 +138,10 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
     window.onTouchCancel.listen((evt) {
       if (IsCurrentHandler) {
-        print("Touch Cancel Event");
+        canvas.controller.setTouchMode(true);
+
+        mouseHandler.onTouchCancel(
+            GraphEvent.touch(evt), context, _isPageActive);
         evt.preventDefault();
       }
     });
@@ -158,12 +161,7 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
     window.onMouseMove.listen((evt) {
       if (IsCurrentHandler) {
-        if (editor.moveCounter > 2) {
-          editor.controller.setTouchMode(false);
-          mouseHandler.onMouseMove(
-              GraphEvent.mouse(evt), context, _isPageActive);
-        }
-        editor.moveCounter++;
+        mouseHandler.onMouseMove(GraphEvent.mouse(evt), context, _isPageActive);
       }
     });
 
@@ -174,23 +172,10 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
         evt.preventDefault();
         return;
       }
-      /*
-      print("context menu: ${editor.controller.isTouchMode} ${evt.buttons}");
-      if (IsCurrentHandler) {
-        if (editor.controller.isTouchMode) {
-          evt.preventDefault();
-          return;
-        }
-
-        editor.controller.setTouchMode(false);
-        mouseHandler.onContextMenu(
-            GraphEvent.mouse(evt), context, _isPageActive);
-      }*/
     });
 
     window.onMouseDown.listen((evt) {
       if (IsCurrentHandler) {
-        print("Mouse Down");
         editor.controller.setTouchMode(false);
         mouseHandler.onMouseDown(GraphEvent.mouse(evt), context, _isPageActive);
       }
@@ -198,8 +183,6 @@ class _CanvasEventContainerState extends State<CanvasEventContainer>
 
     window.onMouseUp.listen((evt) {
       if (IsCurrentHandler) {
-        print("Mouse Up");
-        editor.controller.setTouchMode(false);
         mouseHandler.onMouseUp(GraphEvent.mouse(evt), context, _isPageActive);
       }
     });

@@ -20,12 +20,15 @@ class RadialMenuController with MouseController, KeyboardController {
   bool allowClose = false;
 
   void openMenu(MenuItemSet items) {
+    allowClose = false;
     menu.beginUpdate();
     menu.setMenuItems(items);
     menu.endUpdate(true);
   }
 
   MenuItemSet pushMenu(MenuItemSet items) {
+    allowClose = false;
+
     var last = menu.getMenuItems();
     menuStack.add(last);
     openMenu(items);
@@ -34,6 +37,8 @@ class RadialMenuController with MouseController, KeyboardController {
   }
 
   MenuItemSet popMenu() {
+    allowClose = false;
+
     if (menuStack.isEmpty) return null;
     var next = menuStack.removeLast();
     var last = menu.getMenuItems();
@@ -56,6 +61,8 @@ class RadialMenuController with MouseController, KeyboardController {
     bool pointer = false;
 
     changed != menu.center.checkHovered(pt);
+    if (changed && menu.center.hovered) allowClose = true;
+
     pointer |= (menu.center.hovered && menu.center.command != null);
 
     for (var sector in menu.sectors) {
@@ -86,10 +93,13 @@ class RadialMenuController with MouseController, KeyboardController {
 
       if (selected == null) {
         editor.dispatch(GraphEditorCommand.hideMenu());
+        editor.cancelEditing();
       }
+
       if (selected != null && selected.command != null) {
         editor.dispatch(GraphEditorCommand.thenCloseMenu(selected.command),
             afterTicks: 5);
+        editor.cancelEditing();
       }
     }
     return true;

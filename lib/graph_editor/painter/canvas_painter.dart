@@ -76,6 +76,10 @@ class CanvasPainter extends CustomPainter {
       drawSelectBorder(canvas, Rect.fromPoints(p1, p2));
     }
 
+    if (graph.controller.longPressRadius > 0) {
+      canvas.drawCircle(graph.controller.longPressPos,
+          graph.controller.longPressRadius, Graph.LongPressHighlight);
+    }
     menuPainter.paint(canvas, menu);
   }
 

@@ -59,13 +59,16 @@ class GraphEditorControllerBase {
 
   bool get isTouchMode => editor.touchMode;
   bool get isMultiMode => editor.multiMode;
-
   bool get isModalActive => menu.visible;
-  int get moveCounter => editor.moveCounter;
 
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
   Duration timer = Duration.zero;
+
+  Duration longPressTimeout;
+  Duration longPressUpdate = Duration.zero;
+  Rect longPressRect = Rect.zero;
+  GraphEvent longPressStart = GraphEvent();
 
   int ticks = 0;
 
@@ -96,9 +99,44 @@ class GraphEditorController extends GraphEditorControllerBase
     dispatch(GraphEditorCommand.zoomToFit(), afterTicks: 10);
   }
 
+  void handleLongPress() {
+    var delta = longPressTimeout - timer;
+
+    if (delta < Duration.zero) {
+      graph.controller.onContextMenu(longPressStart);
+      cancelLongPress();
+      graph.beginUpdate();
+      longPressRect = Rect.zero;
+      graph.endUpdate(true);
+      return;
+    }
+
+    if (timer > longPressUpdate) {
+      var ratio = 1 -
+          delta.inMicroseconds /
+              Graph.LongPressDuration.inMicroseconds.toDouble();
+
+      graph.beginUpdate();
+
+      var radius = Graph.LongPressRadius * ratio;
+      if (radius > Graph.LongPressStartRadius) {
+        graph.controller.longPressRadius = radius;
+      }
+
+      graph.controller.longPressPos = longPressStart.pos;
+
+      graph.endUpdate(true);
+
+      longPressUpdate += Graph.LongPressUpdatePeriod;
+    }
+  }
+
   void onTick(Duration dt) {
     timer = dt;
 
+    if (longPressTimeout != null) {
+      handleLongPress();
+    }
     while (commands.isNotEmpty) {
       var cmd = commands.removeAt(0);
       if (cmd.waitUntil > timer) {
@@ -127,6 +165,22 @@ class GraphEditorController extends GraphEditorControllerBase
     if (afterTicks != 0) cmd.waitTicks = ticks + afterTicks;
 
     commands.add(cmd);
+  }
+
+  void startLongPress(GraphEvent evt) {
+    longPressStart = evt;
+    longPressTimeout = evt.timer + Graph.LongPressDuration;
+    longPressUpdate = evt.timer + Graph.LongPressUpdatePeriod;
+    longPressRect = Rect.zero;
+  }
+
+  void cancelLongPress() {
+    longPressTimeout = null;
+    if (graph.controller.longPressRadius > 0) {
+      graph.beginUpdate();
+      graph.controller.longPressRadius = 0;
+      graph.endUpdate(true);
+    }
   }
 
   void onChangeTabs() {
@@ -199,16 +253,17 @@ class GraphEditorController extends GraphEditorControllerBase
     }
 
     if (key == "f") {
-      zoomToFit();
+      zoomToFit(evt.ctrlKey);
       return true;
     }
 
     return false;
   }
 
-  void zoomToFit() {
+  void zoomToFit([bool selected = false]) {
     if (graph.nodes.isNotEmpty) {
-      var rect = graph.extents.inflate(50);
+      var rect = selected ? graph.selectionExtents : graph.extents;
+      rect = rect.inflate(50);
       canvas.zoomToFit(rect, canvas.size);
     } else {
       zoomHome();
@@ -256,6 +311,7 @@ class GraphEditorController extends GraphEditorControllerBase
   }
 
   void cancelEditing() {
+    cancelLongPress();
     editor.beginUpdate();
     graph.beginUpdate();
     graph.controller.moveMode = MouseMoveMode.none;
