@@ -1,6 +1,6 @@
 import 'package:flutter_web/material.dart';
 import 'package:provider/provider.dart';
-import 'package:tide_ui/graph_editor/canvas_events.dart';
+import 'package:tide_ui/graph_editor/graph_events.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
@@ -34,7 +34,7 @@ class _GraphEditorPageState extends State<GraphEditorPage>
         child: Row(
           children: <Widget>[
             Expanded(
-                child: CanvasEventContainer(
+                child: GraphEventContainer(
               child: Column(
                 children: <Widget>[
                   Container(

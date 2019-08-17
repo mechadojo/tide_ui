@@ -16,16 +16,16 @@ import 'package:uuid/uuid.dart';
 
 import 'controller/graph_event.dart';
 
-class CanvasEventContainer extends StatefulWidget {
+class GraphEventContainer extends StatefulWidget {
   final Widget child;
 
-  CanvasEventContainer({this.child});
+  GraphEventContainer({this.child});
 
   @override
-  _CanvasEventContainerState createState() => _CanvasEventContainerState();
+  _GraphEventContainerState createState() => _GraphEventContainerState();
 }
 
-class _CanvasEventContainerState extends State<CanvasEventContainer>
+class _GraphEventContainerState extends State<GraphEventContainer>
     with RouteAware {
   String _eventkey = Uuid().v1().toString();
 
