@@ -11,7 +11,6 @@ class GraphNodePainter {
   NodePortPainter portPainter = NodePortPainter();
 
   GraphNode node;
-  Offset pos;
   double scale;
 
   Paint get borderPaint => Graph.NodeBorder;
@@ -32,10 +31,8 @@ class GraphNodePainter {
   bool get zoomedOut => Graph.isZoomedOut(scale);
   VectorFont get font => Graph.font;
 
-  void paint(
-      Canvas canvas, Size size, Offset pos, double scale, GraphNode node) {
+  void paint(Canvas canvas, double scale, GraphNode node) {
     this.node = node;
-    this.pos = pos;
     this.scale = scale;
 
     var body = Rect.fromCenter(
@@ -56,11 +53,11 @@ class GraphNodePainter {
     drawMethodLabel(canvas);
 
     for (var port in node.inports) {
-      portPainter.paint(canvas, size, pos, scale, port);
+      portPainter.paint(canvas, scale, port);
     }
 
     for (var port in node.outports) {
-      portPainter.paint(canvas, size, pos, scale, port);
+      portPainter.paint(canvas, scale, port);
     }
   }
 

@@ -1,20 +1,23 @@
-import 'dart:html';
-import 'dart:js' as js;
-
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
+
+import 'graph_editor_controller.dart';
+import 'graph_event.dart';
 
 class CanvasTabsController with MouseController, KeyboardController {
-  CanvasTabsState tabs;
+  GraphEditorController editor;
 
-  CanvasTabsController(this.tabs);
+  CanvasTabsState get tabs => editor.tabs;
+
+  CanvasTabsController(this.editor);
 
   bool hoverCanceled = false;
   Offset cursorPos = Offset.zero;
-  String cursor = "default";
 
   Offset swipeStart = Offset.zero;
   Offset swipeLast = Offset.zero;
@@ -35,17 +38,7 @@ class CanvasTabsController with MouseController, KeyboardController {
     scroll(direction);
   }
 
-  void setCursor(bool hovered) {
-    var next = hovered ? "pointer" : "default";
-    if (cursor != next) {
-      var result = js.context["window"];
-      cursor = next;
-      result.document.body.style.cursor = cursor;
-    }
-  }
-
   void scroll(double velocity) {
-    print(velocity);
     if (tabs.length < 1) return;
 
     var idx = tabs.selectedIndex;
@@ -77,34 +70,43 @@ class CanvasTabsController with MouseController, KeyboardController {
         notify = true;
       }
     }
+
     tabs.endUpdate(notify);
 
-    setCursor(false);
+    editor.dispatch(GraphEditorCommand.setCursor("default"));
+
     hoverCanceled = true;
     return true;
   }
 
   @override
-  bool onMouseDown(MouseEvent evt, Offset pt) {
+  bool onMouseUp(GraphEvent evt) {
+    var delta = evt.pos.dx - GraphEvent.start.pos.dx;
+    var dist = delta.abs();
+
+    if (dist > Graph.TabSwipeDelta) {
+      editor.dispatch(GraphEditorCommand.scrollTab(delta));
+    }
+    return true;
+  }
+
+  @override
+  bool onMouseDown(GraphEvent evt) {
+    var pt = getPos(evt.pos);
+
     cursorPos = pt;
+
+    if (pt.dx < Graph.DefaultTabReloadMargin) {
+      editor.dispatch(GraphEditorCommand.showAppMenu());
+      return true;
+    }
+
     tabs.beginUpdate();
 
     for (var item in tabs.menu) {
       if (item.hitbox.contains(pt) && !item.disabled) {
-        switch (item.name) {
-          case "tab-new":
-            tabs.add(select: true);
-            break;
-          case "tab-next":
-            scroll(1);
-            break;
-          case "tab-prev":
-            scroll(-1);
-            break;
-          default:
-            print("Select menu: ${item.name} [${item.group}]");
-
-            break;
+        if (item.command != null) {
+          editor.dispatch(item.command);
         }
 
         tabs.endUpdate(true);
@@ -130,16 +132,10 @@ class CanvasTabsController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseUp(MouseEvent evt) {
-    // This helps with tabs that get removed on mouse down
-    // Its not perfect but we cannot call state changes from inside the re-paint
-    return onMouseMove(evt, cursorPos);
-  }
-
-  @override
-  bool onMouseMove(MouseEvent evt, Offset pt) {
+  bool onMouseMove(GraphEvent evt) {
     if (tabs.requirePaint) return false;
 
+    var pt = getPos(evt.pos);
     cursorPos = pt;
 
     bool notify = false;
@@ -154,27 +150,28 @@ class CanvasTabsController with MouseController, KeyboardController {
 
     tabs.endUpdate(notify);
 
-    setCursor(hovered);
+    editor.dispatch(
+        GraphEditorCommand.setCursor(hovered ? "pointer" : "default"));
+
     return true;
   }
 
   @override
-  bool onKeyDown(KeyboardEvent evt) {
+  bool onKeyDown(GraphEvent evt) {
     var key = evt.key.toLowerCase();
 
     // Ctrl+n = Open new tab
     if (key == "n" && evt.ctrlKey) {
-      print("Open new tab");
-      tabs.add(select: true);
+      editor.dispatch(GraphEditorCommand.newTab());
       return true;
     }
 
     // Ctrl+tab = Select next tab
     if (key == "tab" && evt.ctrlKey) {
       if (evt.shiftKey) {
-        tabs.selectPrev();
+        editor.dispatch(GraphEditorCommand.prevTab());
       } else {
-        tabs.selectNext();
+        editor.dispatch(GraphEditorCommand.nextTab());
       }
 
       return true;
@@ -184,15 +181,14 @@ class CanvasTabsController with MouseController, KeyboardController {
     if (key == "w" && evt.ctrlKey) {
       var tab = tabs.current;
       if (tab != null) {
-        print("Close tab ${tab.name}");
-        tabs.remove(tab.name);
+        editor.dispatch(GraphEditorCommand.closeTab(tab.name));
       }
       return true;
     }
 
     // Ctrl+Shift+t = Restore last closed tab
     if (key == "t" && evt.ctrlKey && evt.shiftKey) {
-      tabs.restore(true);
+      editor.dispatch(GraphEditorCommand.restoreTab());
       return true;
     }
 

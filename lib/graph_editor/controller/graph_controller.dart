@@ -1,13 +1,17 @@
-import 'dart:html';
-
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
+import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/node_port.dart';
+
+import 'graph_event.dart';
 
 enum MouseMoveMode {
   none,
@@ -16,22 +20,30 @@ enum MouseMoveMode {
   linking,
 }
 
+enum MouseSelectMode { none, add, replace, toggle }
+
 class GraphController with MouseController, KeyboardController {
-  GraphState graph;
+  GraphEditorController editor;
+
+  GraphState get graph => editor.graph;
   GraphObject focus;
 
   List<GraphNode> selection = [];
   List<GraphNode> savedSelection = [];
 
-  GraphController(this.graph);
+  GraphSelection dropping;
+
+  GraphController(this.editor);
 
   MouseMoveMode moveMode = MouseMoveMode.none;
+
   Offset moveStart = Offset.zero;
   Offset moveEnd = Offset.zero;
   Offset panOffset = Offset.zero;
   Rect selectRect = Rect.zero;
 
   NodePort linkStart;
+  int nextGroup = 0;
 
   bool get selecting => moveMode == MouseMoveMode.selecting;
   bool get dragging => moveMode == MouseMoveMode.dragging;
@@ -42,6 +54,7 @@ class GraphController with MouseController, KeyboardController {
 
   void applyCommand(GraphCommand cmd) {
     graph.beginUpdate();
+
     if (cmd is GraphCommandGroup) {
       for (var inner in cmd.cmds) {
         applyCommand(inner);
@@ -54,14 +67,67 @@ class GraphController with MouseController, KeyboardController {
     }
 
     if (cmd is GraphLinkCommand) {
-      var fromPort = graph.unpackPort(cmd.link.fromPort);
-      var toPort = graph.unpackPort(cmd.link.toPort);
+      var link = graph.unpackLink(cmd.link);
 
       if (cmd.type == "add") {
-        addLink(fromPort, toPort, save: false);
+        addLink(link.outPort, link.inPort, group: link.group, save: false);
       } else if (cmd.type == "remove") {
-        removeLink(fromPort, toPort, save: false);
+        removeLink(link.outPort, link.inPort, save: false);
       }
+    }
+
+    if (cmd is GraphNodeCommand) {
+      var node = graph.unpackNode(cmd.node);
+      if (cmd.type == "add") {
+        addNode(node, save: false);
+      } else if (cmd.type == "remove") {
+        removeNode(node, save: false);
+      }
+    }
+    graph.endUpdate(true);
+  }
+
+  void previewDrop(GraphSelection dropping) {
+    graph.beginUpdate();
+    this.dropping = dropping;
+    graph.endUpdate(true);
+  }
+
+  void cancelDrop() {
+    if (dropping == null) return;
+
+    graph.beginUpdate();
+    dropping = null;
+    graph.endUpdate(true);
+  }
+
+  void startDrop(GraphSelection dropping) {
+    // used by external drop/drop or clipboard
+    // need to set dropping mode
+
+    graph.beginUpdate();
+    dropping = dropping;
+    graph.endUpdate(true);
+  }
+
+  void endDrop(GraphSelection dropping) {
+    graph.beginUpdate();
+    this.dropping = null;
+    var dx = dropping.pos.dx;
+    var dy = dropping.pos.dy;
+
+    GraphCommandGroup cmd = GraphCommandGroup();
+
+    for (var node in dropping.nodes) {
+      var next = graph.copyNode(node);
+      next.moveBy(dx, dy);
+
+      cmd.add(GraphNodeCommand.add(next));
+    }
+
+    if (cmd.isNotEmpty) {
+      applyCommand(cmd);
+      graph.history.push(cmd);
     }
 
     graph.endUpdate(true);
@@ -82,8 +148,10 @@ class GraphController with MouseController, KeyboardController {
     if (!graph.history.canRedo) return;
     graph.beginUpdate();
     var cmd = graph.history.redo();
+    print("Redo: $cmd");
+
     applyCommand(cmd);
-    graph.history.push(cmd);
+    graph.history.push(cmd, false);
 
     clearSelection();
     graph.endUpdate(true);
@@ -127,18 +195,57 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
+  void removeNode(GraphNode node, {bool save = true, bool relink = false}) {
+    var idx = graph.findNode(node);
+    if (idx < 0) return;
+
+    graph.beginUpdate();
+    node = graph.nodes.removeAt(idx);
+
+    var links = graph.getNodeLinks(node).toList();
+    for (var link in links) {
+      removeLink(link.outPort, link.inPort, save: false);
+    }
+    graph.endUpdate(true);
+
+    if (save) {
+      GraphCommandGroup cmd = GraphCommandGroup()
+        ..add(GraphNodeCommand.remove(node))
+        ..addAll(links.map((x) => GraphLinkCommand.remove(x)));
+
+      graph.history.push(cmd);
+    }
+  }
+
+  void addNode(GraphNode node, {bool save = true, bool replace = false}) {
+    var idx = graph.findNode(node);
+    if (idx >= 0 || replace) return;
+
+    graph.beginUpdate();
+    if (idx >= 0) graph.nodes.removeAt(idx);
+    graph.nodes.add(node);
+
+    graph.endUpdate(true);
+
+    if (save) {
+      var cmd = GraphNodeCommand.add(node);
+      graph.history.push(cmd);
+    }
+  }
+
   void addLink(NodePort fromPort, NodePort toPort,
-      {bool replace = false, bool save = true}) {
+      {int group = -1, bool replace = false, bool save = true}) {
     var outport = fromPort.isOutport ? fromPort : toPort;
     var inport = fromPort.isInport ? fromPort : toPort;
 
     var idx = graph.findLink(outport, inport);
-    if (idx >= 0 && replace) return;
+    if (idx >= 0 || replace) return;
 
     graph.beginUpdate();
     if (idx >= 0) graph.links.removeAt(idx);
 
-    var link = graph.addLink(outport, inport);
+    var link = graph.addLink(outport, inport, group);
+
     graph.endUpdate(true);
 
     if (save) {
@@ -194,6 +301,21 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
   }
 
+  Iterable<GraphObject> walkSelection() sync* {
+    for (GraphNode node in selection) {
+      yield* node.inports;
+      yield* node.outports;
+      yield node;
+    }
+
+    for (GraphLink link in graph.links) {
+      if (selection.contains(link.outPort.node) &&
+          selection.contains(link.inPort.node)) {
+        yield link;
+      }
+    }
+  }
+
   Iterable<GraphObject> walkGraph() sync* {
     for (var node in graph.nodes.reversed) {
       if (node.selected) continue;
@@ -202,7 +324,7 @@ class GraphController with MouseController, KeyboardController {
       yield node;
     }
 
-    yield* graph.links;
+    yield* graph.links.reversed;
 
     for (var node in graph.nodes.reversed) {
       if (!node.selected) continue;
@@ -213,7 +335,51 @@ class GraphController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseDown(MouseEvent evt, Offset pt) {
+  Offset getPos(Offset pt) {
+    return editor.canvas.toGraphCoord(pt);
+  }
+
+  @override
+  bool onContextMenu(GraphEvent evt) {
+    var gpt = getPos(evt.pos);
+    var pt = editor.canvas.toScreenCoord(gpt);
+
+    for (var node in graph.nodes.reversed) {
+      for (var port in node.inports) {
+        if (port.isHovered(gpt)) {
+          editor.dispatch(GraphEditorCommand.showPortMenu(port, pt));
+          return true;
+        }
+      }
+
+      for (var port in node.outports) {
+        if (port.isHovered(gpt)) {
+          editor.dispatch(GraphEditorCommand.showPortMenu(port, pt));
+          return true;
+        }
+      }
+
+      if (node.isHovered(gpt)) {
+        editor.dispatch(GraphEditorCommand.showNodeMenu(node, pt));
+        return true;
+      }
+    }
+
+    for (var link in graph.links.reversed) {
+      if (link.isHovered(gpt)) {
+        editor.dispatch(GraphEditorCommand.showLinkMenu(link, pt));
+        return true;
+      }
+    }
+
+    editor.dispatch(GraphEditorCommand.showGraphMenu(graph, pt));
+    return true;
+  }
+
+  @override
+  bool onMouseDown(GraphEvent evt) {
+    var pt = getPos(evt.pos);
+
     moveStart = pt;
 
     if (focus == null) {
@@ -236,39 +402,65 @@ class GraphController with MouseController, KeyboardController {
     if (focus is GraphNode) {
       var node = focus as GraphNode;
 
-      if (evt.shiftKey && evt.ctrlKey) {
-        addSelection(node);
-      } else if (evt.ctrlKey) {
-        toggleSelection(node);
-      } else {
-        if (selection.length == 1 || !selection.contains(node)) {
+      switch (getSelectMode(evt, node)) {
+        case MouseSelectMode.none:
+          return true;
+
+        case MouseSelectMode.add:
+          addSelection(node);
+          break;
+        case MouseSelectMode.toggle:
+          toggleSelection(node);
+          break;
+        case MouseSelectMode.replace:
           setSelection(node);
-        }
+          break;
       }
 
       startDragging(pt);
     } else if (focus is NodePort) {
       linkStart = focus as NodePort;
       moveMode = MouseMoveMode.linking;
+      nextGroup = GraphNode.nodeRandom.nextInt(Graph.MaxGroupNumber);
     }
     return true;
   }
 
+  MouseSelectMode getSelectMode(GraphEvent evt, GraphNode node) {
+    if (evt.ctrlKey) return MouseSelectMode.toggle;
+
+    if (selection.length == 1 || !selection.contains(node)) {
+      return MouseSelectMode.replace;
+    } else {
+      return MouseSelectMode.add;
+    }
+  }
+
   @override
-  bool onMouseUp(MouseEvent evt) {
+  bool onMouseUp(GraphEvent evt) {
     if (moveMode == MouseMoveMode.none) return true;
 
     if (focus == null && dragging && moveStart == moveEnd) {
+      print("Cancel Selection and Editing");
+
       clearSelection();
+      editor.cancelEditing();
       return true;
     }
 
-    if (focus is NodePort) {
+    if (focus is NodePort && linkStart != null) {
       var port = focus as NodePort;
       if (linkStart.canLinkTo(port)) {
-        addLink(linkStart, port);
+        addLink(linkStart, port, group: nextGroup);
       }
     }
+
+    if (focus is GraphLink && linkStart != null) {
+      var link = focus as GraphLink;
+      var target = linkStart.isInport ? link.outPort : link.inPort;
+      addLink(linkStart, target, group: nextGroup);
+    }
+
     selectRect = Rect.zero;
 
     graph.beginUpdate();
@@ -279,12 +471,18 @@ class GraphController with MouseController, KeyboardController {
     }
 
     moveMode = MouseMoveMode.none;
+    if (editor.isTouchMode && focus != null) {
+      focus.hovered = false;
+      focus = null;
+    }
+
     graph.endUpdate(true);
     return true;
   }
 
   @override
-  bool onMouseMove(MouseEvent evt, Offset pt) {
+  bool onMouseMove(GraphEvent evt) {
+    var pt = getPos(evt.pos);
     hoverCanceled = false;
     moveEnd = pt;
     graph.beginUpdate();
@@ -292,19 +490,19 @@ class GraphController with MouseController, KeyboardController {
     var changed = false;
     switch (moveMode) {
       case MouseMoveMode.none:
-        changed = onMouseHover(evt, pt);
+        changed = onMouseHover(evt);
         break;
       case MouseMoveMode.dragging:
-        changed = onMouseDrag(evt, pt);
-        changed |= onMouseHover(evt, pt);
+        changed = onMouseDrag(evt);
+        changed |= onMouseHover(evt);
         break;
       case MouseMoveMode.linking:
-        changed = onMouseLink(evt, pt);
-        changed |= onMouseHover(evt, pt);
+        changed = onMouseLink(evt);
+        changed |= onMouseHover(evt);
         break;
       case MouseMoveMode.selecting:
-        changed = onMouseSelect(evt, pt);
-        changed |= onMouseHover(evt, pt);
+        changed = onMouseSelect(evt);
+        changed |= onMouseHover(evt);
         break;
     }
 
@@ -320,7 +518,8 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
-  bool onMouseDrag(MouseEvent evt, Offset pt) {
+  bool onMouseDrag(GraphEvent evt) {
+    var pt = getPos(evt.pos);
     if (selection.isEmpty) return false;
 
     var dx = pt.dx;
@@ -328,22 +527,22 @@ class GraphController with MouseController, KeyboardController {
 
     for (var node in selection) {
       node.moveTo(node.dragOffset.dx + dx, node.dragOffset.dy + dy);
-      //node.moveTo(node.dragStart.dx + dx, node.dragStart.dy + dy);
     }
 
     return true;
   }
 
-  bool onMouseSelect(MouseEvent evt, Offset pt) {
+  bool onMouseSelect(GraphEvent evt) {
     lassoSelection(Rect.fromPoints(moveStart, moveEnd));
     return true;
   }
 
-  bool onMouseLink(MouseEvent evt, Offset pt) {
+  bool onMouseLink(GraphEvent evt) {
     return true;
   }
 
-  bool onMouseHover(MouseEvent evt, Offset pt) {
+  bool onMouseHover(GraphEvent evt) {
+    var pt = getPos(evt.pos);
     bool changed = false;
     bool isHovering = false;
 
@@ -372,12 +571,15 @@ class GraphController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseDoubleTap() {
-    print("Double Tap");
+  bool onMouseDoubleTap(GraphEvent evt) {
     graph.beginUpdate();
     onMouseOut();
     clearSelection();
     moveMode = MouseMoveMode.none;
+    if (focus != null) {
+      focus.hovered = false;
+      focus = null;
+    }
     graph.endUpdate(true);
     return true;
   }
@@ -391,7 +593,6 @@ class GraphController with MouseController, KeyboardController {
     bool changed = false;
     if (focus != null) {
       changed = focus.hovered;
-
       focus.hovered = false;
     }
 
@@ -401,7 +602,7 @@ class GraphController with MouseController, KeyboardController {
   }
 
   @override
-  bool onKeyDown(KeyboardEvent evt) {
+  bool onKeyDown(GraphEvent evt) {
     var key = evt.key.toLowerCase();
 
     if (key == "z" && evt.ctrlKey) {

@@ -1,4 +1,7 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/data/graph_node.dart';
+import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
+import 'package:tide_ui/graph_editor/painter/graph_link_painter.dart';
 
 import '../data/canvas_state.dart';
 import '../data/graph_state.dart';
@@ -14,11 +17,22 @@ class CanvasPainter extends CustomPainter {
 
   final CanvasGridPainter gridPainter = CanvasGridPainter();
   final GraphNodePainter nodePainter = GraphNodePainter();
+  final GraphLinkPainter linkPainter = GraphLinkPainter();
 
   CanvasPainter(this.state, this.graph);
 
   @override
   void paint(Canvas canvas, Size size) {
+    var screen =
+        Rect.fromLTRB(0, 0, size.width - graph.paddingRight, size.height);
+    state.size = screen.size;
+    var pan = screen.inflate(-Graph.AutoPanMargin);
+
+    state.controller.setClip(
+      screen,
+      pan,
+    );
+
     gridPainter.paint(canvas, size, state.pos, state.scale);
 
     canvas.save();
@@ -26,21 +40,32 @@ class CanvasPainter extends CustomPainter {
     canvas.scale(state.scale, state.scale);
     canvas.translate(state.pos.dx, state.pos.dy);
 
-    for (var node in graph.nodes) {
-      if (node.selected) continue;
-      nodePainter.paint(canvas, size, state.pos, state.scale, node);
-    }
-
-    for (var node in graph.nodes) {
-      if (!node.selected) continue;
-      nodePainter.paint(canvas, size, state.pos, state.scale, node);
+    for (var link in graph.links) {
+      linkPainter.paint(canvas, size, state.pos, state.scale, link);
     }
 
     if (graph.controller.linking) {
       var p1 = graph.controller.linkStart.pos;
       var p2 = graph.controller.moveEnd;
+      if (graph.controller.linkStart.type == NodePortType.outport) {
+        linkPainter.paintPoints(canvas, size, state.pos, state.scale, p1, p2);
+      } else {
+        linkPainter.paintPoints(canvas, size, state.pos, state.scale, p2, p1);
+      }
+    }
 
-      canvas.drawLine(p1, p2, Graph.redPen);
+    for (var node in graph.nodes) {
+      if (node.selected) continue;
+      nodePainter.paint(canvas, state.scale, node);
+    }
+
+    for (var node in graph.nodes) {
+      if (!node.selected) continue;
+      nodePainter.paint(canvas, state.scale, node);
+    }
+
+    if (graph.controller.dropping != null) {
+      drawDropPreview(canvas, graph.controller.dropping);
     }
 
     canvas.restore();
@@ -53,6 +78,50 @@ class CanvasPainter extends CustomPainter {
 
       drawSelectBorder(canvas, Rect.fromPoints(p1, p2));
     }
+
+    drawZoomSlider(canvas, size);
+
+    if (Graph.ShowPanRect) {
+      canvas.drawRect(pan, Graph.redPen);
+    }
+  }
+
+  void drawDropPreview(Canvas canvas, GraphSelection dropping) {
+    canvas.save();
+    canvas.translate(dropping.pos.dx, dropping.pos.dy);
+
+    for (var node in dropping.nodes) {
+      nodePainter.paint(canvas, state.scale, node);
+    }
+
+    canvas.restore();
+  }
+
+  void drawZoomSlider(Canvas canvas, Size size) {
+    var delta = Graph.MaxZoomScale - Graph.MinZoomScale;
+    var pos = (state.scale - Graph.MinZoomScale) / delta;
+
+    var cx = size.width -
+        Graph.ZoomSliderLeftMargin -
+        Graph.ZoomSliderRightMargin -
+        graph.paddingRight;
+
+    cx *= pos;
+    cx += Graph.ZoomSliderLeftMargin;
+
+    var cy = size.height - Graph.ZoomSliderBottomMargin;
+    var p0 = Offset(cx, cy);
+    var p1 = Offset(Graph.ZoomSliderLeftMargin, cy);
+    var p2 = Offset(
+        size.width - Graph.ZoomSliderRightMargin - graph.paddingRight, cy);
+
+    canvas.drawLine(p1, p0, Graph.ZoomSliderLeftLine);
+    canvas.drawLine(p0, p2, Graph.ZoomSliderRightLine);
+    canvas.drawCircle(p0, Graph.ZoomSliderSize, Graph.ZoomSliderColor);
+    canvas.drawCircle(p0, Graph.ZoomSliderSize, Graph.ZoomSliderOutline);
+
+    VectorIcons.paint(canvas, "search", p0, Graph.ZoomSliderSize,
+        fill: Graph.ZoomSliderIconColor);
   }
 
   void drawSelectBorder(Canvas canvas, Rect rect) {

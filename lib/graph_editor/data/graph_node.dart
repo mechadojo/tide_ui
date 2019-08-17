@@ -69,6 +69,7 @@ class PackedGraphNode {
     logging = node.logging;
     debugging = node.debugging;
     version = node.version;
+    delay = node.delay;
 
     inports = [...node.inports.map((x) => x.pack())];
     outports = [...node.outports.map((x) => x.pack())];
@@ -85,6 +86,7 @@ class PackedGraphNode {
     node.comment = comment;
     node.logging = logging;
     node.debugging = debugging;
+    node.delay = delay;
 
     node.inports = [...inports.map((x) => x.unpack(lookup))];
     node.outports = [...outports.map((x) => x.unpack(lookup))];
@@ -162,6 +164,41 @@ class GraphNode extends GraphObject {
     return "$name";
   }
 
+  NodePort getInport(String name) {
+    return inports.firstWhere((x) => x.name == name, orElse: () => null);
+  }
+
+  NodePort getOutport(String name) {
+    return outports.firstWhere((x) => x.name == name, orElse: () => null);
+  }
+
+  NodePort getOrAddPort(String name, NodePortType type) {
+    bool added = false;
+    NodePort result;
+
+    switch (type) {
+      case NodePortType.inport:
+        result = getInport(name);
+        if (result == null) {
+          result = NodePort.input(this, inports.length + 1, name);
+          inports.add(result);
+          added = true;
+        }
+        break;
+      case NodePortType.outport:
+        result = getOutport(name);
+        if (result == null) {
+          result = NodePort.output(this, outports.length + 1, name);
+          outports.add(result);
+          added = true;
+        }
+        break;
+    }
+
+    if (added) resize();
+    return result;
+  }
+
   RefGraphNode ref() {
     return RefGraphNode.node(this);
   }
@@ -180,27 +217,6 @@ class GraphNode extends GraphObject {
 
   bool equalTo(GraphNode other) {
     if (name != other.name) return false;
-    if (version != other.version) return false;
-
-    // Lets try to just have version be the only check
-    //
-    // if (title != other.title) return false;
-    // if (icon != other.icon) return false;
-    // if (type != other.type) return false;
-    // if (pos != other.pos) return false;
-    // if (size != other.size) return false;
-
-    // if (inports.length != other.inports.length) return false;
-    // if (outports.length != other.outports.length) return false;
-
-    // for (int i = 0; i < inports.length; i++) {
-    //   if (!inports[i].equalTo(other.inports[i])) return false;
-    // }
-
-    // for (int i = 0; i < outports.length; i++) {
-    //   if (!outports[i].equalTo(other.outports[i])) return false;
-    // }
-
     return true;
   }
 

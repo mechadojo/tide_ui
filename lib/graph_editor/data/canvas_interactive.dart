@@ -9,6 +9,7 @@ mixin CanvasInteractive {
   bool dragging = false;
 
   Rect hitbox = Rect.zero;
+  Rect extents = Rect.zero;
   Offset pos = Offset.zero;
   Size size = Size.zero;
 

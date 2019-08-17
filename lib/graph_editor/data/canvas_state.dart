@@ -1,29 +1,27 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
 
-class CanvasState with ChangeNotifier {
+import 'package:tide_ui/graph_editor/data/graph.dart';
+
+import 'update_notifier.dart';
+
+class CanvasState extends UpdateNotifier {
   CanvasController controller;
 
-  final double minScale = 0.1316872427983539;
-  final double maxScale = 5.0625;
+  double get minScale => Graph.MinZoomScale;
+  double get maxScale => Graph.MaxZoomScale;
   double get stepSize => 100 / scale;
 
-  Offset pos = Offset.zero;
+  Size size = Size.zero;
+  Offset pos = Offset(-10000, 10000); // prevent flash loading zoom to fit
   Offset get screenPos => toScreenCoord(pos);
   double scale = 1.0;
-  bool debugMode = true;
-  bool touchMode = false;
-
-  void beginUpdate() {}
-
-  void endUpdate(bool changed) {
-    if (changed) notifyListeners();
-  }
 
   bool copy(CanvasState other) {
     bool changed = false;
 
     beginUpdate();
+
     if (this.scale != other.scale) {
       this.scale = other.scale;
       changed = true;
@@ -61,16 +59,29 @@ class CanvasState with ChangeNotifier {
     scrollTo(pos.translate(dx, dy));
   }
 
-  void log(Object object, [bool debug = true]) {
-    if (debugMode || !debug) {
-      print(object);
-    }
-  }
-
   void reset() {
     pos = Offset.zero;
     scale = 1.0;
-    log("Reset Canvas State");
+    print("Reset Canvas State");
+    notifyListeners();
+  }
+
+  void zoomToFit(Rect rect, Size size) {
+    var scaleX = size.width / rect.width;
+    var scaleY = size.height / rect.height;
+
+    if (scaleX < scaleY) {
+      scale = scaleX;
+    } else {
+      scale = scaleY;
+    }
+
+    var dx = ((size.width / scale) - rect.width) / 2;
+    var dy = ((size.height / scale) - rect.height) / 2;
+
+    pos = -rect.topLeft;
+    pos = pos.translate(dx, dy);
+
     notifyListeners();
   }
 

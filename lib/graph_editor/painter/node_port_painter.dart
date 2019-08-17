@@ -7,7 +7,7 @@ import '../fonts/vector_font.dart';
 
 class NodePortPainter {
   NodePort port;
-  Offset pos;
+
   double scale;
 
   Paint get borderPaint =>
@@ -16,10 +16,9 @@ class NodePortPainter {
   Paint get fillPaint => port.hovered ? Graph.PortHoverColor : Graph.PortColor;
   VectorFont get font => Graph.font;
 
-  void paint(
-      Canvas canvas, Size size, Offset pos, double scale, NodePort port) {
+  void paint(Canvas canvas, double scale, NodePort port) {
     this.port = port;
-    this.pos = pos;
+
     this.scale = scale;
 
     var sz = Graph.DefaultPortSize / 2;

@@ -1,11 +1,11 @@
-import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
 
+import 'update_notifier.dart';
 import 'canvas_tab.dart';
 import 'menu_item.dart';
 
-class CanvasTabsState with ChangeNotifier {
+class CanvasTabsState extends UpdateNotifier {
   CanvasTabsController controller;
 
   List<MenuItem> menu = [];
@@ -13,6 +13,7 @@ class CanvasTabsState with ChangeNotifier {
   List<CanvasTab> history = [];
 
   String selected;
+  String version;
   int nextTab = 1;
   int get length => tabs.length;
   bool requirePaint = false;
@@ -36,11 +37,6 @@ class CanvasTabsState with ChangeNotifier {
       yield tab.closeBtn;
       yield tab;
     }
-  }
-
-  void beginUpdate() {}
-  void endUpdate(bool changed) {
-    if (changed) notifyListeners();
   }
 
   int get selectedIndex => tabs.indexWhere((t) => t.name == selected);

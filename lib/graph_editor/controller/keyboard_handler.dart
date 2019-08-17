@@ -4,36 +4,33 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
+
+import 'graph_event.dart';
 
 class KeyboardHandler {
-  CanvasTabsController tabs;
-  CanvasController canvas;
-  GraphController graph;
+  GraphEditorController editor;
+  CanvasTabsController get tabs => editor.tabs.controller;
+  CanvasController get canvas => editor.canvas.controller;
+  GraphController get graph => editor.graph.controller;
 
   bool ctrlKey = false;
   bool shiftKey = false;
   bool altKey = false;
 
-  KeyboardHandler(this.canvas, this.tabs, this.graph);
+  KeyboardHandler(this.editor);
 
   final reFuncKey = RegExp(r"F\d\d?");
 
-  MouseEvent get mouse => MouseEvent(
-        "",
-        ctrlKey: ctrlKey,
-        altKey: altKey,
-        shiftKey: shiftKey,
-      );
+  void onKeyPress(GraphEvent evt, BuildContext context, bool isActive) {}
 
-  void onKeyPress(KeyboardEvent evt, BuildContext context, bool isActive) {}
-
-  void onKeyUp(KeyboardEvent evt, BuildContext context, bool isActive) {
+  void onKeyUp(GraphEvent evt, BuildContext context, bool isActive) {
     if (evt.key == "Control") ctrlKey = false;
     if (evt.key == "Alt") altKey = false;
     if (evt.key == "Shift") shiftKey = false;
   }
 
-  void onKeyDown(KeyboardEvent evt, BuildContext context, bool isActive) {
+  void onKeyDown(GraphEvent evt, BuildContext context, bool isActive) {
     if (evt.key == "Control") ctrlKey = true;
     if (evt.key == "Alt") altKey = true;
     if (evt.key == "Shift") shiftKey = true;
@@ -54,6 +51,7 @@ class KeyboardHandler {
       }
       return;
     }
+    if (editor.isModalActive) return;
 
     // Ctrl+? switches to the about / help page
     if (evt.key == "?" && evt.ctrlKey) {
@@ -61,6 +59,7 @@ class KeyboardHandler {
       return;
     }
 
+    if (editor.onKeyDown(evt)) return;
     if (canvas.onKeyDown(evt)) return;
     if (tabs.onKeyDown(evt)) return;
     if (graph.onKeyDown(evt)) return;

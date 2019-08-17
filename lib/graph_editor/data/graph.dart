@@ -1,8 +1,13 @@
 import 'package:flutter_web/material.dart';
+
 import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
 
 class Graph {
   static const bool ShowHitBox = false;
+  static const bool ShowPanRect = false;
+
+  static const double MaxZoomScale = 5.0625;
+  static const double MinZoomScale = 0.1316872427983539;
 
   static const double DefaultNodeSize = 80;
 
@@ -15,10 +20,109 @@ class Graph {
   static const double DefaultGamepadWidth = 250;
   static const double DefaultGamepadHeight = 100;
 
+  static const double DefaultTabReloadMargin = 35; // clicking version #
+
   //
   // Canvas Styling
+  //
 
   static Paint CanvasColor = Paint()..color = Color(0xfffffff0);
+
+  //
+  // Library Styling
+  //
+
+  static const double LibraryCollapsedWidth = 75;
+  static const double LibraryExpandedWidth = 200;
+  static const double LibraryShadowWidth = 10;
+  static const double LibraryExpandSize = 15;
+  static const double LibraryExpandIconSize = 20;
+  static const double LibraryExpandIconPadding = 5;
+
+  static const double LibraryTopIconSize = 18;
+  static const double LibraryTopIconSpacing = 30;
+  static const double LibraryTopIconPadding = 5;
+
+  static const double LibraryCollapsedItemRadius = 5;
+  static const double LibraryCollapsedItemSize = 30;
+  static const double LibraryCollapsedItemIconSize = 20;
+  static const double LibraryCollapsedItemSpacing = 30;
+  static const double LibraryCollapsedItemMaxSpacing = 75;
+
+  static const double LibraryDragIconSize = 40;
+  static Paint LibraryDragIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(150);
+
+  static Paint LibraryCollapsedItemBorder = Paint()
+    ..color = Color(0xff888888).withAlpha(100)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+
+  static Paint LibraryItemIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(150);
+
+  static Paint LibraryItemIconHoverColor = Paint()..color = Colors.black;
+
+  static Paint LibraryTopIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(150);
+
+  static Paint LibraryTopIconHoverColor = Paint()
+    ..color = Color(0xff333333).withAlpha(150);
+
+  static Paint LibraryTopIconSelectedColor = Paint()..color = Colors.black;
+
+  static Color LibraryShadowStart = Color(0xfffffff0).withAlpha(50);
+  static Color LibraryShadowEnd = Color(0xff888888).withAlpha(100);
+
+  static Paint LibraryColor = Paint()..color = Color(0xfffffff0);
+
+  static Paint LibraryEdgeColor = Paint()
+    ..color = Color(0xff888888).withAlpha(100)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+
+  static Paint LibraryExpandIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(100);
+
+  static Paint LibraryExpandIconEdgeColor = Paint()
+    ..color = Color(0xff888888).withAlpha(100)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+
+  //
+  // Zoom Slider Styling
+  //
+
+  static const double ZoomSliderLeftMargin = 100;
+  static const double ZoomSliderRightMargin = 35;
+  static const double ZoomSliderBottomMargin = 15;
+
+  static const double ZoomSliderSize = 10;
+  static Paint ZoomSliderLeftLine = Paint()
+    ..color = Color(0xff333300).withAlpha(100)
+    ..color = Color(0xff000000).withAlpha(100)
+    ..strokeCap = StrokeCap.round
+    ..strokeWidth = 4
+    ..style = PaintingStyle.stroke;
+
+  static Paint ZoomSliderIconColor = Paint()
+    ..color = Color(0xff333300).withAlpha(50);
+
+  static Paint ZoomSliderRightLine = Paint()
+    //..color = Color(0xffbaba6c).withAlpha(100)
+    ..color = Color(0xff333300).withAlpha(50)
+    ..strokeWidth = 4
+    ..strokeCap = StrokeCap.round
+    ..style = PaintingStyle.stroke;
+
+  static Paint ZoomSliderColor = Paint()..color = Color(0xfffffff0);
+  static Paint ZoomSliderShadow = Paint()
+    ..color = Color(0xff333333).withAlpha(25);
+
+  static Paint ZoomSliderOutline = Paint()
+    ..color = Color(0xff333300).withAlpha(100)
+    ..strokeWidth = .5
+    ..style = PaintingStyle.stroke;
 
   //
   //
@@ -74,6 +178,70 @@ class Graph {
     ..color = CanvasColor.color.withAlpha(200);
 
   //
+  // Link Styles
+  //
+  static const double LinkPathWidth = 4;
+  static double LinkPathHitWidth = 6;
+  static Paint LinkHoverShadowColor = Paint()
+    ..color = Colors.black.withAlpha(128)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 8;
+
+  static Paint LinkArrowHoverShadowColor = Paint()
+    ..color = Colors.black.withAlpha(128)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 4;
+
+  static Paint LinkShadowColor = Paint()
+    ..color = CanvasColor.color.withAlpha(200)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 8;
+
+  static Paint LinkArrowShadowColor = Paint()
+    ..color = CanvasColor.color.withAlpha(200)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 4;
+
+  static Color DefaultLinkColor = Color(0xFF333333);
+  static const double LinkArrowSize = 16;
+  static const double LinkArrowEpsilon = 0.01;
+  static const int LinkPathSteps = 10;
+
+  //
+  //  Radial Menu Styles
+  //
+
+  static const double RadialMenuSize = 100;
+  static const double RadialMenuCenter = 40;
+  static const double RadialMenuIconPos = 70;
+  static const double RadialMenuIconSize = RadialMenuCenter * .90;
+  static const double RadialMenuMargin = 10;
+
+  static Paint RadialMenuColor = Paint()
+    ..color = Color(0xefefef).withAlpha(250);
+  static Paint RadialMenuHoverColor = Paint()..color = Colors.cyan[50];
+  static Paint RadialMenuIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(190);
+  static Paint RadialMenuHoverIconColor = Paint()..color = Colors.black;
+
+  static Paint RadialMenuDisabledIconColor = Paint()..color = Color(0xffaaaaaa);
+
+  static Paint RadialMenuCenterColor = Paint()..color = Color(0xfff8f8f8);
+  static Paint RadialMenuBorder = Paint()
+    ..color = Colors.black.withAlpha(200)
+    ..strokeWidth = 1
+    ..style = PaintingStyle.stroke;
+
+  static Paint RadialMenuSectorBorder = Paint()
+    ..color = Colors.black.withAlpha(90)
+    ..strokeWidth = 1
+    ..style = PaintingStyle.stroke;
+
+  static Paint RaidalMenuCenterBorder = Paint()
+    ..color = Colors.black.withAlpha(90)
+    ..strokeWidth = 2
+    ..style = PaintingStyle.stroke;
+  //
   //  Other Styles
   //
   static var font = SourceSansProFont;
@@ -90,8 +258,50 @@ class Graph {
   static double SelectDashSize = 10;
 
   //
-  // Utlitity methods
+  // Utlitity methods and properties
   //
+  static double TabSwipeDelta = 25;
+
+  static Duration DoubleClickDuration = Duration(milliseconds: 250);
+  static Duration LongPressDuration = Duration(milliseconds: 350);
+  static Duration LongPressUpdatePeriod = Duration(milliseconds: 20);
+
+  static const double LongPressDistance = 10;
+  static const double LongPressRadius = 75;
+  static const double LongPressStartRadius = 15;
+
+  static Paint LongPressHighlight = Paint()
+    ..color = Colors.blue[200].withAlpha(100);
+
+  static const double AutoPanMargin = 50;
+  static const double MaxAutoPan = 15;
+
   static bool isZoomedIn(double scale) => scale > 2.0;
   static bool isZoomedOut(double scale) => scale < .5;
+
+  static Color getGroupColor(int group, [bool disabled = false]) {
+    return disabled
+        ? DisabledGroupColor
+        : GroupColors[group % GroupColors.length];
+  }
+
+  static int MaxGroupNumber = 2 ^ 32 - 1;
+
+  static List<Color> GroupColors = [
+    Color(0xFF001f3f),
+    Color(0xFF0074d9),
+    Color(0xFF7fdbff),
+    Color(0xFF39cccc),
+    Color(0xFF3d9970),
+    Color(0xFF2ecc40),
+    Color(0xFF01ff70),
+    Color(0xFFffdc00),
+    Color(0xFFff851b),
+    Color(0xFFff4136),
+    Color(0xFF85144b),
+    Color(0xFFf012be),
+    Color(0xFFb10dc9),
+  ];
+
+  static Color DisabledGroupColor = Color(0xFF777777);
 }

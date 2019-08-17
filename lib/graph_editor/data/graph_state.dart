@@ -3,44 +3,62 @@ import 'dart:math';
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
+import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 import 'package:uuid/uuid.dart';
 
+import 'canvas_interactive.dart';
+import 'update_notifier.dart';
 import 'graph_link.dart';
 import 'graph_node.dart';
 import 'node_port.dart';
 
 typedef GetNodeByName(String name);
 
-class GraphState with ChangeNotifier {
+class GraphSelection {
+  Offset pos = Offset.zero;
+
+  List<GraphNode> nodes = [];
+  List<GraphLink> links = [];
+
+  GraphSelection.node(GraphNode node) {
+    nodes.add(node);
+  }
+}
+
+class GraphState extends UpdateNotifier {
   GraphController controller;
 
   String id = Uuid().v1().toString();
+  String name = GraphNode.randomName();
   String title = "";
+  String icon = VectorIcons.getRandomName();
+
   int version = 0;
 
-  List<GraphNode> nodes = [...random(10)];
+  List<GraphNode> nodes = [];
   List<GraphLink> links = [];
+
+  double paddingRight = 0;
 
   // access nodes by reference where nodes may not be fully defined
   // allows reconstructing the recursively defined graph objects
   Map<String, GraphNode> referenced = {};
   GraphHistory history = GraphHistory();
 
-  int updating = 0;
-  bool hasChanged = false;
+  GraphState() {
+    nodes.addAll(random(10));
+    var rand = Random();
+    for (int i = 0; i < 10; i++) {
+      var fromNode = nodes[rand.nextInt(nodes.length)];
+      var toNode = nodes[rand.nextInt(nodes.length)];
+      while (toNode == fromNode) {
+        toNode = nodes[rand.nextInt(nodes.length)];
+      }
 
-  void beginUpdate() {
-    updating++;
-  }
+      var fromPort = fromNode.outports[rand.nextInt(fromNode.outports.length)];
+      var toPort = toNode.inports[rand.nextInt(toNode.inports.length)];
 
-  void endUpdate(bool changed) {
-    updating--;
-    hasChanged |= changed;
-
-    if (updating <= 0 && hasChanged) {
-      notifyListeners();
-      hasChanged = false;
-      updating = 0;
+      addLink(fromPort, toPort);
     }
   }
 
@@ -48,10 +66,23 @@ class GraphState with ChangeNotifier {
     var result = referenced[name];
     if (result != null) return result;
 
-    result = nodes.firstWhere((x) => x.name == name,
-        orElse: () => GraphNode()..name = name);
+    result = nodes.firstWhere((x) => x.name == name, orElse: () => null);
+
+    if (result != null) {
+      referenced[name] = result;
+      return result;
+    }
+
+    print("Creating a new node for $name");
+    result = GraphNode()..name = name;
     referenced[name] = result;
     return result;
+  }
+
+  GraphNode copyNode(GraphNode node) {
+    var packed = node.pack();
+    node.name = GraphNode.randomName();
+    return unpackNode(packed);
   }
 
   GraphNode unpackNode(PackedGraphNode node) {
@@ -66,9 +97,20 @@ class GraphState with ChangeNotifier {
     return port.unpack(getNode);
   }
 
+  int findNode(GraphNode node) {
+    return nodes.indexWhere((x) => x.equalTo(node));
+  }
+
   int findLink(NodePort fromPort, NodePort toPort) {
     return links.indexWhere(
-        (x) => x.fromPort.equalTo(fromPort) && x.toPort.equalTo(toPort));
+        (x) => x.outPort.equalTo(fromPort) && x.inPort.equalTo(toPort));
+  }
+
+  Iterable<GraphLink> getNodeLinks(GraphNode node) sync* {
+    for (var link in links) {
+      if (link.outPort.node.equalTo(node)) yield link;
+      if (link.inPort.node.equalTo(node)) yield link;
+    }
   }
 
   GraphLink removeLink(NodePort fromPort, NodePort toPort) {
@@ -79,10 +121,50 @@ class GraphState with ChangeNotifier {
     return GraphLink.none;
   }
 
-  GraphLink addLink(NodePort fromPort, NodePort toPort) {
+  GraphLink addLink(NodePort fromPort, NodePort toPort, [int group = -1]) {
     var link = GraphLink.link(fromPort, toPort);
+    if (group >= 0) link.group = group;
+
     links.add(link);
     return link;
+  }
+
+  Rect getExtents(Iterable<CanvasInteractive> items) {
+    double top = 0;
+    double left = 0;
+    double bottom = 0;
+    double right = 0;
+    bool first = true;
+
+    for (var item in items) {
+      if (first) {
+        top = item.hitbox.top;
+        left = item.hitbox.left;
+        bottom = item.hitbox.bottom;
+        right = item.hitbox.right;
+      } else {
+        if (item.hitbox.left < left) left = item.hitbox.left;
+        if (item.hitbox.top < top) top = item.hitbox.top;
+        if (item.hitbox.right > right) right = item.hitbox.right;
+        if (item.hitbox.bottom > bottom) bottom = item.hitbox.bottom;
+      }
+      first = false;
+    }
+
+    var result = Rect.fromLTRB(left, top, right, bottom);
+    return result;
+  }
+
+  Rect get selectionExtents {
+    if (controller.selection.isEmpty) {
+      return extents;
+    }
+
+    return getExtents(controller.walkSelection());
+  }
+
+  Rect get extents {
+    return getExtents(controller.walkGraph());
   }
 
   static Iterable<GraphNode> random(int count) sync* {
@@ -92,7 +174,7 @@ class GraphState with ChangeNotifier {
       yield GraphNode.action(
           inputs: List.filled(rnd.nextInt(6) + 1, ""),
           outputs: List.filled(rnd.nextInt(6) + 1, ""))
-        ..moveTo(rnd.nextInt(500) + 50.0, rnd.nextInt(500) + 50.0)
+        ..moveTo(rnd.nextInt(750) + 50.0, rnd.nextInt(750) + 50.0)
         ..logging = rnd.nextBool()
         ..debugging = rnd.nextBool()
         ..method = rnd.nextBool()
@@ -107,6 +189,10 @@ class GraphState with ChangeNotifier {
 
   bool equalTo(GraphState other) {
     if (id != other.id) return false;
+    if (name != other.name) return false;
+    if (title != other.title) return false;
+    if (icon != other.icon) return false;
+
     if (version != other.version) return false;
     if (nodes.length != other.nodes.length) return false;
     if (links.length != other.links.length) return false;
@@ -123,11 +209,15 @@ class GraphState with ChangeNotifier {
   }
 
   bool copy(GraphState other) {
-    bool changed = !equalTo(other);
+    bool changed = true;
 
     beginUpdate();
 
     id = other.id;
+    title = other.title;
+    icon = other.icon;
+    name = other.name;
+
     version = other.version;
     nodes = [...other.nodes];
     links = [...other.links];

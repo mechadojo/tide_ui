@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_web/material.dart';
 
 import 'vector_icon_definitions.dart';
@@ -12,6 +14,10 @@ class VectorIcon {
   String name;
 
   VectorIcon(this.width, this.height, this.svg) {
+    path = parseSvgPathData(svg);
+  }
+
+  VectorIcon.named(this.name, this.width, this.height, this.svg) {
     path = parseSvgPathData(svg);
   }
 
@@ -56,12 +62,21 @@ class VectorIcons {
     return getIcon(nameOf(index));
   }
 
+  static String getRandomName() {
+    return nameOf(Random().nextInt(names.length));
+  }
+
+  static VectorIcon getRandom() {
+    return getIcon(getRandomName());
+  }
+
   static VectorIcon getIcon(String name) {
     return iconDefinitions[name];
   }
 
   static void paint(Canvas canvas, String name, Offset pos, double size,
       {Paint fill, Paint stroke}) {
+    if (name == null || name.isEmpty) return;
     var icon = iconDefinitions[name];
     if (icon == null) return;
 

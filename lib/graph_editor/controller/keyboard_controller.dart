@@ -1,15 +1,15 @@
-import 'dart:html';
+import 'graph_event.dart';
 
 mixin KeyboardController {
-  bool onKeyDown(KeyboardEvent evt) {
+  bool onKeyDown(GraphEvent evt) {
     return false;
   }
 
-  bool onKeyUp(KeyboardEvent evt) {
+  bool onKeyUp(GraphEvent evt) {
     return false;
   }
 
-  bool onKeyPress(KeyboardEvent evt) {
+  bool onKeyPress(GraphEvent evt) {
     return false;
   }
 }
