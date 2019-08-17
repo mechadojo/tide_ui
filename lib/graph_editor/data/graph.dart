@@ -243,11 +243,11 @@ class Graph {
   static double TabSwipeDelta = 25;
 
   static Duration DoubleClickDuration = Duration(milliseconds: 250);
-  static Duration LongPressDuration = Duration(milliseconds: 500);
+  static Duration LongPressDuration = Duration(milliseconds: 350);
   static Duration LongPressUpdatePeriod = Duration(milliseconds: 20);
 
   static const double LongPressDistance = 10;
-  static const double LongPressRadius = 50;
+  static const double LongPressRadius = 75;
   static const double LongPressStartRadius = 15;
 
   static Paint LongPressHighlight = Paint()

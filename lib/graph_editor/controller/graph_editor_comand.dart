@@ -5,6 +5,7 @@ import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/node_port.dart';
 import 'graph_editor_controller.dart';
+import 'graph_event.dart';
 import 'library_controller.dart';
 
 typedef ExecuteCommand(GraphEditorController editor);
@@ -25,6 +26,12 @@ class GraphEditorCommand {
   GraphEditorCommand.hideLibrary() {
     handler = (GraphEditorController editor) {
       editor.hideLibrary();
+    };
+  }
+
+  GraphEditorCommand.onContextMenu(GraphEvent evt) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.onContextMenu(evt);
     };
   }
 
@@ -220,6 +227,18 @@ class GraphEditorCommand {
   GraphEditorCommand.nextTab() {
     handler = (GraphEditorController editor) {
       editor.tabs.selectNext();
+    };
+  }
+
+  // ************************************************************
+  //
+  //  Chart File Commands
+  //
+  // ************************************************************
+
+  GraphEditorCommand.restoreCharts() {
+    handler = (GraphEditorController editor) {
+      editor.tabs.add(select: true);
     };
   }
 }

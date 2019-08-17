@@ -1,5 +1,6 @@
 import 'package:flutter_web/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tide_ui/graph_editor/data/focus_state.dart';
 import 'package:tide_ui/graph_editor/graph_events.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
@@ -47,6 +48,7 @@ class _GraphEditorPageState extends State<GraphEditorPage>
                       children: [
                         GraphCanvas(),
                         GraphLibrary(),
+                        LongPressFocus(),
                         GraphMenu(),
                         Column(
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -65,6 +67,45 @@ class _GraphEditorPageState extends State<GraphEditorPage>
         ),
       ),
     );
+  }
+}
+
+class LongPressFocus extends StatelessWidget {
+  const LongPressFocus({Key key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<LongPressFocusState>(
+      builder: (context, LongPressFocusState focus, widget) {
+        return CustomPaint(
+          painter: LongPressFocusPainter(focus),
+          child: Container(),
+        );
+      },
+    );
+  }
+}
+
+class LongPressFocusPainter extends CustomPainter {
+  final LongPressFocusState focus;
+  LongPressFocusPainter(this.focus);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!focus.active || focus.radius == 0) return;
+
+    var fill = Graph.LongPressHighlight;
+    if (focus.maxRadius < double.infinity) {
+      var alpha = fill.color.alpha * (focus.radius / focus.maxRadius);
+      fill = Paint()..color = fill.color.withAlpha(alpha.toInt());
+    }
+
+    canvas.drawCircle(focus.pos, focus.radius, fill);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
   }
 }
 

@@ -77,11 +77,6 @@ class CanvasPainter extends CustomPainter {
 
     drawZoomSlider(canvas, size);
 
-    if (graph.controller.longPressRadius > 0) {
-      canvas.drawCircle(graph.controller.longPressPos,
-          graph.controller.longPressRadius, Graph.LongPressHighlight);
-    }
-
     if (Graph.ShowPanRect) {
       canvas.drawRect(pan, Graph.redPen);
     }

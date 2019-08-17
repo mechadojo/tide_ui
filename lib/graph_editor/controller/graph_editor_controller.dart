@@ -13,6 +13,7 @@ import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
+import 'package:tide_ui/graph_editor/data/focus_state.dart';
 
 import 'package:tide_ui/main.dart' show AppVersion;
 
@@ -55,6 +56,7 @@ class GraphEditorControllerBase {
   final GraphState graph = GraphState();
   final CanvasState canvas = CanvasState();
   final LibraryState library = LibraryState();
+  final LongPressFocusState longPress = LongPressFocusState();
 
   KeyboardHandler get keyboardHandler => editor.keyboardHandler;
   MouseHandler get mouseHandler => editor.mouseHandler;
@@ -69,11 +71,6 @@ class GraphEditorControllerBase {
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
   Duration timer = Duration.zero;
-
-  Duration longPressTimeout;
-  Duration longPressUpdate = Duration.zero;
-  Rect longPressRect = Rect.zero;
-  GraphEvent longPressStart = GraphEvent();
 
   int ticks = 0;
 
@@ -94,56 +91,41 @@ class GraphEditorController extends GraphEditorControllerBase
     canvas.controller = CanvasController(this);
     menu.controller = RadialMenuController(this);
     library.controller = LibraryController(this);
-
     editor.keyboardHandler = KeyboardHandler(this);
     editor.mouseHandler = MouseHandler(this);
 
+    longPress.editor = this;
+
     tabs.version = AppVersion;
     tabs.addListener(onChangeTabs);
-    tabs.add(select: true);
 
-    dispatch(GraphEditorCommand.showLibrary(), afterTicks: 5);
+    //
+    // Dispatch some startup commands in the future after
+    // everything has painted at least once
+    //
+
+    dispatch(GraphEditorCommand.restoreCharts(), afterTicks: 5);
+
+    dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.toolbox),
+        afterTicks: 5);
+
     dispatch(GraphEditorCommand.zoomToFit(), afterTicks: 10);
   }
 
   void handleLongPress() {
-    var delta = longPressTimeout - timer;
+    if (!longPress.active) return;
 
-    if (delta < Duration.zero) {
-      graph.controller.onContextMenu(longPressStart);
-      cancelLongPress();
-      graph.beginUpdate();
-      longPressRect = Rect.zero;
-      graph.endUpdate(true);
-      return;
-    }
-
-    if (timer > longPressUpdate) {
-      var ratio = 1 -
-          delta.inMicroseconds /
-              Graph.LongPressDuration.inMicroseconds.toDouble();
-
-      graph.beginUpdate();
-
-      var radius = Graph.LongPressRadius * ratio;
-      if (radius > Graph.LongPressStartRadius) {
-        graph.controller.longPressRadius = radius;
-      }
-
-      graph.controller.longPressPos = longPressStart.pos;
-
-      graph.endUpdate(true);
-
-      longPressUpdate += Graph.LongPressUpdatePeriod;
-    }
+    bool changed = false;
+    longPress.beginUpdate();
+    changed = longPress.checkUpdate(timer);
+    longPress.endUpdate(changed);
   }
 
   void onTick(Duration dt) {
     timer = dt;
 
-    if (longPressTimeout != null) {
-      handleLongPress();
-    }
+    handleLongPress();
+
     while (commands.isNotEmpty) {
       var cmd = commands.removeAt(0);
       if (cmd.waitUntil > timer) {
@@ -167,6 +149,8 @@ class GraphEditorController extends GraphEditorControllerBase
       {Duration delay = Duration.zero,
       CommandCondition runWhen,
       int afterTicks = 0}) {
+    if (cmd == null) return;
+
     cmd.waitUntil = timer + delay;
     if (runWhen != null) cmd.condition = runWhen;
     if (afterTicks != 0) cmd.waitTicks = ticks + afterTicks;
@@ -175,19 +159,26 @@ class GraphEditorController extends GraphEditorControllerBase
   }
 
   void startLongPress(GraphEvent evt) {
-    longPressStart = evt;
-    longPressTimeout = evt.timer + Graph.LongPressDuration;
-    longPressUpdate = evt.timer + Graph.LongPressUpdatePeriod;
-    longPressRect = Rect.zero;
+    longPress.beginUpdate();
+    longPress.start(evt, Graph.LongPressDuration);
+    longPress.endUpdate(true);
   }
 
   void cancelLongPress() {
-    longPressTimeout = null;
-    if (graph.controller.longPressRadius > 0) {
-      graph.beginUpdate();
-      graph.controller.longPressRadius = 0;
-      graph.endUpdate(true);
-    }
+    if (!longPress.active) return;
+
+    longPress.beginUpdate();
+    longPress.cancel();
+    longPress.endUpdate(true);
+  }
+
+  void checkLongPress(GraphEvent evt) {
+    if (!longPress.active) return;
+
+    var changed = false;
+    longPress.beginUpdate();
+    changed = longPress.checkEvent(evt);
+    longPress.endUpdate(changed);
   }
 
   void onChangeTabs() {
@@ -202,6 +193,7 @@ class GraphEditorController extends GraphEditorControllerBase
       ChangeNotifierProvider(builder: (_) => graph),
       ChangeNotifierProvider(builder: (_) => menu),
       ChangeNotifierProvider(builder: (_) => library),
+      ChangeNotifierProvider(builder: (_) => longPress),
     ];
   }
 

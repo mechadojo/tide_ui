@@ -47,9 +47,6 @@ class GraphController with MouseController, KeyboardController {
   bool get dragging => moveMode == MouseMoveMode.dragging;
   bool get linking => moveMode == MouseMoveMode.linking;
 
-  double longPressRadius = 0;
-  Offset longPressPos = Offset.zero;
-
   bool hoverCanceled = false; // tracks if hovering needs to be canceled
   bool updating = false;
 

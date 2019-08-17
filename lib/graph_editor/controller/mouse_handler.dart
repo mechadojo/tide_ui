@@ -6,7 +6,6 @@ import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/controller/radial_menu_controller.dart';
-import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/graph_tabs.dart';
 
 import 'graph_event.dart';
@@ -235,14 +234,11 @@ class MouseHandler {
   void onMouseMoveCanvas(GraphEvent evt) {
     onMouseOutTabs();
 
-    if (editor.longPressTimeout != null) {
+    if (editor.longPress.active) {
       if (library.isHovered(evt.pos)) {
         editor.cancelLongPress();
       } else {
-        var dist = (evt.pos - editor.longPressStart.pos).distance;
-        if (dist > Graph.LongPressDistance) {
-          editor.cancelLongPress();
-        }
+        editor.checkLongPress(evt);
       }
     }
 
