@@ -4,6 +4,7 @@ import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 
@@ -54,6 +55,12 @@ class RadialMenuController with MouseController, KeyboardController {
   }
 
   @override
+  bool onContextMenu(GraphEvent evt) {
+    // allow graph to select a different menu
+    return editor.graph.controller.onContextMenu(evt);
+  }
+
+  @override
   bool onMouseMove(GraphEvent evt) {
     var pt = getPos(evt.pos);
     menu.beginUpdate();
@@ -75,6 +82,15 @@ class RadialMenuController with MouseController, KeyboardController {
           GraphEditorCommand.setCursor(pointer ? "pointer" : "default"));
     }
     menu.endUpdate(changed);
+
+    // pass mouse events back to graph so that items can be hovered
+    var dist = (evt.pos - menu.pos).distance;
+    if (dist < Graph.RadialMenuSize) {
+      editor.graph.controller.onMouseOut();
+    } else {
+      return editor.graph.controller.onMouseMove(evt);
+    }
+
     return true;
   }
 

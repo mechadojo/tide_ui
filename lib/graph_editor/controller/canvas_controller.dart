@@ -15,6 +15,8 @@ class CanvasController with MouseController, KeyboardController {
 
   CanvasController(this.editor);
 
+  Size get size => canvas.size;
+
   /// The region of the graph that is visible
   Rect clipRect = Rect.zero;
 

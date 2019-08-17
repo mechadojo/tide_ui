@@ -1,6 +1,5 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
-import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 import 'package:tide_ui/graph_editor/painter/graph_link_painter.dart';
 
@@ -11,28 +10,27 @@ import '../data/graph.dart';
 
 import 'canvas_grid_painter.dart';
 import 'graph_node_painter.dart';
-import 'radial_menu_painter.dart';
 
 class CanvasPainter extends CustomPainter {
   final CanvasState state;
   final GraphState graph;
-  final RadialMenuState menu;
 
   final CanvasGridPainter gridPainter = CanvasGridPainter();
   final GraphNodePainter nodePainter = GraphNodePainter();
   final GraphLinkPainter linkPainter = GraphLinkPainter();
-  final RadialMenuPainter menuPainter = RadialMenuPainter();
 
-  CanvasPainter(this.state, this.graph, this.menu);
+  CanvasPainter(this.state, this.graph);
 
   @override
   void paint(Canvas canvas, Size size) {
-    var screen = Rect.fromLTRB(0, 0, size.width, size.height);
-    state.size = size;
+    var screen =
+        Rect.fromLTRB(0, 0, size.width - graph.paddingRight, size.height);
+    state.size = screen.size;
+    var pan = screen.inflate(-Graph.AutoPanMargin);
 
     state.controller.setClip(
       screen,
-      screen.inflate(-Graph.AutoPanMargin),
+      pan,
     );
 
     gridPainter.paint(canvas, size, state.pos, state.scale);
@@ -84,22 +82,28 @@ class CanvasPainter extends CustomPainter {
           graph.controller.longPressRadius, Graph.LongPressHighlight);
     }
 
-    menuPainter.paint(canvas, menu);
+    if (Graph.ShowPanRect) {
+      canvas.drawRect(pan, Graph.redPen);
+    }
   }
 
   void drawZoomSlider(Canvas canvas, Size size) {
     var delta = Graph.MaxZoomScale - Graph.MinZoomScale;
     var pos = (state.scale - Graph.MinZoomScale) / delta;
 
-    var cx =
-        size.width - Graph.ZoomSliderLeftMargin - Graph.ZoomSliderRightMargin;
+    var cx = size.width -
+        Graph.ZoomSliderLeftMargin -
+        Graph.ZoomSliderRightMargin -
+        graph.paddingRight;
+
     cx *= pos;
     cx += Graph.ZoomSliderLeftMargin;
 
     var cy = size.height - Graph.ZoomSliderBottomMargin;
     var p0 = Offset(cx, cy);
     var p1 = Offset(Graph.ZoomSliderLeftMargin, cy);
-    var p2 = Offset(size.width - Graph.ZoomSliderRightMargin, cy);
+    var p2 = Offset(
+        size.width - Graph.ZoomSliderRightMargin - graph.paddingRight, cy);
 
     canvas.drawLine(p1, p0, Graph.ZoomSliderLeftLine);
     canvas.drawLine(p0, p2, Graph.ZoomSliderRightLine);

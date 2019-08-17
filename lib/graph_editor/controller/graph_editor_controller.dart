@@ -12,10 +12,13 @@ import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
+import 'package:tide_ui/graph_editor/data/library_state.dart';
+
 import 'package:tide_ui/main.dart' show AppVersion;
 
 import 'canvas_controller.dart';
 import 'graph_controller.dart';
+import 'library_controller.dart';
 import 'graph_editor_comand.dart';
 import 'graph_editor_menus.dart';
 import 'graph_event.dart';
@@ -51,6 +54,8 @@ class GraphEditorControllerBase {
   final RadialMenuState menu = RadialMenuState();
   final GraphState graph = GraphState();
   final CanvasState canvas = CanvasState();
+  final LibraryState library = LibraryState();
+
   KeyboardHandler get keyboardHandler => editor.keyboardHandler;
   MouseHandler get mouseHandler => editor.mouseHandler;
   bool get isPanMode => editor.dragMode == GraphDragMode.panning;
@@ -88,6 +93,7 @@ class GraphEditorController extends GraphEditorControllerBase
     graph.controller = GraphController(this);
     canvas.controller = CanvasController(this);
     menu.controller = RadialMenuController(this);
+    library.controller = LibraryController(this);
 
     editor.keyboardHandler = KeyboardHandler(this);
     editor.mouseHandler = MouseHandler(this);
@@ -96,6 +102,7 @@ class GraphEditorController extends GraphEditorControllerBase
     tabs.addListener(onChangeTabs);
     tabs.add(select: true);
 
+    dispatch(GraphEditorCommand.showLibrary(), afterTicks: 5);
     dispatch(GraphEditorCommand.zoomToFit(), afterTicks: 10);
   }
 
@@ -194,6 +201,7 @@ class GraphEditorController extends GraphEditorControllerBase
       ChangeNotifierProvider(builder: (_) => tabs),
       ChangeNotifierProvider(builder: (_) => graph),
       ChangeNotifierProvider(builder: (_) => menu),
+      ChangeNotifierProvider(builder: (_) => library),
     ];
   }
 
@@ -318,5 +326,31 @@ class GraphEditorController extends GraphEditorControllerBase
     graph.controller.selectRect = Rect.zero;
     graph.endUpdate(true);
     editor.endUpdate(true);
+  }
+
+  void showLibrary([LibraryDisplayMode mode]) {
+    library.beginUpdate();
+    if (mode != null) {
+      library.controller.setMode(mode);
+    }
+
+    library.controller.show();
+    library.endUpdate(true);
+
+    if (graph.paddingRight != library.controller.width) {
+      graph.beginUpdate();
+      graph.paddingRight = library.controller.width;
+      graph.endUpdate(true);
+    }
+  }
+
+  void hideLibrary() {
+    library.controller.hide();
+
+    if (graph.paddingRight != library.controller.width) {
+      graph.beginUpdate();
+      graph.paddingRight = library.controller.width;
+      graph.endUpdate(true);
+    }
   }
 }

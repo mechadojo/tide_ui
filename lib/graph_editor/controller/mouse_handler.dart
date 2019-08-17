@@ -4,6 +4,7 @@ import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
+import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/controller/radial_menu_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/graph_tabs.dart';
@@ -20,6 +21,7 @@ class MouseHandler {
   GraphController get graph => editor.graph.controller;
   KeyboardHandler get keyboard => editor.keyboardHandler;
   RadialMenuController get menu => editor.menu.controller;
+  LibraryController get library => editor.library.controller;
 
   MouseHandler(this.editor);
 
@@ -45,26 +47,34 @@ class MouseHandler {
     evt.timer = editor.timer;
 
     var pt = globalToLocal(rb, evt.pos);
+
     if (pt == null) return;
 
     if (pt.dx < 0 || pt.dy < 0) return;
     if (pt.dx > rb.size.width || pt.dy > rb.size.height) return;
 
-    if (pt.dy < GraphTabs.DefaultTabHeight) {
+    for (var touch in evt.touches.values) {
+      var tpt = globalToLocal(rb, touch.pos);
+      if (tpt != null) touch.pos = tpt;
+    }
+
+    evt.pos = pt;
+
+    if (evt.pos.dy < GraphTabs.DefaultTabHeight) {
       if (onTabs != null) {
-        evt.pos = pt;
         onTabs(evt);
       }
     } else {
-      pt = pt.translate(0, -GraphTabs.DefaultTabHeight);
-      for (var touch in evt.touches.values) {
-        touch.pos = touch.pos.translate(0, -GraphTabs.DefaultTabHeight);
-      }
-      evt.pos = pt;
+      evt.moveBy(0, -GraphTabs.DefaultTabHeight);
       if (onCanvas != null) {
         onCanvas(evt);
       }
     }
+  }
+
+  bool shouldUseLibrary(GraphEvent evt) {
+    return library.isHovered(evt.pos) ||
+        library.mouseMode != LibraryMouseMode.none;
   }
 
   Iterable<MouseController> getActiveControllers(GraphEvent evt,
@@ -80,8 +90,12 @@ class MouseHandler {
       if (useCanvas) {
         yield canvas;
       } else {
-        yield editor;
-        yield graph;
+        if (shouldUseLibrary(evt)) {
+          yield library;
+        } else {
+          yield editor;
+          yield graph;
+        }
       }
     }
   }
@@ -222,13 +236,24 @@ class MouseHandler {
     onMouseOutTabs();
 
     if (editor.longPressTimeout != null) {
-      var dist = (evt.pos - editor.longPressStart.pos).distance;
-      if (dist > Graph.LongPressDistance) {
+      if (library.isHovered(evt.pos)) {
         editor.cancelLongPress();
+      } else {
+        var dist = (evt.pos - editor.longPressStart.pos).distance;
+        if (dist > Graph.LongPressDistance) {
+          editor.cancelLongPress();
+        }
       }
     }
 
-    for (var active in getActiveControllers(evt)) {
+    var ls = getActiveControllers(evt).toList();
+    if (!ls.contains(library)) library.onMouseOut();
+    if (!ls.contains(graph)) graph.onMouseOut();
+    if (!ls.contains(editor)) editor.onMouseOut();
+    if (!ls.contains(canvas)) canvas.onMouseOut();
+    if (!ls.contains(menu)) menu.onMouseOut();
+
+    for (var active in ls) {
       active.onMouseMove(evt);
     }
   }
@@ -253,6 +278,7 @@ class MouseHandler {
     graph.onMouseOut();
     canvas.onMouseOut();
     menu.onMouseOut();
+    library.onMouseOut();
   }
 
   void onMouseOut(GraphEvent evt, BuildContext context, bool isActive) {
@@ -275,6 +301,8 @@ class MouseHandler {
     canvas.onMouseDoubleTap();
     tabs.onMouseDoubleTap();
     graph.onMouseDoubleTap();
+    library.onMouseDoubleTap();
+
     canvas.stopPanning();
     editor.hideMenu();
     editor.cancelEditing();
@@ -287,6 +315,8 @@ class MouseHandler {
   }
 
   bool shouldAutoPan(GraphEvent evt) {
+    if (library.isHovered(evt.pos)) return false;
+
     if (editor.isViewMode) return true;
 
     if (evt.ctrlKey) return false;
@@ -311,8 +341,11 @@ class MouseHandler {
       onMouseDoubleTap();
       return;
     }
-    GraphEvent.start = evt;
-    editor.startLongPress(evt);
+
+    if (!library.isHovered(evt.pos) && !editor.isViewMode) {
+      GraphEvent.start = evt;
+      editor.startLongPress(evt);
+    }
 
     for (var active in getActiveControllers(evt, true)) {
       active.onMouseDown(evt);
@@ -354,6 +387,7 @@ class MouseHandler {
   void onMouseUpCanvas(GraphEvent evt) {
     onMouseOutTabs();
     editor.cancelLongPress();
+
     for (var active in getActiveControllers(evt)) {
       active.onMouseUp(evt);
     }
@@ -379,13 +413,16 @@ class MouseHandler {
 
   void onContextMenuCanvas(GraphEvent evt) {
     onMouseOutTabs();
+
     if (editor.isViewMode) return;
 
     if (editor.isModalActive && !editor.menu.visible) {
       return;
     }
 
-    graph.onContextMenu(evt);
+    for (var active in getActiveControllers(evt)) {
+      active.onContextMenu(evt);
+    }
   }
 
   void onContextMenuTabs(GraphEvent evt) {
@@ -396,6 +433,7 @@ class MouseHandler {
     evt.preventDefault();
 
     if (!isActive) return;
+    print("Context Menu");
 
     dispatchEvent(
       evt,
@@ -415,8 +453,11 @@ class MouseHandler {
     if (editor.isModalActive) {
       return;
     }
-
-    canvas.onMouseWheel(evt);
+    if (evt.pos.dx > canvas.size.width) {
+      library.onMouseWheel(evt);
+    } else {
+      canvas.onMouseWheel(evt);
+    }
   }
 
   void onMouseWheel(GraphEvent evt, BuildContext context, bool isActive) {

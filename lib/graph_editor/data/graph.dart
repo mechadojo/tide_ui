@@ -1,8 +1,10 @@
 import 'package:flutter_web/material.dart';
+
 import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
 
 class Graph {
   static const bool ShowHitBox = false;
+  static const bool ShowPanRect = false;
 
   static const double MaxZoomScale = 5.0625;
   static const double MinZoomScale = 0.1316872427983539;
@@ -25,6 +27,47 @@ class Graph {
   //
 
   static Paint CanvasColor = Paint()..color = Color(0xfffffff0);
+
+  //
+  // Library Styling
+  //
+
+  static const double LibraryCollapsedWidth = 75;
+  static const double LibraryExpandedWidth = 200;
+  static const double LibraryShadowWidth = 10;
+  static const double LibraryExpandSize = 15;
+  static const double LibraryExpandIconSize = 20;
+  static const double LibraryExpandIconPadding = 5;
+
+  static const double LibraryTopIconSize = 18;
+  static const double LibraryTopIconSpacing = 30;
+  static const double LibraryTopIconPadding = 5;
+
+  static Paint LibraryTopIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(150);
+
+  static Paint LibraryTopIconHoverColor = Paint()
+    ..color = Color(0xff333333).withAlpha(150);
+
+  static Paint LibraryTopIconSelectedColor = Paint()..color = Colors.black;
+
+  static Color LibraryShadowStart = Color(0xfffffff0).withAlpha(50);
+  static Color LibraryShadowEnd = Color(0xff888888).withAlpha(100);
+
+  static Paint LibraryColor = Paint()..color = Color(0xfffffff0);
+
+  static Paint LibraryEdgeColor = Paint()
+    ..color = Color(0xff888888).withAlpha(100)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+
+  static Paint LibraryExpandIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(100);
+
+  static Paint LibraryExpandIconEdgeColor = Paint()
+    ..color = Color(0xff888888).withAlpha(100)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
 
   //
   // Zoom Slider Styling
@@ -199,7 +242,7 @@ class Graph {
   //
   static double TabSwipeDelta = 25;
 
-  static Duration DoubleClickDuration = Duration(milliseconds: 500);
+  static Duration DoubleClickDuration = Duration(milliseconds: 250);
   static Duration LongPressDuration = Duration(milliseconds: 500);
   static Duration LongPressUpdatePeriod = Duration(milliseconds: 20);
 

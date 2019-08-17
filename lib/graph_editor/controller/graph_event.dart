@@ -132,4 +132,11 @@ class GraphEvent {
 
     preventDefault = evt.preventDefault;
   }
+
+  void moveBy(double dx, double dy) {
+    pos = pos.translate(dx, dy);
+    for (var touch in touches.values) {
+      touch.pos = touch.pos.translate(dx, dy);
+    }
+  }
 }

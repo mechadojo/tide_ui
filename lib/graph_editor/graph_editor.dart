@@ -7,6 +7,8 @@ import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/icons/font_awesome_icons.dart';
 import 'graph_canvas.dart';
+import 'graph_library.dart';
+import 'graph_menu.dart';
 import 'graph_tabs.dart';
 
 class GraphEditorPage extends StatefulWidget {
@@ -44,13 +46,15 @@ class _GraphEditorPageState extends State<GraphEditorPage>
                       delegate: OverlayFlowDelegate(),
                       children: [
                         GraphCanvas(),
+                        GraphLibrary(),
+                        GraphMenu(),
                         Column(
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               DragModeButton(),
                               ZoomActionButton(),
-                            ])
+                            ]),
                       ],
                     ),
                   )

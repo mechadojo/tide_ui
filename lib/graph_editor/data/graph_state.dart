@@ -27,6 +27,8 @@ class GraphState extends UpdateNotifier {
   List<GraphNode> nodes = [];
   List<GraphLink> links = [];
 
+  double paddingRight = 0;
+
   // access nodes by reference where nodes may not be fully defined
   // allows reconstructing the recursively defined graph objects
   Map<String, GraphNode> referenced = {};

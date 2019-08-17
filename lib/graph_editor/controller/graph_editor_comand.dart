@@ -5,6 +5,7 @@ import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/node_port.dart';
 import 'graph_editor_controller.dart';
+import 'library_controller.dart';
 
 typedef ExecuteCommand(GraphEditorController editor);
 typedef CommandCondition(GraphEditorController editor);
@@ -14,6 +15,18 @@ class GraphEditorCommand {
   CommandCondition condition;
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
+
+  GraphEditorCommand.showLibrary([LibraryDisplayMode mode]) {
+    handler = (GraphEditorController editor) {
+      editor.showLibrary(mode);
+    };
+  }
+
+  GraphEditorCommand.hideLibrary() {
+    handler = (GraphEditorController editor) {
+      editor.hideLibrary();
+    };
+  }
 
   GraphEditorCommand.undoHistory() {
     handler = (GraphEditorController editor) {
@@ -103,7 +116,9 @@ class GraphEditorCommand {
 
   GraphEditorCommand.hideMenu() {
     handler = (GraphEditorController editor) {
-      editor.hideMenu();
+      if (editor.menu.visible) {
+        editor.hideMenu();
+      }
     };
   }
   GraphEditorCommand.print(String text) {

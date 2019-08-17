@@ -15,7 +15,7 @@ class CanvasTabsPainter extends CustomPainter {
 
   final width = 175.0;
   final height = 35.0;
-  final padding = 2.0;
+  final padding = .75;
   final spacing = 25.0;
   final btnIconSize = 14.0;
   final tabIconSize = 18.0;
