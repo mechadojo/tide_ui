@@ -39,7 +39,8 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
         return MenuItemSet([
           MenuItem(icon: "edit"),
           MenuItem(icon: "chevron-circle-right"),
-          MenuItem(icon: "trash-alt"),
+          MenuItem(
+              icon: "trash-alt", command: GraphEditorCommand.removeNode(node)),
           MenuItem(icon: "chevron-circle-left"),
         ]);
       default:

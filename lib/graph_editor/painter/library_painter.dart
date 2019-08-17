@@ -29,10 +29,10 @@ class LibraryPainter {
     drawTopIcons(canvas, library, rect);
     switch (library.mode) {
       case LibraryDisplayMode.toolbox:
-        drawToolbox(canvas, library, rect);
+        drawCollapsed(canvas, library, rect, library.toolbox);
         break;
       case LibraryDisplayMode.collapsed:
-        drawCollapsed(canvas, library, rect);
+        drawCollapsed(canvas, library, rect, library.sheets);
         break;
       case LibraryDisplayMode.expanded:
         drawExpanded(canvas, library, rect);
@@ -43,6 +43,70 @@ class LibraryPainter {
 
       default:
         break;
+    }
+
+    if (library.controller.isDragging) {
+      var item = library.controller.dragging;
+      if (item.pos.dx > rect.left) {
+        VectorIcons.paint(
+            canvas, item.icon, item.pos, Graph.LibraryDragIconSize,
+            fill: Graph.LibraryDragIconColor);
+      }
+    }
+  }
+
+  void drawCollapsed(
+      Canvas canvas, LibraryState library, Rect rect, List<LibraryItem> items) {
+    var cx = rect.center.dx;
+    var cy =
+        rect.top + Graph.LibraryTopIconPadding * 2 + Graph.LibraryTopIconSize;
+
+    var spacing = Graph.LibraryCollapsedItemSpacing;
+
+    if (items.length > 1) {
+      spacing = (rect.height - cy) / (items.length);
+    }
+
+    if (spacing < Graph.LibraryCollapsedItemSpacing) {
+      spacing = Graph.LibraryCollapsedItemSpacing;
+    }
+
+    if (spacing > Graph.LibraryCollapsedItemMaxSpacing) {
+      spacing = Graph.LibraryCollapsedItemMaxSpacing;
+    }
+
+    cy += spacing / 2;
+
+    for (var item in items) {
+      var icon = item.hoveredIcon;
+      var fill = item.hovered
+          ? Graph.LibraryItemIconHoverColor
+          : Graph.LibraryItemIconColor;
+
+      var factor = item.hovered ? .875 : .5;
+
+      if (library.controller.mouseMode != LibraryMouseMode.none) {
+        icon = item.icon;
+        fill = Graph.LibraryItemIconColor;
+        factor = .5;
+      }
+
+      var size = spacing * factor;
+
+      if (size < Graph.LibraryCollapsedItemSize) {
+        size = Graph.LibraryCollapsedItemSize;
+      }
+
+      if (size > rect.width * .9) {
+        size = rect.width * .9;
+      }
+
+      item.resizeTo(size, size);
+      item.moveTo(cx, cy);
+
+      VectorIcons.paint(canvas, icon, item.pos, size * .75, fill: fill);
+
+      cy += spacing;
     }
   }
 
@@ -77,10 +141,6 @@ class LibraryPainter {
       VectorIcons.paint(canvas, icon, pt, sz, fill: paint);
     }
   }
-
-  void drawToolbox(Canvas canvas, LibraryState library, Rect rect) {}
-
-  void drawCollapsed(Canvas canvas, LibraryState library, Rect rect) {}
 
   void drawExpanded(Canvas canvas, LibraryState library, Rect rect) {}
 

@@ -14,6 +14,17 @@ import 'node_port.dart';
 
 typedef GetNodeByName(String name);
 
+class GraphSelection {
+  Offset pos = Offset.zero;
+
+  List<GraphNode> nodes = [];
+  List<GraphLink> links = [];
+
+  GraphSelection.node(GraphNode node) {
+    nodes.add(node);
+  }
+}
+
 class GraphState extends UpdateNotifier {
   GraphController controller;
 
@@ -68,6 +79,12 @@ class GraphState extends UpdateNotifier {
     return result;
   }
 
+  GraphNode copyNode(GraphNode node) {
+    var packed = node.pack();
+    node.name = GraphNode.randomName();
+    return unpackNode(packed);
+  }
+
   GraphNode unpackNode(PackedGraphNode node) {
     return node.unpack(getNode);
   }
@@ -80,9 +97,20 @@ class GraphState extends UpdateNotifier {
     return port.unpack(getNode);
   }
 
+  int findNode(GraphNode node) {
+    return nodes.indexWhere((x) => x.equalTo(node));
+  }
+
   int findLink(NodePort fromPort, NodePort toPort) {
     return links.indexWhere(
         (x) => x.outPort.equalTo(fromPort) && x.inPort.equalTo(toPort));
+  }
+
+  Iterable<GraphLink> getNodeLinks(GraphNode node) sync* {
+    for (var link in links) {
+      if (link.outPort.node.equalTo(node)) yield link;
+      if (link.inPort.node.equalTo(node)) yield link;
+    }
   }
 
   GraphLink removeLink(NodePort fromPort, NodePort toPort) {

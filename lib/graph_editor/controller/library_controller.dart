@@ -1,5 +1,7 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
+import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 
@@ -48,6 +50,9 @@ class LibraryController with MouseController, KeyboardController {
 
   Offset startPos = Offset.zero;
   Offset lastPos = Offset.zero;
+
+  MenuItem dragging;
+  GraphSelection dropping;
 
   LibraryController(this.editor) {
     _setMenu(library.mode);
@@ -174,7 +179,25 @@ class LibraryController with MouseController, KeyboardController {
   @override
   bool onContextMenu(GraphEvent evt) {
     print("Library Context Menu: ${evt.pos}");
+
+    mouseMode = LibraryMouseMode.none;
+    dragging = null;
+
     return true;
+  }
+
+  Iterable<CanvasInteractive> interactive() sync* {
+    yield* library.menu;
+    switch (library.mode) {
+      case LibraryDisplayMode.toolbox:
+        yield* library.toolbox;
+        break;
+      case LibraryDisplayMode.collapsed:
+        yield* library.sheets;
+        break;
+      default:
+        break;
+    }
   }
 
   @override
@@ -194,13 +217,29 @@ class LibraryController with MouseController, KeyboardController {
     bool changed = false;
     bool hovered = false;
 
-    library.beginUpdate();
-    for (var item in library.menu) {
-      changed |= item.checkHovered(evt.pos);
-      hovered |= item.hovered;
+    if (isDragging) {
+      changed = true;
+      dragging.pos = evt.pos;
+
+      if (dropping != null) {
+        if (evt.pos.dx < editor.canvas.size.width) {
+          dropping.pos = editor.canvas.toGraphCoord(evt.pos);
+          editor.previewDrop(dropping);
+        } else {
+          editor.cancelDrop();
+        }
+      }
     }
 
-    editor.setCursor(hovered ? "pointer" : "default");
+    if (mouseMode == LibraryMouseMode.none) {
+      library.beginUpdate();
+      for (var item in interactive()) {
+        changed |= item.checkHovered(evt.pos);
+        hovered |= item.hovered;
+      }
+    }
+
+    editor.setCursor(isDragging ? "grab" : hovered ? "pointer" : "default");
 
     library.endUpdate(changed);
 
@@ -209,7 +248,9 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseDoubleTap(GraphEvent evt) {
-    print("Library Double Click: ${evt.pos}");
+    mouseMode = LibraryMouseMode.none;
+    dragging = null;
+    editor.setCursor("default");
     return true;
   }
 
@@ -244,13 +285,52 @@ class LibraryController with MouseController, KeyboardController {
       }
     }
 
-    print("Library Down: ${evt.pos}");
+    if (checkStartDrag(evt)) {
+      return true;
+    }
+
+    mouseMode = LibraryMouseMode.none;
+    dragging = null;
+
     return true;
+  }
+
+  Iterable<LibraryItem> draggable() sync* {
+    switch (library.mode) {
+      case LibraryDisplayMode.toolbox:
+        yield* library.toolbox;
+        break;
+
+      case LibraryDisplayMode.collapsed:
+        yield* library.sheets;
+        break;
+      default:
+        break;
+    }
+  }
+
+  bool checkStartDrag(GraphEvent evt) {
+    for (var item in draggable()) {
+      if (item.isHovered(evt.pos)) {
+        mouseMode = LibraryMouseMode.dragging;
+        dragging = MenuItem()..copy(item);
+
+        dropping = GraphSelection.node(item.node..moveTo(0, 0));
+
+        return true;
+      }
+    }
+
+    return false;
   }
 
   @override
   bool onMouseUp(GraphEvent evt) {
     print("Library Up: ${evt.pos}");
+    bool changed = mouseMode != LibraryMouseMode.none;
+
+    library.beginUpdate();
+
     if (isSwiping) {
       var dx = evt.pos.dx - startPos.dx;
       if (dx < 0 && library.isCollapsed) {
@@ -265,9 +345,20 @@ class LibraryController with MouseController, KeyboardController {
       }
     }
 
-    isMouseDown = false;
-    mouseMode = LibraryMouseMode.none;
+    if (isDragging) {
+      if (dropping != null && evt.pos.dx < editor.canvas.size.width) {
+        editor.endDrop(dropping);
+      }
 
+      dropping = null;
+      dragging = null;
+      editor.setCursor("default");
+    }
+
+    mouseMode = LibraryMouseMode.none;
+    isMouseDown = false;
+
+    library.endUpdate(changed);
     return true;
   }
 
@@ -277,11 +368,13 @@ class LibraryController with MouseController, KeyboardController {
 
     bool changed = false;
     library.beginUpdate();
-    for (var item in library.menu) {
+    for (var item in interactive()) {
       changed |= item.hovered;
       item.hovered = false;
     }
+
     library.endUpdate(changed);
+
     return true;
   }
 }

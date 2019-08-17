@@ -21,6 +21,11 @@ class GraphCommandGroup extends GraphCommand {
   @override
   String get name => "group";
 
+  bool get isNotEmpty => cmds.isNotEmpty;
+  bool get isEmpty => cmds.isEmpty;
+  int get length => cmds.length;
+
+  GraphCommandGroup();
   GraphCommandGroup.all(Iterable<GraphCommand> source) {
     cmds = [...source];
   }
@@ -72,6 +77,34 @@ class GraphMoveCommand extends GraphCommand {
   }
 }
 
+class GraphNodeCommand extends GraphCommand {
+  String type;
+  PackedGraphNode node;
+
+  GraphNodeCommand();
+
+  GraphNodeCommand.add(GraphNode node) {
+    type = "add";
+    this.node = node.pack();
+  }
+
+  GraphNodeCommand.remove(GraphNode node) {
+    type = "remove";
+    this.node = node.pack();
+  }
+
+  @override
+  String get name => "$type-node";
+
+  @override
+  GraphCommand get reverse {
+    return GraphNodeCommand()
+      ..type = type == "add" ? "remove" : "add"
+      ..node = node
+      ..version = version;
+  }
+}
+
 class GraphLinkCommand extends GraphCommand {
   String type;
 
@@ -110,6 +143,14 @@ class GraphHistory {
   bool get canUndo => undoCmds.isNotEmpty;
 
   void push(GraphCommand cmd, [bool clear = true]) {
+    // optimize empty and single command groups
+    if (cmd is GraphCommandGroup) {
+      if (cmd.isEmpty) return;
+      if (cmd.length == 1) {
+        return push(cmd.cmds.first, clear);
+      }
+    }
+
     undoCmds.add(cmd);
     if (clear) {
       redoCmds.clear();

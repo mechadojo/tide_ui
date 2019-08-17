@@ -158,6 +158,22 @@ class GraphEditorController extends GraphEditorControllerBase
     commands.add(cmd);
   }
 
+  void previewDrop(GraphSelection dropping) {
+    graph.controller.previewDrop(dropping);
+  }
+
+  void cancelDrop() {
+    graph.controller.cancelDrop();
+  }
+
+  void startDrop(GraphSelection dropping) {
+    graph.controller.startDrop(dropping);
+  }
+
+  void endDrop(GraphSelection dropping) {
+    graph.controller.endDrop(dropping);
+  }
+
   void startLongPress(GraphEvent evt) {
     longPress.beginUpdate();
     longPress.start(evt, Graph.LongPressDuration);

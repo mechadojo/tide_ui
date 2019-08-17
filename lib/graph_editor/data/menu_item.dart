@@ -31,6 +31,8 @@ class MenuItem with CanvasInteractive {
   bool get hasIconAlt => iconAlt != null && iconAlt.isNotEmpty;
   bool get hasCommand => command != null;
 
+  String get hoveredIcon => hovered ? (hasIconAlt ? iconAlt : icon) : icon;
+
   MenuItem(
       {this.icon,
       this.title,

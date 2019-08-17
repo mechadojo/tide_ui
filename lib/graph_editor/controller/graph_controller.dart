@@ -31,6 +31,8 @@ class GraphController with MouseController, KeyboardController {
   List<GraphNode> selection = [];
   List<GraphNode> savedSelection = [];
 
+  GraphSelection dropping;
+
   GraphController(this.editor);
 
   MouseMoveMode moveMode = MouseMoveMode.none;
@@ -52,6 +54,7 @@ class GraphController with MouseController, KeyboardController {
 
   void applyCommand(GraphCommand cmd) {
     graph.beginUpdate();
+
     if (cmd is GraphCommandGroup) {
       for (var inner in cmd.cmds) {
         applyCommand(inner);
@@ -73,6 +76,60 @@ class GraphController with MouseController, KeyboardController {
       }
     }
 
+    if (cmd is GraphNodeCommand) {
+      var node = graph.unpackNode(cmd.node);
+      if (cmd.type == "add") {
+        addNode(node, save: false);
+      } else if (cmd.type == "remove") {
+        removeNode(node, save: false);
+      }
+    }
+    graph.endUpdate(true);
+  }
+
+  void previewDrop(GraphSelection dropping) {
+    graph.beginUpdate();
+    this.dropping = dropping;
+    graph.endUpdate(true);
+  }
+
+  void cancelDrop() {
+    if (dropping == null) return;
+
+    graph.beginUpdate();
+    dropping = null;
+    graph.endUpdate(true);
+  }
+
+  void startDrop(GraphSelection dropping) {
+    // used by external drop/drop or clipboard
+    // need to set dropping mode
+
+    graph.beginUpdate();
+    dropping = dropping;
+    graph.endUpdate(true);
+  }
+
+  void endDrop(GraphSelection dropping) {
+    graph.beginUpdate();
+    this.dropping = null;
+    var dx = dropping.pos.dx;
+    var dy = dropping.pos.dy;
+
+    GraphCommandGroup cmd = GraphCommandGroup();
+
+    for (var node in dropping.nodes) {
+      var next = graph.copyNode(node);
+      next.moveBy(dx, dy);
+
+      cmd.add(GraphNodeCommand.add(next));
+    }
+
+    if (cmd.isNotEmpty) {
+      applyCommand(cmd);
+      graph.history.push(cmd);
+    }
+
     graph.endUpdate(true);
   }
 
@@ -91,6 +148,8 @@ class GraphController with MouseController, KeyboardController {
     if (!graph.history.canRedo) return;
     graph.beginUpdate();
     var cmd = graph.history.redo();
+    print("Redo: $cmd");
+
     applyCommand(cmd);
     graph.history.push(cmd, false);
 
@@ -128,11 +187,48 @@ class GraphController with MouseController, KeyboardController {
 
     graph.beginUpdate();
     var link = graph.links.removeAt(idx);
-
     graph.endUpdate(true);
 
     if (save) {
       var cmd = GraphLinkCommand.remove(link);
+      graph.history.push(cmd);
+    }
+  }
+
+  void removeNode(GraphNode node, {bool save = true, bool relink = false}) {
+    var idx = graph.findNode(node);
+    if (idx < 0) return;
+
+    graph.beginUpdate();
+    node = graph.nodes.removeAt(idx);
+
+    var links = graph.getNodeLinks(node).toList();
+    for (var link in links) {
+      removeLink(link.outPort, link.inPort, save: false);
+    }
+    graph.endUpdate(true);
+
+    if (save) {
+      GraphCommandGroup cmd = GraphCommandGroup()
+        ..add(GraphNodeCommand.remove(node))
+        ..addAll(links.map((x) => GraphLinkCommand.remove(x)));
+
+      graph.history.push(cmd);
+    }
+  }
+
+  void addNode(GraphNode node, {bool save = true, bool replace = false}) {
+    var idx = graph.findNode(node);
+    if (idx >= 0 || replace) return;
+
+    graph.beginUpdate();
+    if (idx >= 0) graph.nodes.removeAt(idx);
+    graph.nodes.add(node);
+
+    graph.endUpdate(true);
+
+    if (save) {
+      var cmd = GraphNodeCommand.add(node);
       graph.history.push(cmd);
     }
   }

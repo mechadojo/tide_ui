@@ -69,6 +69,7 @@ class PackedGraphNode {
     logging = node.logging;
     debugging = node.debugging;
     version = node.version;
+    delay = node.delay;
 
     inports = [...node.inports.map((x) => x.pack())];
     outports = [...node.outports.map((x) => x.pack())];
@@ -85,6 +86,7 @@ class PackedGraphNode {
     node.comment = comment;
     node.logging = logging;
     node.debugging = debugging;
+    node.delay = delay;
 
     node.inports = [...inports.map((x) => x.unpack(lookup))];
     node.outports = [...outports.map((x) => x.unpack(lookup))];

@@ -93,6 +93,12 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.removeNode(GraphNode node) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.removeNode(node);
+    };
+  }
+
   // ************************************************************
   //
   //  Radial Menu Commands

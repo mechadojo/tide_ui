@@ -43,6 +43,26 @@ class Graph {
   static const double LibraryTopIconSpacing = 30;
   static const double LibraryTopIconPadding = 5;
 
+  static const double LibraryCollapsedItemRadius = 5;
+  static const double LibraryCollapsedItemSize = 30;
+  static const double LibraryCollapsedItemIconSize = 20;
+  static const double LibraryCollapsedItemSpacing = 30;
+  static const double LibraryCollapsedItemMaxSpacing = 75;
+
+  static const double LibraryDragIconSize = 40;
+  static Paint LibraryDragIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(150);
+
+  static Paint LibraryCollapsedItemBorder = Paint()
+    ..color = Color(0xff888888).withAlpha(100)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+
+  static Paint LibraryItemIconColor = Paint()
+    ..color = Color(0xff333333).withAlpha(150);
+
+  static Paint LibraryItemIconHoverColor = Paint()..color = Colors.black;
+
   static Paint LibraryTopIconColor = Paint()
     ..color = Color(0xff333333).withAlpha(150);
 

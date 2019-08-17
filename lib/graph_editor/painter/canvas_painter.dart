@@ -56,12 +56,16 @@ class CanvasPainter extends CustomPainter {
 
     for (var node in graph.nodes) {
       if (node.selected) continue;
-      nodePainter.paint(canvas, size, state.pos, state.scale, node);
+      nodePainter.paint(canvas, state.scale, node);
     }
 
     for (var node in graph.nodes) {
       if (!node.selected) continue;
-      nodePainter.paint(canvas, size, state.pos, state.scale, node);
+      nodePainter.paint(canvas, state.scale, node);
+    }
+
+    if (graph.controller.dropping != null) {
+      drawDropPreview(canvas, graph.controller.dropping);
     }
 
     canvas.restore();
@@ -80,6 +84,17 @@ class CanvasPainter extends CustomPainter {
     if (Graph.ShowPanRect) {
       canvas.drawRect(pan, Graph.redPen);
     }
+  }
+
+  void drawDropPreview(Canvas canvas, GraphSelection dropping) {
+    canvas.save();
+    canvas.translate(dropping.pos.dx, dropping.pos.dy);
+
+    for (var node in dropping.nodes) {
+      nodePainter.paint(canvas, state.scale, node);
+    }
+
+    canvas.restore();
   }
 
   void drawZoomSlider(Canvas canvas, Size size) {
