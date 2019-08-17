@@ -475,7 +475,7 @@ class GraphController with MouseController, KeyboardController {
   }
 
   @override
-  bool onMouseDoubleTap() {
+  bool onMouseDoubleTap(GraphEvent evt) {
     graph.beginUpdate();
     onMouseOut();
     clearSelection();

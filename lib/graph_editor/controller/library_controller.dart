@@ -208,6 +208,12 @@ class LibraryController with MouseController, KeyboardController {
   }
 
   @override
+  bool onMouseDoubleTap(GraphEvent evt) {
+    print("Library Double Click: ${evt.pos}");
+    return true;
+  }
+
+  @override
   bool onMouseDown(GraphEvent evt) {
     if (library.hitbox.contains(evt.pos)) {
       if (isHidden) {
@@ -222,10 +228,9 @@ class LibraryController with MouseController, KeyboardController {
     startPos = evt.pos;
     isMouseDown = true;
     if (lastDown != null) {
-      var dt = evt.timer - lastDown.timer;
-      if (dt < Graph.DoubleClickDuration) {
-        print("Library Double Click: ${evt.pos}");
-        lastDown = evt;
+      var dt = editor.timer - lastDown.timer;
+      if (dt < Duration(milliseconds: 500) && lastDown.touches.length <= 1) {
+        onMouseDoubleTap(evt);
         return true;
       }
     }

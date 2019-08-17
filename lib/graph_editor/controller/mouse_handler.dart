@@ -290,14 +290,18 @@ class MouseHandler {
   //
   // ***************************************************************
 
-  void onMouseDoubleTap() {
+  void onMouseDoubleTap(GraphEvent evt) {
+    if (library.isHovered(evt.pos)) {
+      library.onMouseDoubleTap(evt);
+      return;
+    }
+
     onMouseOutCanvas();
     onMouseOutTabs();
 
-    canvas.onMouseDoubleTap();
-    tabs.onMouseDoubleTap();
-    graph.onMouseDoubleTap();
-    library.onMouseDoubleTap();
+    canvas.onMouseDoubleTap(evt);
+    tabs.onMouseDoubleTap(evt);
+    graph.onMouseDoubleTap(evt);
 
     canvas.stopPanning();
     editor.hideMenu();
@@ -334,7 +338,7 @@ class MouseHandler {
     var dt = editor.timer - GraphEvent.start.timer;
     if (dt < Duration(milliseconds: 500) &&
         GraphEvent.last.touches.length <= 1) {
-      onMouseDoubleTap();
+      onMouseDoubleTap(evt);
       return;
     }
 

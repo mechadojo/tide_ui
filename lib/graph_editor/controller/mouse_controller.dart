@@ -23,7 +23,7 @@ mixin MouseController {
     return false;
   }
 
-  bool onMouseDoubleTap() {
+  bool onMouseDoubleTap(GraphEvent evt) {
     return false;
   }
 
