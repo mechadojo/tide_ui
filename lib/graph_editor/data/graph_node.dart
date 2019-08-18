@@ -127,6 +127,17 @@ class GraphNode extends GraphObject {
     return number.toRadixString(36);
   }
 
+  NodePort get defaultInport {
+    if (inports.isEmpty) return null;
+    return inports.firstWhere((x) => x.isDefault, orElse: () => inports.first);
+  }
+
+  NodePort get defaultOutport {
+    if (outports.isEmpty) return null;
+    return outports.firstWhere((x) => x.isDefault,
+        orElse: () => outports.first);
+  }
+
   GraphNode();
 
   GraphNode.behavior(GraphState graph) {

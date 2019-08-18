@@ -3,6 +3,7 @@ import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
 import 'package:tide_ui/graph_editor/controller/keyboard_controller.dart';
+import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
@@ -44,6 +45,8 @@ class GraphController with MouseController, KeyboardController {
 
   NodePort linkStart;
   int nextGroup = 0;
+  int dragRelease = 0; // allows extra mouse down events without canceling
+  bool dragDrop = false; // allows escape to cancel and undo last action
 
   bool get selecting => moveMode == MouseMoveMode.selecting;
   bool get dragging => moveMode == MouseMoveMode.dragging;
@@ -119,7 +122,7 @@ class GraphController with MouseController, KeyboardController {
     GraphCommandGroup cmd = GraphCommandGroup();
 
     for (var node in dropping.nodes) {
-      var next = graph.copyNode(node);
+      var next = graph.clone(node);
       next.moveBy(dx, dy);
 
       cmd.add(GraphNodeCommand.add(next));
@@ -217,7 +220,8 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
-  void addNode(GraphNode node, {bool save = true, bool replace = false}) {
+  void addNode(GraphNode node,
+      {bool save = true, bool replace = false, List<GraphLink> links}) {
     var idx = graph.findNode(node);
     if (idx >= 0 || replace) return;
 
@@ -225,10 +229,18 @@ class GraphController with MouseController, KeyboardController {
     if (idx >= 0) graph.nodes.removeAt(idx);
     graph.nodes.add(node);
 
+    links = links ?? [];
+    for (var link in links) {
+      addLink(link.outPort, link.inPort, group: link.group, save: false);
+    }
+
     graph.endUpdate(true);
 
     if (save) {
-      var cmd = GraphNodeCommand.add(node);
+      var cmd = GraphCommandGroup()
+        ..add(GraphNodeCommand.add(node))
+        ..addAll(links.map((x) => GraphLinkCommand.add(x)));
+
       graph.history.push(cmd);
     }
   }
@@ -364,6 +376,11 @@ class GraphController with MouseController, KeyboardController {
 
     moveStart = pt;
 
+    if (moveMode == MouseMoveMode.dragging) {
+      --dragRelease;
+      return true;
+    }
+
     if (focus == null) {
       if (selection.length <= 1 || evt.ctrlKey) {
         moveMode = MouseMoveMode.selecting;
@@ -421,6 +438,9 @@ class GraphController with MouseController, KeyboardController {
   @override
   bool onMouseUp(GraphEvent evt) {
     if (moveMode == MouseMoveMode.none) return true;
+    if (moveMode == MouseMoveMode.dragging && dragRelease > 0) return true;
+
+    dragDrop = false;
 
     if (focus == null && dragging && moveStart == moveEnd) {
       print("Cancel Selection and Editing");
@@ -498,6 +518,7 @@ class GraphController with MouseController, KeyboardController {
       node.dragOffset = node.pos - pt;
       node.dragStart = node.pos;
     }
+    dragRelease = 0;
   }
 
   bool onMouseDrag(GraphEvent evt) {
@@ -566,6 +587,29 @@ class GraphController with MouseController, KeyboardController {
     return true;
   }
 
+  void addFromToolbox([int hotkey = -1, GraphEvent evt]) {
+    if (editor.library.isCollapsed) {
+      editor
+          .dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.toolbox));
+    }
+
+    var node = graph.clone(editor.library.getToolboxNode(hotkey, evt));
+    if (node != null) {
+      List<GraphLink> links = [];
+
+      if (linking) {
+        if (linkStart.isInport) {
+          links.add(GraphLink.link(node.defaultOutport, linkStart));
+        } else {
+          links.add(GraphLink.link(linkStart, node.defaultInport));
+        }
+      }
+
+      editor
+          .dispatch(GraphEditorCommand.addNode(node, links: links, drag: true));
+    }
+  }
+
   @override
   bool onMouseOut() {
     if (hoverCanceled) return true;
@@ -587,6 +631,22 @@ class GraphController with MouseController, KeyboardController {
   bool onKeyDown(GraphEvent evt) {
     var key = evt.key.toLowerCase();
 
+    if (key == "escape") {
+      if (dragDrop) {
+        undoHistory();
+      }
+
+      if (dragging) {
+        for (var node in selection) {
+          node.moveTo(node.dragStart.dx, node.dragStart.dy);
+        }
+      }
+
+      clearSelection();
+      editor.cancelDrop();
+      editor.cancelEditing();
+      return true;
+    }
     if (key == "z" && evt.ctrlKey) {
       undoHistory();
       return true;
@@ -594,6 +654,39 @@ class GraphController with MouseController, KeyboardController {
 
     if (key == "y" && evt.ctrlKey) {
       redoHistory();
+      return true;
+    }
+
+    // toggle the librTary panels
+    if (key == 't') {
+      if (evt.shiftKey) {
+        if (editor.library.isExpanded) {
+          editor.dispatch(GraphEditorCommand.collapseLibrary());
+        } else {
+          editor.dispatch(GraphEditorCommand.expandLibrary());
+        }
+      } else {
+        if (!editor.library.isExpanded) {
+          var mode = editor.library.mode == LibraryDisplayMode.toolbox
+              ? LibraryDisplayMode.collapsed
+              : LibraryDisplayMode.toolbox;
+          editor.dispatch(GraphEditorCommand.showLibrary(mode));
+        } else {
+          var mode = editor.library.mode == LibraryDisplayMode.expanded
+              ? LibraryDisplayMode.detailed
+              : LibraryDisplayMode.expanded;
+          editor.dispatch(GraphEditorCommand.showLibrary(mode));
+        }
+      }
+    }
+
+    if (evt.keyCode >= 48 && evt.keyCode <= 57) {
+      int hotkey = evt.keyCode == 48 ? 9 : evt.keyCode - 49;
+      addFromToolbox(hotkey, evt);
+    }
+
+    if (key == " ") {
+      addFromToolbox(-1, evt);
       return true;
     }
 

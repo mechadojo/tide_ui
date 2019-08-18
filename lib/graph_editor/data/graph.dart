@@ -246,6 +246,8 @@ class Graph {
   //
   static var font = SourceSansProFont;
   static Paint blackPaint = Paint()..color = Colors.black;
+  static Paint whitePaint = Paint()..color = Colors.white;
+
   static Paint redPen = Paint()
     ..color = Colors.red
     ..style = PaintingStyle.stroke;

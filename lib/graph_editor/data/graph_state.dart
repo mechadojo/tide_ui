@@ -85,7 +85,9 @@ class GraphState extends UpdateNotifier {
     return result;
   }
 
-  GraphNode copyNode(GraphNode node) {
+  GraphNode clone(GraphNode node) {
+    if (node == null) return null;
+
     var packed = node.pack();
     node.name = GraphNode.randomName();
     return unpackNode(packed);

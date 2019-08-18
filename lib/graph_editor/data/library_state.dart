@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_event.dart';
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'graph_node.dart';
@@ -76,5 +77,22 @@ class LibraryState extends UpdateNotifier {
     int count = 10;
     toolbox = [...GraphState.random(count).map((x) => LibraryItem.node(x))];
     toolbox[Random().nextInt(count)].isDefault = true;
+  }
+
+  GraphNode getDefaultNode([GraphEvent evt]) {
+    if (toolbox.isEmpty) return null;
+
+    var item =
+        toolbox.firstWhere((x) => x.isDefault, orElse: () => toolbox.first);
+    return item.dropNode;
+  }
+
+  GraphNode getToolboxNode([int hotkey = -1, GraphEvent evt]) {
+    if (hotkey == -1) return getDefaultNode(evt);
+
+    if (toolbox.isEmpty) return null;
+
+    var item = toolbox[hotkey % toolbox.length];
+    return item.dropNode;
   }
 }

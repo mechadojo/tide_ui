@@ -29,6 +29,22 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.expandLibrary() {
+    handler = (GraphEditorController editor) {
+      if (!editor.library.isExpanded) {
+        editor.showLibrary(editor.library.lastExpanded);
+      }
+    };
+  }
+
+  GraphEditorCommand.collapseLibrary() {
+    handler = (GraphEditorController editor) {
+      if (!editor.library.isCollapsed) {
+        editor.showLibrary(editor.library.lastCollapsed);
+      }
+    };
+  }
+
   GraphEditorCommand.hideLibrary() {
     handler = (GraphEditorController editor) {
       editor.hideLibrary();
@@ -102,6 +118,13 @@ class GraphEditorCommand {
   GraphEditorCommand.removeNode(GraphNode node) {
     handler = (GraphEditorController editor) {
       editor.graph.controller.removeNode(node);
+    };
+  }
+
+  GraphEditorCommand.addNode(GraphNode node,
+      {List<GraphLink> links, bool drag = false}) {
+    handler = (GraphEditorController editor) {
+      editor.addNode(node, links: links, drag: drag);
     };
   }
 

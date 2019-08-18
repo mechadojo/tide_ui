@@ -7,18 +7,21 @@ class PackedNodePort {
   NodePortType type;
   RefGraphNode node;
   String name;
-  int ordinal;
+  int ordinal = 0;
+  bool isDefault = false;
 
   PackedNodePort.port(NodePort port) {
     type = port.type;
     node = port.node.ref();
     name = port.name;
     ordinal = port.ordinal;
+    isDefault = port.isDefault;
   }
 
   NodePort unpack(GetNodeByName lookup) {
     GraphNode target = lookup(node.name) as GraphNode;
     NodePort result = target.getOrAddPort(name, type);
+    result.isDefault = isDefault;
     return result;
   }
 }
@@ -31,6 +34,8 @@ class NodePort extends GraphObject {
 
   String name = "";
   int ordinal = 0;
+  bool isDefault = false;
+
   bool get isInport => type == NodePortType.inport;
   bool get isOutport => type == NodePortType.outport;
 

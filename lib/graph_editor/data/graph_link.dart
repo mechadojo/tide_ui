@@ -43,9 +43,9 @@ class GraphLink extends GraphObject {
   bool get changed => outPort.pos != pathStart || inPort.pos != pathEnd;
 
   GraphLink();
-  GraphLink.link(NodePort fromPort, NodePort toPort) {
-    this.outPort = fromPort;
-    this.inPort = toPort;
+  GraphLink.link(NodePort outPort, NodePort inPort) {
+    this.outPort = outPort;
+    this.inPort = inPort;
   }
 
   PackedGraphLink pack() {

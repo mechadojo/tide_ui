@@ -10,6 +10,7 @@ import 'package:tide_ui/graph_editor/data/canvas_tab.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
+import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
@@ -413,5 +414,23 @@ class GraphEditorController extends GraphEditorControllerBase
     }
 
     tabs.endUpdate(true);
+  }
+
+  void addNode(GraphNode node, {List<GraphLink> links, bool drag = false}) {
+    graph.beginUpdate();
+
+    if (drag) {
+      var gpt = canvas.controller.toGraphCoord(cursor);
+      node.moveTo(gpt.dx, gpt.dy);
+      graph.controller.setSelection(node);
+      bool mouseDown = graph.controller.moveMode != MouseMoveMode.none;
+      graph.controller.startDragging(gpt);
+      graph.controller.dragRelease = mouseDown ? 0 : 1;
+      graph.controller.dragDrop = true;
+    }
+
+    graph.controller.addNode(node, links: links);
+
+    graph.endUpdate(true);
   }
 }
