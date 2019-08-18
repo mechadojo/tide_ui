@@ -129,6 +129,37 @@ class GraphNode extends GraphObject {
 
   GraphNode();
 
+  GraphNode.behavior(GraphState graph) {
+    name = GraphNode.randomName();
+    icon = graph.icon;
+    title = graph.title;
+    type = GraphNodeType.behavior;
+    method = graph.name;
+
+    List<String> inputs = [];
+    List<String> outputs = [];
+
+    for (var node in graph.nodes) {
+      if (node.type == GraphNodeType.inport) {
+        inputs.add(node.name);
+      }
+
+      if (node.type == GraphNodeType.outport) {
+        outputs.add(node.name);
+      }
+    }
+
+    for (int i = 0; i < inputs.length; i++) {
+      this.inports.add(NodePort.input(this, i + 1, inputs[i]));
+    }
+
+    for (int i = 0; i < outputs.length; i++) {
+      this.outports.add(NodePort.output(this, i + 1, outputs[i]));
+    }
+
+    resize();
+  }
+
   GraphNode.action(
       {this.name,
       this.title,

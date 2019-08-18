@@ -62,6 +62,12 @@ class GraphState extends UpdateNotifier {
     }
   }
 
+  void layout() {
+    for (var link in links) {
+      link.update();
+    }
+  }
+
   GraphNode getNode(String name) {
     var result = referenced[name];
     if (result != null) return result;
@@ -164,7 +170,25 @@ class GraphState extends UpdateNotifier {
   }
 
   Rect get extents {
-    return getExtents(controller.walkGraph());
+    return getExtents(walkGraph());
+  }
+
+  Iterable<GraphObject> walkGraph() sync* {
+    for (var node in nodes.reversed) {
+      if (node.selected) continue;
+      yield* node.inports;
+      yield* node.outports;
+      yield node;
+    }
+
+    yield* links.reversed;
+
+    for (var node in nodes.reversed) {
+      if (!node.selected) continue;
+      yield* node.inports;
+      yield* node.outports;
+      yield node;
+    }
   }
 
   static Iterable<GraphNode> random(int count) sync* {

@@ -5,6 +5,7 @@ import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
+import 'package:tide_ui/graph_editor/data/node_port.dart';
 
 import 'graph_controller.dart';
 import 'graph_editor_controller.dart';
@@ -43,10 +44,20 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
               icon: "trash-alt", command: GraphEditorCommand.removeNode(node)),
           MenuItem(icon: "chevron-circle-left"),
         ]);
+      case GraphNodeType.behavior:
+        return MenuItemSet([
+          MenuItem(icon: "edit"),
+          MenuItem(
+              icon: "folder-open",
+              command: GraphEditorCommand.showTab(node.method)),
+          MenuItem(
+              icon: "trash-alt", command: GraphEditorCommand.removeNode(node)),
+        ]);
       default:
         return MenuItemSet([
           MenuItem(icon: "edit"),
-          MenuItem(icon: "trash-alt"),
+          MenuItem(
+              icon: "trash-alt", command: GraphEditorCommand.removeNode(node)),
         ]);
     }
   }
@@ -57,6 +68,30 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(icon: "link"),
       MenuItem(icon: "trash-alt", command: GraphEditorCommand.removeLink(link)),
     ]);
+  }
+
+  MenuItemSet getInportMenu(NodePort port) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(icon: "trash-alt"),
+      MenuItem(icon: "sign-in-alt"),
+    ]);
+  }
+
+  MenuItemSet getOutportMenu(NodePort port) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(icon: "sign-out-alt"),
+      MenuItem(icon: "trash-alt"),
+    ]);
+  }
+
+  MenuItemSet getPortMenu(NodePort port) {
+    if (port.isInport) {
+      return getInportMenu(port);
+    } else {
+      return getOutportMenu(port);
+    }
   }
 
   MenuItemSet getGraphMenu(GraphState graph) {

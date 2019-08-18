@@ -38,8 +38,14 @@ class GraphEditorState extends UpdateNotifier {
       currentTab.graph.copy(graph);
     }
 
-    beginUpdate();
+    if (tab == null) {
+      if (tabs.isNotEmpty) {
+        controller.showTab(tabs.keys.first, reload: true);
+      }
+      return;
+    }
 
+    beginUpdate();
     if (tab != null) {
       var next = tabs[tab.name];
       if (next == null) {

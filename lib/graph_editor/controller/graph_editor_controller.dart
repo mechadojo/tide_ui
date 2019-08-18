@@ -5,15 +5,18 @@ import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_browser.dart';
 import 'package:tide_ui/graph_editor/controller/radial_menu_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_state.dart';
+import 'package:tide_ui/graph_editor/data/canvas_tab.dart';
 
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
+import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/focus_state.dart';
+import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'package:tide_ui/main.dart' show AppVersion;
 
@@ -71,7 +74,7 @@ class GraphEditorControllerBase {
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
   Duration timer = Duration.zero;
-
+  int nextChart = 1;
   int ticks = 0;
 
   bool isAutoPanning = false;
@@ -106,10 +109,8 @@ class GraphEditorController extends GraphEditorControllerBase
 
     dispatch(GraphEditorCommand.restoreCharts(), afterTicks: 5);
 
-    dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.toolbox),
+    dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.collapsed),
         afterTicks: 5);
-
-    dispatch(GraphEditorCommand.zoomToFit(), afterTicks: 10);
   }
 
   void handleLongPress() {
@@ -314,6 +315,9 @@ class GraphEditorController extends GraphEditorControllerBase
     editor.touchMode = mode;
     editor.moveCounter = 0;
     editor.endUpdate(true);
+
+    library.beginUpdate(); // library displays hover labels in touch mode
+    library.endUpdate(true);
     return true;
   }
 
@@ -360,5 +364,54 @@ class GraphEditorController extends GraphEditorControllerBase
       graph.paddingRight = library.controller.width;
       graph.endUpdate(true);
     }
+  }
+
+  void newTab() {
+    editor.beginUpdate();
+
+    var tab = CanvasTab();
+    tab.graph.copy(GraphState()
+      ..name = GraphNode.randomName()
+      ..icon = VectorIcons.getRandomName()
+      ..title = "Untitled - ${nextChart++}");
+
+    editor.tabs[tab.name] = tab;
+
+    tabs.beginUpdate();
+
+    tab.graph.layout();
+    var rect = tab.graph.extents.inflate(50);
+    tab.canvas.zoomToFit(rect, canvas.size);
+
+    tabs.addTab(tab, true);
+
+    library.controller.addSheet(tab.graph);
+    tabs.endUpdate(true);
+
+    editor.endUpdate(true);
+  }
+
+  void showTab(String name, {bool reload = false}) {
+    if (tabs.selected == name && !reload) return;
+    if (!editor.tabs.containsKey(name)) return;
+
+    tabs.beginUpdate();
+    if (tabs.hasTab(name)) {
+      tabs.select(name);
+    } else {
+      var tab = editor.tabs[name];
+
+      tab.graph.layout();
+      var rect = tab.graph.extents.inflate(50);
+      tab.canvas.zoomToFit(rect, canvas.size);
+
+      tabs.addTab(tab, true);
+    }
+
+    for (var item in tabs.interactive()) {
+      item.clearInteractive();
+    }
+
+    tabs.endUpdate(true);
   }
 }

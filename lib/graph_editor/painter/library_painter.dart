@@ -63,9 +63,7 @@ class LibraryPainter {
 
     var spacing = Graph.LibraryCollapsedItemSpacing;
 
-    if (items.length > 1) {
-      spacing = (rect.height - cy) / (items.length);
-    }
+    spacing = (rect.height - cy) / (items.length);
 
     if (spacing < Graph.LibraryCollapsedItemSpacing) {
       spacing = Graph.LibraryCollapsedItemSpacing;
@@ -83,12 +81,16 @@ class LibraryPainter {
           ? Graph.LibraryItemIconHoverColor
           : Graph.LibraryItemIconColor;
 
-      var factor = item.hovered ? .875 : .5;
+      bool defaultShowLabel = library.controller.editor.isTouchMode ||
+          library.mode == LibraryDisplayMode.collapsed;
 
+      bool showLabel = item.hovered || defaultShowLabel;
+      var factor = item.hovered ? .875 : .5;
       if (library.controller.mouseMode != LibraryMouseMode.none) {
         icon = item.icon;
         fill = Graph.LibraryItemIconColor;
         factor = .5;
+        showLabel = defaultShowLabel;
       }
 
       var size = spacing * factor;
@@ -103,9 +105,16 @@ class LibraryPainter {
 
       item.resizeTo(size, size);
       item.moveTo(cx, cy);
+      var iconSize = size * .75;
+      VectorIcons.paint(canvas, icon, item.pos, iconSize, fill: fill);
 
-      VectorIcons.paint(canvas, icon, item.pos, size * .75, fill: fill);
+      if (showLabel) {
+        var labelPos = item.pos.translate(0, iconSize / 2 + 4);
+        var labelWidth = rect.width - 8;
 
+        Graph.font.paint(canvas, item.name, labelPos, 8,
+            fill: fill, width: labelWidth, alignment: Alignment.topCenter);
+      }
       cy += spacing;
     }
   }

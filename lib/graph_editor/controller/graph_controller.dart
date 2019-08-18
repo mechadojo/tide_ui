@@ -316,24 +316,6 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
-  Iterable<GraphObject> walkGraph() sync* {
-    for (var node in graph.nodes.reversed) {
-      if (node.selected) continue;
-      yield* node.inports;
-      yield* node.outports;
-      yield node;
-    }
-
-    yield* graph.links.reversed;
-
-    for (var node in graph.nodes.reversed) {
-      if (!node.selected) continue;
-      yield* node.inports;
-      yield* node.outports;
-      yield node;
-    }
-  }
-
   @override
   Offset getPos(Offset pt) {
     return editor.canvas.toGraphCoord(pt);
@@ -546,7 +528,7 @@ class GraphController with MouseController, KeyboardController {
     bool changed = false;
     bool isHovering = false;
 
-    for (var item in walkGraph()) {
+    for (var item in graph.walkGraph()) {
       // only one item at a time can have hovering focus
       if (isHovering) {
         if (item.hovered) {

@@ -61,12 +61,17 @@ class CanvasTabsState extends UpdateNotifier {
     nextTab = tabs.length + 1;
   }
 
+  bool hasTab(String name) {
+    return tabs.any((x) => x.name == name);
+  }
+
   /// Add a new tab and optionally [select] it.
-  void add({String title, String name, String icon, bool select}) {
+  CanvasTab add({String title, String name, String icon, bool select}) {
     if (name == null) name = "tab${nextTab++}";
 
     var tab = CanvasTab(title: title, name: name, icon: icon);
     addTab(tab, select);
+    return tab;
   }
 
   /// Get the currently selected tab.

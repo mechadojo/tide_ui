@@ -25,10 +25,7 @@ class RadialMenuPainter {
     canvas.drawCircle(menu.pos, Graph.RadialMenuSize, Graph.RadialMenuColor);
 
     var iconSize = getIconSize(menu);
-    var rect = Rect.fromCenter(
-        center: menu.pos,
-        width: Graph.RadialMenuSize * 2,
-        height: Graph.RadialMenuSize * 2);
+    var rect = Rect.fromCircle(center: menu.pos, radius: Graph.RadialMenuSize);
 
     for (var sector in menu.sectors) {
       var disabled = sector.command == null;
@@ -62,12 +59,25 @@ class RadialMenuPainter {
 
     var centerSize = Graph.RadialMenuIconSize;
     var centerPaint = Graph.RadialMenuIconColor;
+    var centerPos = menu.pos;
+
     if (menu.center.hovered && menu.center.command != null) {
       centerSize *= 1.25;
       centerPaint = Graph.RadialMenuHoverIconColor;
     }
 
-    VectorIcons.paint(canvas, menu.center.icon, menu.pos, centerSize,
+    if (menu.center.hasTitle) {
+      centerSize *= .875;
+      centerPos = menu.pos.translate(0, -10);
+      var textPos = centerPos.translate(0, centerSize / 2 + 4);
+
+      Graph.font.paint(canvas, menu.center.title, textPos, 10,
+          fill: centerPaint,
+          width: Graph.RadialMenuSize,
+          alignment: Alignment.topCenter);
+    }
+
+    VectorIcons.paint(canvas, menu.center.icon, centerPos, centerSize,
         fill: centerPaint);
   }
 }

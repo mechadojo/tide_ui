@@ -17,6 +17,12 @@ class GraphEditorCommand {
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
 
+  GraphEditorCommand.showTab(String name) {
+    handler = (GraphEditorController editor) {
+      editor.showTab(name);
+    };
+  }
+
   GraphEditorCommand.showLibrary([LibraryDisplayMode mode]) {
     handler = (GraphEditorController editor) {
       editor.showLibrary(mode);
@@ -162,9 +168,12 @@ class GraphEditorCommand {
   }
 
   GraphEditorCommand.showPortMenu(NodePort port, Offset pt) {
-    print("show port menu: $port");
     handler = (GraphEditorController editor) {
-      editor.showMenu(pt);
+      var menu = editor.getPortMenu(port)
+        ..icon = port.node.icon
+        ..title = port.name;
+
+      editor.openMenu(menu, pt);
     };
   }
 
@@ -201,8 +210,7 @@ class GraphEditorCommand {
 
   GraphEditorCommand.newTab() {
     handler = (GraphEditorController editor) {
-      editor.tabs.add(select: true);
-      editor.dispatch(GraphEditorCommand.zoomToFit(), afterTicks: 1);
+      editor.newTab();
     };
   }
 
@@ -244,7 +252,7 @@ class GraphEditorCommand {
 
   GraphEditorCommand.restoreCharts() {
     handler = (GraphEditorController editor) {
-      editor.tabs.add(select: true);
+      editor.dispatch(GraphEditorCommand.newTab());
     };
   }
 }

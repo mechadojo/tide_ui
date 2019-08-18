@@ -9,6 +9,8 @@ import 'update_notifier.dart';
 
 class LibraryItem extends MenuItem {
   GraphNode node;
+  GraphState graph;
+
   String name;
   bool isDefault = false;
   List<LibraryItem> items = [];
@@ -16,6 +18,20 @@ class LibraryItem extends MenuItem {
   LibraryItem.node(this.node) {
     icon = node.icon;
     name = node.hasTitle ? node.title : node.name;
+  }
+
+  LibraryItem.graph(GraphState graph) {
+    this.graph = graph;
+    icon = graph.icon;
+    name = graph.title;
+  }
+
+  GraphNode get dropNode {
+    if (graph != null) {
+      return GraphNode.behavior(graph);
+    }
+
+    return node;
   }
 }
 

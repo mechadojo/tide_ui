@@ -46,7 +46,7 @@ class Graph {
   static const double LibraryCollapsedItemRadius = 5;
   static const double LibraryCollapsedItemSize = 30;
   static const double LibraryCollapsedItemIconSize = 20;
-  static const double LibraryCollapsedItemSpacing = 30;
+  static const double LibraryCollapsedItemSpacing = 50;
   static const double LibraryCollapsedItemMaxSpacing = 75;
 
   static const double LibraryDragIconSize = 40;

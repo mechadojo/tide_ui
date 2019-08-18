@@ -200,6 +200,12 @@ class LibraryController with MouseController, KeyboardController {
     }
   }
 
+  void addSheet(GraphState graph) {
+    library.beginUpdate();
+    library.sheets.add(LibraryItem.graph(graph));
+    library.endUpdate(true);
+  }
+
   @override
   bool onMouseMove(GraphEvent evt) {
     if (isMouseDown && mouseMode == LibraryMouseMode.none) {
@@ -248,6 +254,14 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseDoubleTap(GraphEvent evt) {
+    for (var item in draggable()) {
+      if (item.hitbox.contains(evt.pos)) {
+        if (item.graph != null) {
+          editor.dispatch(GraphEditorCommand.showTab(item.graph.name));
+        }
+      }
+    }
+
     mouseMode = LibraryMouseMode.none;
     dragging = null;
     editor.setCursor("default");
@@ -314,8 +328,8 @@ class LibraryController with MouseController, KeyboardController {
       if (item.isHovered(evt.pos)) {
         mouseMode = LibraryMouseMode.dragging;
         dragging = MenuItem()..copy(item);
-
-        dropping = GraphSelection.node(item.node..moveTo(0, 0));
+        var node = item.dropNode..moveTo(0, 0);
+        dropping = GraphSelection.node(node);
 
         return true;
       }
@@ -326,7 +340,6 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseUp(GraphEvent evt) {
-    print("Library Up: ${evt.pos}");
     bool changed = mouseMode != LibraryMouseMode.none;
 
     library.beginUpdate();
