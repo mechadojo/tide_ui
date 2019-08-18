@@ -140,6 +140,26 @@ class GraphNode extends GraphObject {
 
   GraphNode();
 
+  GraphNode.outport([String method]) {
+    name = GraphNode.randomName();
+    this.method = method ?? name;
+    icon = "sign-out-alt";
+    type = GraphNodeType.outport;
+
+    this.inports.add(NodePort.input(this, 1, "in"));
+    resize();
+  }
+
+  GraphNode.inport([String method]) {
+    name = GraphNode.randomName();
+    this.method = method ?? name;
+    icon = "sign-in-alt";
+    type = GraphNodeType.inport;
+
+    this.outports.add(NodePort.output(this, 1, "out"));
+    resize();
+  }
+
   GraphNode.behavior(GraphState graph) {
     name = GraphNode.randomName();
     icon = graph.icon;
@@ -152,11 +172,12 @@ class GraphNode extends GraphObject {
 
     for (var node in graph.nodes) {
       if (node.type == GraphNodeType.inport) {
-        inputs.add(node.name);
+        print("Inport: ${node.method}");
+        inputs.add(node.method);
       }
 
       if (node.type == GraphNodeType.outport) {
-        outputs.add(node.name);
+        outputs.add(node.method);
       }
     }
 

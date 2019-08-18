@@ -65,6 +65,10 @@ class GraphNodePainter {
     if (zoomedOut) return;
 
     var label = node.hasTitle ? node.title : node.name;
+    if (node.isAnyType(Inport_Outport)) {
+      label = node.method;
+    }
+
     var pos = Offset(node.pos.dx, node.pos.dy + node.size.height / 2 + 4);
 
     var rect = font.limits(label, pos, 8, alignment: Alignment.topCenter);
@@ -85,6 +89,10 @@ class GraphNodePainter {
       var label = node.method;
 
       if (label.isNotEmpty) {
+        if (node.type == GraphNodeType.behavior) {
+          label = "#$label";
+        }
+
         var pt = Offset(node.pos.dx, node.pos.dy + node.size.height / 2 - 3);
 
         font.paint(canvas, label, pt, 5,

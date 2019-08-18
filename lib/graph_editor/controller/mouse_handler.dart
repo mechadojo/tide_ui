@@ -352,7 +352,9 @@ class MouseHandler {
       return;
     }
 
-    if (!library.isHovered(evt.pos) && !editor.isViewMode) {
+    int release = editor.graph.controller.dragRelease;
+
+    if (!library.isHovered(evt.pos) && !editor.isViewMode && release <= 0) {
       GraphEvent.start = evt;
       editor.startLongPress(evt);
     }

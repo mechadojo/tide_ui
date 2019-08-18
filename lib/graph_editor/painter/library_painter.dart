@@ -99,6 +99,10 @@ class LibraryPainter {
         showHotkey = false;
       }
 
+      if (item.alerted) {
+        fill = Graph.LibraryItemIconAlertColor;
+      }
+
       var size = spacing * factor;
 
       if (size < Graph.LibraryCollapsedItemSize) {

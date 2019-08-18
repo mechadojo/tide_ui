@@ -63,6 +63,8 @@ class Graph {
 
   static Paint LibraryItemIconHoverColor = Paint()..color = Colors.black;
 
+  static Paint LibraryItemIconAlertColor = Paint()..color = GroupColors[0];
+
   static Paint LibraryTopIconColor = Paint()
     ..color = Color(0xff333333).withAlpha(150);
 

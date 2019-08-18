@@ -122,10 +122,32 @@ class GraphEditorCommand {
   }
 
   GraphEditorCommand.addNode(GraphNode node,
-      {List<GraphLink> links, bool drag = false}) {
+      {List<GraphLink> links, bool drag = false, double offset = 0}) {
     handler = (GraphEditorController editor) {
-      editor.addNode(node, links: links, drag: drag);
+      editor.addNode(node, links: links, drag: drag, offset: offset);
     };
+  }
+
+  factory GraphEditorCommand.addGraphOutport(
+      {NodePort attach, bool drag = false}) {
+    var node = GraphNode.outport();
+    List<GraphLink> links = [];
+    if (attach != null) {
+      links.add(GraphLink.link(attach, node.defaultInport));
+    }
+    return GraphEditorCommand.addNode(node,
+        links: links, drag: drag, offset: 2);
+  }
+
+  factory GraphEditorCommand.addGraphInport(
+      {NodePort attach, bool drag = false}) {
+    var node = GraphNode.inport();
+    List<GraphLink> links = [];
+    if (attach != null) {
+      links.add(GraphLink.link(node.defaultOutport, attach));
+    }
+    return GraphEditorCommand.addNode(node,
+        links: links, drag: drag, offset: -2);
   }
 
   // ************************************************************

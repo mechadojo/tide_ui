@@ -74,14 +74,19 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
     return MenuItemSet([
       MenuItem(icon: "edit"),
       MenuItem(icon: "trash-alt"),
-      MenuItem(icon: "sign-in-alt"),
+      MenuItem(
+          icon: "sign-in-alt",
+          command: GraphEditorCommand.addGraphInport(attach: port, drag: true)),
     ]);
   }
 
   MenuItemSet getOutportMenu(NodePort port) {
     return MenuItemSet([
       MenuItem(icon: "edit"),
-      MenuItem(icon: "sign-out-alt"),
+      MenuItem(
+          icon: "sign-out-alt",
+          command:
+              GraphEditorCommand.addGraphOutport(attach: port, drag: true)),
       MenuItem(icon: "trash-alt"),
     ]);
   }

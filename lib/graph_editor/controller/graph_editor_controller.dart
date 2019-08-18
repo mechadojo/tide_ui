@@ -200,7 +200,9 @@ class GraphEditorController extends GraphEditorControllerBase
   }
 
   void onChangeTabs() {
+    library.beginUpdate();
     editor.onChangeTab(tabs.current, canvas, graph);
+    library.endUpdate(library.controller.update());
   }
 
   List<SingleChildCloneableWidget> get providers {
@@ -392,6 +394,10 @@ class GraphEditorController extends GraphEditorControllerBase
     editor.endUpdate(true);
   }
 
+  bool isTabSelected(String name) {
+    return tabs.selected == name;
+  }
+
   void showTab(String name, {bool reload = false}) {
     if (tabs.selected == name && !reload) return;
     if (!editor.tabs.containsKey(name)) return;
@@ -416,17 +422,25 @@ class GraphEditorController extends GraphEditorControllerBase
     tabs.endUpdate(true);
   }
 
-  void addNode(GraphNode node, {List<GraphLink> links, bool drag = false}) {
+  void addNode(GraphNode node,
+      {List<GraphLink> links, bool drag = false, double offset = 0}) {
     graph.beginUpdate();
 
     if (drag) {
       var gpt = canvas.controller.toGraphCoord(cursor);
-      node.moveTo(gpt.dx, gpt.dy);
-      graph.controller.setSelection(node);
-      bool mouseDown = graph.controller.moveMode != MouseMoveMode.none;
-      graph.controller.startDragging(gpt);
-      graph.controller.dragRelease = mouseDown ? 0 : 1;
-      graph.controller.dragDrop = true;
+
+      if (isTouchMode) {
+        gpt = gpt.translate(node.size.width * offset, 0);
+        node.moveTo(gpt.dx, gpt.dy);
+      } else {
+        node.moveTo(gpt.dx, gpt.dy);
+
+        graph.controller.setSelection(node);
+        bool mouseDown = graph.controller.moveMode != MouseMoveMode.none;
+        graph.controller.startDragging(gpt);
+        graph.controller.dragRelease = mouseDown ? 0 : 1;
+        graph.controller.dragDrop = true;
+      }
     }
 
     graph.controller.addNode(node, links: links);

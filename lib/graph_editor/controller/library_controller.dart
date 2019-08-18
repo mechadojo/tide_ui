@@ -206,6 +206,20 @@ class LibraryController with MouseController, KeyboardController {
     library.endUpdate(true);
   }
 
+  bool update() {
+    bool changed = false;
+    for (var item in library.sheets) {
+      var alerted = editor.isTabSelected(item.graph.name);
+      if (alerted != item.alerted) {
+        changed = true;
+      }
+
+      item.clearInteractive();
+      item.alerted = alerted;
+    }
+    return changed;
+  }
+
   @override
   bool onMouseMove(GraphEvent evt) {
     if (isMouseDown && mouseMode == LibraryMouseMode.none) {
@@ -237,11 +251,15 @@ class LibraryController with MouseController, KeyboardController {
       }
     }
 
+    library.beginUpdate();
     if (mouseMode == LibraryMouseMode.none) {
-      library.beginUpdate();
       for (var item in interactive()) {
+        if (item.alerted) continue;
+
         changed |= item.checkHovered(evt.pos);
-        hovered |= item.hovered;
+        if (!item.alerted) {
+          hovered |= item.hovered;
+        }
       }
     }
 
@@ -325,6 +343,7 @@ class LibraryController with MouseController, KeyboardController {
 
   bool checkStartDrag(GraphEvent evt) {
     for (var item in draggable()) {
+      if (item.alerted) continue;
       if (item.isHovered(evt.pos)) {
         mouseMode = LibraryMouseMode.dragging;
         dragging = MenuItem()..copy(item);
