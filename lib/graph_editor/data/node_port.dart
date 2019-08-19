@@ -24,6 +24,14 @@ class PackedNodePort {
     result.isDefault = isDefault;
     return result;
   }
+
+  Map<String, dynamic> toJson() => {
+        'type': type.toString().split(".").last,
+        'node': node.name,
+        'name': name,
+        'ordinal': ordinal,
+        'isDefault': isDefault
+      };
 }
 
 class NodePort extends GraphObject {

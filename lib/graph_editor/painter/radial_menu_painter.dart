@@ -27,12 +27,17 @@ class RadialMenuPainter {
     var iconSize = getIconSize(menu);
     var rect = Rect.fromCircle(center: menu.pos, radius: Graph.RadialMenuSize);
 
+    var title = menu.center.hasTitle ? menu.center.title : "";
     for (var sector in menu.sectors) {
       var disabled = sector.command == null;
 
       if (sector.hovered && !disabled) {
         canvas.drawArc(rect, sector.startAngle, sector.sectorTheta, true,
             Graph.RadialMenuHoverColor);
+
+        if (sector.hasTitle) {
+          title = sector.title;
+        }
       }
 
       var pos = Offset.fromDirection(sector.startAngle, Graph.RadialMenuSize);
@@ -66,12 +71,12 @@ class RadialMenuPainter {
       centerPaint = Graph.RadialMenuHoverIconColor;
     }
 
-    if (menu.center.hasTitle) {
+    if (title.isNotEmpty) {
       centerSize *= .875;
       centerPos = menu.pos.translate(0, -10);
       var textPos = centerPos.translate(0, centerSize / 2 + 4);
 
-      Graph.font.paint(canvas, menu.center.title, textPos, 10,
+      Graph.font.paint(canvas, title, textPos, 10,
           fill: centerPaint,
           width: Graph.RadialMenuSize,
           alignment: Alignment.topCenter);

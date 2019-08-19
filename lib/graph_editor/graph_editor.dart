@@ -29,6 +29,8 @@ class _GraphEditorPageState extends State<GraphEditorPage>
 
   @override
   Widget build(BuildContext context) {
+    editor.platform = Theme.of(context).platform.toString();
+
     return Scaffold(
       body: MultiProvider(
         providers: [...editor.providers],

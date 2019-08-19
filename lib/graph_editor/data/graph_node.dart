@@ -96,6 +96,22 @@ class PackedGraphNode {
     node.version = version;
     return node;
   }
+
+  Map<String, dynamic> toJson() => {
+        'type': type.toString().split(".").last,
+        'name': name,
+        'title': title,
+        'icon': icon,
+        'method': method,
+        'comment': comment,
+        'logging': logging,
+        'debugging': debugging,
+        'delay': delay,
+        'inports': inports,
+        'outports': outports,
+        'pos': [pos.dx, pos.dy],
+        'version': version,
+      };
 }
 
 class GraphNode extends GraphObject {

@@ -23,6 +23,7 @@ import 'package:tide_ui/main.dart' show AppVersion;
 
 import 'canvas_controller.dart';
 import 'graph_controller.dart';
+import 'graph_editor_filesource.dart';
 import 'library_controller.dart';
 import 'graph_editor_comand.dart';
 import 'graph_editor_menus.dart';
@@ -39,8 +40,16 @@ class GraphEditorControllerBase {
         name: "app-menu",
         icon: "ellipsisV",
         command: GraphEditorCommand.showAppMenu()),
-    MenuItem(name: "save", icon: "solidSave", iconAlt: "save"),
-    MenuItem(name: "open", icon: "solidFolderOpen", iconAlt: "folderOpen"),
+    MenuItem(
+        name: "save",
+        icon: "solidSave",
+        iconAlt: "save",
+        command: GraphEditorCommand.saveFile()),
+    MenuItem(
+        name: "open",
+        icon: "solidFolderOpen",
+        iconAlt: "folderOpen",
+        command: GraphEditorCommand.openFolder()),
     MenuItem(
         name: "tab-prev",
         icon: "angleLeft",
@@ -78,8 +87,10 @@ class GraphEditorControllerBase {
   int nextChart = 1;
   int ticks = 0;
 
+  String platform;
   bool isAutoPanning = false;
   Offset cursor = Offset.zero; // last position of cursor in screen coord
+  FileSourceType lastSource = FileSourceType.file;
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -87,6 +98,7 @@ class GraphEditorController extends GraphEditorControllerBase
         MouseController,
         KeyboardController,
         GraphEditorMenus,
+        GraphEditorFileSource,
         GraphEditorBrowser {
   GraphEditorController() {
     editor.controller = this;

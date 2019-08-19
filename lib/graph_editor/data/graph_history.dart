@@ -14,6 +14,12 @@ class GraphCommand {
   GraphCommand get reverse {
     return GraphCommand.none;
   }
+
+  Map<String, dynamic> toJson() => {
+        'version': version,
+        'source': source,
+        'name': name,
+      };
 }
 
 class GraphCommandGroup extends GraphCommand {
@@ -46,6 +52,12 @@ class GraphCommandGroup extends GraphCommand {
     cmds.clear();
   }
 
+  Map<String, dynamic> toJson() {
+    var result = super.toJson();
+    result.addAll({"cmds": cmds});
+    return result;
+  }
+
   @override
   GraphCommand get reverse {
     return GraphCommandGroup.all(cmds.map((x) => x.reverse))..version = version;
@@ -75,6 +87,17 @@ class GraphMoveCommand extends GraphCommand {
       ..toPos = fromPos
       ..version = version;
   }
+
+  Map<String, dynamic> toJson() {
+    var result = super.toJson();
+    result.addAll({
+      "node": node.name,
+      "fromPos": [fromPos.dx, fromPos.dy],
+      "toPos": [toPos.dx, toPos.dy],
+    });
+
+    return result;
+  }
 }
 
 class GraphNodeCommand extends GraphCommand {
@@ -102,6 +125,16 @@ class GraphNodeCommand extends GraphCommand {
       ..type = type == "add" ? "remove" : "add"
       ..node = node
       ..version = version;
+  }
+
+  Map<String, dynamic> toJson() {
+    var result = super.toJson();
+    result.addAll({
+      "node": node,
+      "type": type,
+    });
+
+    return result;
   }
 }
 
@@ -131,6 +164,16 @@ class GraphLinkCommand extends GraphCommand {
       ..link = link
       ..version = version;
   }
+
+  Map<String, dynamic> toJson() {
+    var result = super.toJson();
+    result.addAll({
+      "link": link,
+      "type": type,
+    });
+
+    return result;
+  }
 }
 
 class GraphHistory {
@@ -141,6 +184,11 @@ class GraphHistory {
 
   bool get canRedo => redoCmds.isNotEmpty;
   bool get canUndo => undoCmds.isNotEmpty;
+
+  Map<String, dynamic> toJson() => {
+        'version': version,
+        'commands': undoCmds,
+      };
 
   void push(GraphCommand cmd, [bool clear = true]) {
     // optimize empty and single command groups

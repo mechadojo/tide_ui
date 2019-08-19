@@ -1,6 +1,10 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter_web/material.dart';
+import 'package:flutter_web/rendering.dart';
+import 'package:flutter_web_ui/ui.dart' as ui;
+
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
@@ -25,8 +29,42 @@ class GraphSelection {
   }
 }
 
+class PackedGraph {
+  String id;
+  String name;
+  String title;
+  String icon;
+  List<PackedGraphNode> nodes = [];
+  List<PackedGraphLink> links = [];
+  GraphHistory history = GraphHistory();
+
+  PackedGraph.graph(GraphState graph) {
+    id = graph.id;
+    name = graph.name;
+    title = graph.title;
+    icon = graph.icon;
+    nodes = [...graph.nodes.map((x) => x.pack())];
+    links = [...graph.links.map((x) => x.pack())];
+    history.version = graph.history.version;
+    history.undoCmds = [...graph.history.undoCmds];
+    history.redoCmds = [...graph.history.redoCmds];
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'title': title,
+        'icon': icon,
+        'nodes': nodes,
+        'links': links,
+        'history': history.undoCmds,
+      };
+}
+
 class GraphState extends UpdateNotifier {
   GraphController controller;
+
+  GlobalKey graphKey = GlobalKey();
 
   String id = Uuid().v1().toString();
   String name = GraphNode.randomName();
@@ -60,6 +98,19 @@ class GraphState extends UpdateNotifier {
 
       addLink(fromPort, toPort);
     }
+  }
+
+  PackedGraph pack() {
+    return PackedGraph.graph(this);
+  }
+
+  Future<Uint8List> getImage() async {
+    RenderRepaintBoundary boundary = graphKey.currentContext.findRenderObject();
+
+    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+    ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    var pngBytes = byteData.buffer.asUint8List();
+    return pngBytes;
   }
 
   void layout() {

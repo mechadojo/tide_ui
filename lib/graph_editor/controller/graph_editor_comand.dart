@@ -5,6 +5,7 @@ import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/node_port.dart';
 import 'graph_editor_controller.dart';
+import 'graph_editor_filesource.dart';
 import 'graph_event.dart';
 import 'library_controller.dart';
 
@@ -16,6 +17,24 @@ class GraphEditorCommand {
   CommandCondition condition;
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
+
+  GraphEditorCommand.loadChartJson(String content, String filename) {
+    handler = (GraphEditorController editor) {
+      editor.loadChartJson(content, filename);
+    };
+  }
+
+  GraphEditorCommand.saveFile() {
+    handler = (GraphEditorController editor) {
+      editor.saveFile();
+    };
+  }
+
+  GraphEditorCommand.openFolder([FileSourceType source]) {
+    handler = (GraphEditorController editor) {
+      editor.openFolderType(source);
+    };
+  }
 
   GraphEditorCommand.showTab(String name) {
     handler = (GraphEditorController editor) {
@@ -88,12 +107,6 @@ class GraphEditorCommand {
   GraphEditorCommand.setCursor(String cursor) {
     handler = (GraphEditorController editor) {
       editor.setCursor(cursor);
-    };
-  }
-
-  GraphEditorCommand.saveFile() {
-    handler = (GraphEditorController editor) {
-      print("Save File");
     };
   }
 

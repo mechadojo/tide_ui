@@ -11,7 +11,8 @@ import 'update_notifier.dart';
 enum GraphDragMode { panning, selecting, viewing }
 
 class GraphEditorState extends UpdateNotifier {
-  final Map<String, CanvasTab> tabs = Map<String, CanvasTab>();
+  final Map<String, CanvasTab> tabs = {};
+
   GraphEditorController controller;
   MouseHandler mouseHandler;
   KeyboardHandler keyboardHandler;
@@ -20,8 +21,27 @@ class GraphEditorState extends UpdateNotifier {
   GraphDragMode dragMode = GraphDragMode.panning;
   bool touchMode = false;
   bool multiMode = false;
+  bool snapImage = false;
 
   int moveCounter = 0; // number of mouse moves since last reset
+
+  String get platformIcon {
+    var platform = (controller.platform ?? "").split(".").last;
+    platform = "web";
+
+    switch (platform) {
+      case "web":
+        return "chrome-brands";
+      case "ios":
+        return "apple-brands";
+      case "android":
+        return "android-brands";
+      case "windows":
+        return "windows-brands";
+      default:
+        return "thumbtack";
+    }
+  }
 
   void dispatch(GraphEditorCommand cmd) {
     controller.dispatch(cmd);

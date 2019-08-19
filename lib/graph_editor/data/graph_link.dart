@@ -23,6 +23,14 @@ class PackedGraphLink {
       ..inPort = inPort.unpack(lookup)
       ..group = group;
   }
+
+  Map<String, dynamic> toJson() => {
+        'outNode': outPort.node.name,
+        'outPort': outPort.name,
+        'inNode': inPort.node.name,
+        'inPort': inPort.name,
+        'group': group,
+      };
 }
 
 class GraphLink extends GraphObject {
