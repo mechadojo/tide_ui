@@ -24,6 +24,12 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.saveChanges() {
+    handler = (GraphEditorController editor) {
+      editor.saveChanges();
+    };
+  }
+
   GraphEditorCommand.saveFile() {
     handler = (GraphEditorController editor) {
       editor.saveFile();

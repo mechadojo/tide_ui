@@ -172,6 +172,10 @@ class GraphEditorController extends GraphEditorControllerBase
     commands.add(cmd);
   }
 
+  void saveChanges() {
+    editor.saveChanges();
+  }
+
   void previewDrop(GraphSelection dropping) {
     graph.controller.previewDrop(dropping);
   }

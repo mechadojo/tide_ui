@@ -22,6 +22,9 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     var json = JsonEncoder.withIndent("  ");
 
     List data = List();
+
+    editor.saveChanges();
+
     var packed = GraphFile.editor(editor);
     data.add(json.convert(packed));
 

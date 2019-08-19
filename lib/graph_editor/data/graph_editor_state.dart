@@ -47,6 +47,13 @@ class GraphEditorState extends UpdateNotifier {
     controller.dispatch(cmd);
   }
 
+  void saveChanges() {
+    if (currentTab != null) {
+      currentTab.canvas.copy(controller.canvas);
+      currentTab.graph.copy(controller.graph);
+    }
+  }
+
   void onChangeTab(CanvasTab tab, CanvasState canvas, GraphState graph) {
     // Save current canvas and graph state
     if (currentTab != null) {
