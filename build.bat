@@ -5,7 +5,7 @@ goto :end
 
 :next
 echo "Copy to tidechart website ..."
-xcopy .\build ..\tidecharts /e /i /y /s
+xcopy .\build ..\tidecharts\docs /e /i /y /s
 
 :end
 echo "Done."
