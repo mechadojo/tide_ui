@@ -12,7 +12,7 @@ import 'graph_controller.dart';
 import 'graph_editor_controller.dart';
 
 mixin GraphEditorMenus on GraphEditorControllerBase {
-  MenuItemSet getAppMenu() {
+  MenuItemSet getToolsMenu() {
     return MenuItemSet([
       MenuItem(
         icon: "history",
@@ -30,9 +30,9 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
         command: GraphEditorCommand.pushMenu(getOpenFileMenu()),
       ),
       MenuItem(
-        icon: "print",
-        title: "Print",
-        command: GraphEditorCommand.print("Print"),
+        icon: "file",
+        title: "New",
+        command: GraphEditorCommand.newFile(),
       ),
       MenuItem(
         icon: "upload",
@@ -268,7 +268,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
               graph.history.canUndo ? GraphEditorCommand.undoHistory() : null),
       MenuItem(
         icon: "tools",
-        command: GraphEditorCommand.pushMenu(getAppMenu()),
+        command: GraphEditorCommand.pushMenu(getToolsMenu()),
       ),
     ]);
   }

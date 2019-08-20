@@ -40,9 +40,9 @@ class GraphEditorControllerBase {
   final GraphEditorState editor = GraphEditorState();
   final CanvasTabsState tabs = CanvasTabsState(menu: [
     MenuItem(
-        name: "app-menu",
-        icon: "ellipsisV",
-        command: GraphEditorCommand.showAppMenu()),
+      name: "app-menu",
+      icon: "ellipsisV",
+    ),
     MenuItem(
         name: "save",
         icon: "solidSave",
@@ -86,12 +86,12 @@ class GraphEditorControllerBase {
 
   TideChartFile chartFile = TideChartFile()
     ..id = Uuid().v1().toString()
-    ..name = "chart_${GraphNode.randomName()}.chart";
+    ..name = "tide_${GraphNode.randomName()}.chart";
 
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
   Duration timer = Duration.zero;
-  int nextChart = 1;
+  int nextSheet = 1;
   int ticks = 0;
 
   String platform;
@@ -133,22 +133,37 @@ class GraphEditorController extends GraphEditorControllerBase
         afterTicks: 5);
   }
 
+  void newFile() {
+    chartFile = TideChartFile()
+      ..id = Uuid().v1().toString()
+      ..name = "tide_${GraphNode.randomName()}.chart";
+    nextSheet = 0;
+    loadChart();
+  }
+
   void loadChart() {
     beginUpdateAll();
 
-    var file = GraphFile.chart(chartFile);
+    setTitle("Tide Chart Editor - ${chartFile.name}");
+    var file = GraphFile(chartFile.chart);
 
     editor.tabs.clear();
     tabs.clear();
     library.sheets.clear();
+    if (file.sheets.isEmpty) {
+      newTab();
+    }
 
     for (var sheet in file.sheets) {
       var tab = CanvasTab();
 
       tab.graph.unpackGraph(sheet);
-      tab.graph.layout();
-      var rect = tab.graph.extents.inflate(50);
-      tab.canvas.zoomToFit(rect, canvas.size);
+
+      if (tab.graph.nodes.isNotEmpty) {
+        tab.graph.layout();
+        var rect = tab.graph.extents.inflate(50);
+        tab.canvas.zoomToFit(rect, canvas.size);
+      }
 
       editor.tabs[tab.graph.name] = tab;
 
@@ -447,7 +462,7 @@ class GraphEditorController extends GraphEditorControllerBase
     var graph = (random ? GraphState.random() : GraphState())
       ..name = GraphNode.randomName()
       ..icon = VectorIcons.getRandomName()
-      ..title = "Untitled - ${nextChart++}";
+      ..title = "Untitled - ${nextSheet++}";
 
     tab.graph.copy(graph);
     if (graph.nodes.isNotEmpty) {

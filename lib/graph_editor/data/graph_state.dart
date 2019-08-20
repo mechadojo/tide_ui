@@ -30,68 +30,6 @@ class GraphSelection {
   }
 }
 
-class PackedGraph {
-  String id;
-  String name;
-  String type;
-  String title;
-  String icon;
-  List<PackedGraphNode> nodes = [];
-  List<PackedGraphLink> links = [];
-  GraphHistory history = GraphHistory();
-
-  PackedGraph.graph(GraphState graph) {
-    id = graph.id;
-    name = graph.name;
-    title = graph.title;
-    icon = graph.icon;
-    type = graph.type;
-    nodes = [...graph.nodes.map((x) => x.pack())];
-    links = [...graph.links.map((x) => x.pack())];
-    history.version = graph.history.version;
-    history.undoCmds = [...graph.history.undoCmds];
-    history.redoCmds = [...graph.history.redoCmds];
-  }
-
-  PackedGraph.chart(TideChartGraph graph) {
-    id = graph.id;
-    name = graph.name;
-    title = graph.title;
-    icon = graph.icon;
-    type = graph.type;
-
-    nodes = [...graph.nodes.map((x) => PackedGraphNode.chart(x))];
-    links = [...graph.links.map((x) => PackedGraphLink.chart(x))];
-    history.undoCmds = [...graph.history.map((x) => GraphCommand.chart(x))];
-  }
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type,
-        'name': name,
-        'title': title,
-        'icon': icon,
-        'nodes': nodes,
-        'links': links,
-        'history': history.undoCmds,
-      };
-
-  TideChartGraph toChart() {
-    TideChartGraph result = TideChartGraph();
-    result.id = id;
-    result.name = name;
-    result.icon = icon;
-
-    if (title != null) result.title = title;
-    if (type != null) result.type = type;
-
-    result.nodes.addAll(nodes.map((x) => x.toChart()));
-    result.links.addAll(links.map((x) => x.toChart()));
-    result.history.addAll(history.undoCmds.map((x) => x.toChart()));
-    return result;
-  }
-}
-
 class GraphState extends UpdateNotifier {
   GraphController controller;
 
@@ -131,10 +69,6 @@ class GraphState extends UpdateNotifier {
     }
   }
 
-  PackedGraph pack() {
-    return PackedGraph.graph(this);
-  }
-
   Future<Uint8List> getImage() async {
     RenderRepaintBoundary boundary = graphKey.currentContext.findRenderObject();
 
@@ -142,6 +76,21 @@ class GraphState extends UpdateNotifier {
     ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     var pngBytes = byteData.buffer.asUint8List();
     return pngBytes;
+  }
+
+  TideChartGraph pack() {
+    TideChartGraph result = TideChartGraph();
+    result.id = id;
+    result.name = name;
+    result.icon = icon;
+
+    if (title != null) result.title = title;
+    if (type != null) result.type = type;
+
+    result.nodes.addAll(nodes.map((x) => x.pack()));
+    result.links.addAll(links.map((x) => x.pack()));
+    result.history.addAll(history.undoCmds);
+    return result;
   }
 
   void layout() {
@@ -161,7 +110,6 @@ class GraphState extends UpdateNotifier {
       return result;
     }
 
-    print("Creating a new node for $name");
     result = GraphNode()..name = name;
     referenced[name] = result;
     return result;
@@ -175,7 +123,7 @@ class GraphState extends UpdateNotifier {
     return unpackNode(packed);
   }
 
-  void unpackGraph(PackedGraph graph) {
+  void unpackGraph(TideChartGraph graph) {
     id = graph.id;
     name = graph.name;
     title = graph.title;
@@ -185,19 +133,19 @@ class GraphState extends UpdateNotifier {
     nodes = [...graph.nodes.map((x) => unpackNode(x))];
     links = [...graph.links.map((x) => unpackLink(x))];
 
-    history = graph.history;
+    history = GraphHistory()..undoCmds = [...graph.history];
   }
 
-  GraphNode unpackNode(PackedGraphNode node) {
-    return node.unpack(getNode);
+  GraphNode unpackNode(TideChartNode node) {
+    return GraphNode.unpack(node, getNode);
   }
 
-  GraphLink unpackLink(PackedGraphLink link) {
-    return link.unpack(getNode);
+  GraphLink unpackLink(TideChartLink link) {
+    return GraphLink.unpack(link, getNode);
   }
 
-  NodePort unpackPort(PackedNodePort port) {
-    return port.unpack(getNode);
+  NodePort unpackPort(TideChartPort port) {
+    return NodePort.unpack(port, getNode);
   }
 
   int findNode(GraphNode node) {

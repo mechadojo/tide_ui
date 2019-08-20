@@ -1,4 +1,5 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_chart/tide_chart.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
@@ -57,38 +58,63 @@ class GraphController with MouseController, KeyboardController {
   bool hoverCanceled = false; // tracks if hovering needs to be canceled
   bool updating = false;
 
-  void applyCommand(GraphCommand cmd) {
+  void applyCommand(TideChartCommand cmd, {bool reverse = false}) {
     graph.beginUpdate();
 
-    if (cmd is GraphCommandGroup) {
-      for (var inner in cmd.cmds) {
-        applyCommand(inner);
-      }
+    switch (cmd.whichCommand()) {
+      case TideChartCommand_Command.group:
+        for (var inner in cmd.group.commands) {
+          applyCommand(inner, reverse: reverse);
+        }
+        break;
+      case TideChartCommand_Command.move:
+        {
+          var node = graph.getNode(cmd.move.node);
+
+          var dx = reverse
+              ? cmd.move.fromPosX.toDouble()
+              : cmd.move.toPosX.toDouble();
+          var dy = reverse
+              ? cmd.move.fromPosY.toDouble()
+              : cmd.move.toPosY.toDouble();
+
+          node.moveTo(dx, dy);
+        }
+        break;
+
+      case TideChartCommand_Command.link:
+        {
+          var packed = GraphCommand.getLink(cmd.link);
+          var link = graph.unpackLink(packed);
+
+          if (GraphCommand.isNotUpdating(cmd.link.type)) {
+            if (GraphCommand.isAdding(cmd.link.type, reverse)) {
+              addLink(link.outPort, link.inPort,
+                  group: link.group, save: false);
+            } else {
+              removeLink(link.outPort, link.inPort, save: false);
+            }
+          }
+        }
+        break;
+      case TideChartCommand_Command.node:
+        {
+          var packed = GraphCommand.getNode(cmd.node);
+          var node = graph.unpackNode(packed);
+
+          if (GraphCommand.isNotUpdating(cmd.node.type)) {
+            if (GraphCommand.isAdding(cmd.node.type, reverse)) {
+              addNode(node, save: false);
+            } else {
+              removeNode(node, save: false);
+            }
+          }
+        }
+        break;
+      default:
+        break;
     }
 
-    if (cmd is GraphMoveCommand) {
-      var node = graph.getNode(cmd.node.name);
-      node.moveTo(cmd.toPos.dx, cmd.toPos.dy);
-    }
-
-    if (cmd is GraphLinkCommand) {
-      var link = graph.unpackLink(cmd.link);
-
-      if (cmd.type == "add") {
-        addLink(link.outPort, link.inPort, group: link.group, save: false);
-      } else if (cmd.type == "remove") {
-        removeLink(link.outPort, link.inPort, save: false);
-      }
-    }
-
-    if (cmd is GraphNodeCommand) {
-      var node = graph.unpackNode(cmd.node);
-      if (cmd.type == "add") {
-        addNode(node, save: false);
-      } else if (cmd.type == "remove") {
-        removeNode(node, save: false);
-      }
-    }
     graph.endUpdate(true);
   }
 
@@ -121,16 +147,16 @@ class GraphController with MouseController, KeyboardController {
     var dx = dropping.pos.dx;
     var dy = dropping.pos.dy;
 
-    GraphCommandGroup cmd = GraphCommandGroup();
+    var cmd = TideChartCommand()..group = TideChartGroupCommand();
 
     for (var node in dropping.nodes) {
       var next = graph.clone(node);
       next.moveBy(dx, dy);
 
-      cmd.add(GraphNodeCommand.add(next));
+      cmd.group.commands.add(GraphCommand.addNode(node));
     }
 
-    if (cmd.isNotEmpty) {
+    if (cmd.group.commands.isNotEmpty) {
       applyCommand(cmd);
       graph.history.push(cmd);
     }
@@ -143,7 +169,7 @@ class GraphController with MouseController, KeyboardController {
 
     graph.beginUpdate();
     var cmd = graph.history.undo();
-    applyCommand(cmd.reverse);
+    applyCommand(cmd, reverse: true);
 
     clearSelection();
     graph.endUpdate(true);
@@ -195,7 +221,7 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
 
     if (save) {
-      var cmd = GraphLinkCommand.remove(link);
+      var cmd = GraphCommand.removeLink(link);
       graph.history.push(cmd);
     }
   }
@@ -214,11 +240,11 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
 
     if (save) {
-      GraphCommandGroup cmd = GraphCommandGroup()
-        ..add(GraphNodeCommand.remove(node))
-        ..addAll(links.map((x) => GraphLinkCommand.remove(x)));
+      var cmd = TideChartGroupCommand()
+        ..commands.add(GraphCommand.removeNode(node))
+        ..commands.addAll(links.map((x) => GraphCommand.removeLink(x)));
 
-      graph.history.push(cmd);
+      graph.history.push(TideChartCommand()..group = cmd);
     }
   }
 
@@ -239,18 +265,18 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
 
     if (save) {
-      var cmd = GraphCommandGroup()
-        ..add(GraphNodeCommand.add(node))
-        ..addAll(links.map((x) => GraphLinkCommand.add(x)));
+      var cmd = TideChartGroupCommand()
+        ..commands.add(GraphCommand.addNode(node))
+        ..commands.addAll(links.map((x) => GraphCommand.addLink(x)));
 
-      graph.history.push(cmd);
+      graph.history.push(TideChartCommand()..group = cmd);
     }
   }
 
-  void addLink(NodePort fromPort, NodePort toPort,
+  void addLink(NodePort outPort, NodePort inPort,
       {int group = -1, bool replace = false, bool save = true}) {
-    var outport = fromPort.isOutport ? fromPort : toPort;
-    var inport = fromPort.isInport ? fromPort : toPort;
+    var outport = outPort.isOutport ? outPort : inPort;
+    var inport = outPort.isInport ? outPort : inPort;
 
     var idx = graph.findLink(outport, inport);
     if (idx >= 0 || replace) return;
@@ -263,7 +289,7 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
 
     if (save) {
-      var cmd = GraphLinkCommand.add(link);
+      var cmd = GraphCommand.addLink(link);
       graph.history.push(cmd);
     }
   }
@@ -470,7 +496,7 @@ class GraphController with MouseController, KeyboardController {
     graph.beginUpdate();
 
     if (dragging && selection.isNotEmpty) {
-      var cmd = GraphCommandGroup.moveAll(selection);
+      var cmd = GraphCommand.moveAll(selection);
       graph.history.push(cmd);
     }
 

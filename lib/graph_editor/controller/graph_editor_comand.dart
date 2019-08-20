@@ -24,6 +24,12 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.newFile([FileSourceType source]) {
+    handler = (GraphEditorController editor) {
+      editor.newFile();
+    };
+  }
+
   GraphEditorCommand.saveFile([FileSourceType source]) {
     handler = (GraphEditorController editor) {
       editor.saveFileType(source);
@@ -198,11 +204,15 @@ class GraphEditorCommand {
     };
   }
 
-  GraphEditorCommand.showAppMenu() {
+  GraphEditorCommand.showToolsMenu() {
     handler = (GraphEditorController editor) {
-      var menu = editor.getAppMenu();
+      var menu = editor.getToolsMenu();
       editor.openMenu(menu, Offset(0, 0));
     };
+  }
+
+  GraphEditorCommand.showAppMenu() {
+    handler = (GraphEditorController editor) {};
   }
 
   GraphEditorCommand.showGraphMenu(GraphState graph, Offset pt) {

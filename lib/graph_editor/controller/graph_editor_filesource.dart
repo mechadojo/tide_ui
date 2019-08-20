@@ -73,6 +73,8 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
 
   void openFileSystem() {
     FileUploadInputElement upload = FileUploadInputElement();
+    upload.accept = ".chart";
+
     upload.onChange.listen((evt) {
       if (upload.files.isNotEmpty) {
         var file = upload.files.first;
