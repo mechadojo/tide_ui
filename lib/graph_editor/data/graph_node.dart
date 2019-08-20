@@ -262,10 +262,6 @@ class GraphNode extends GraphObject {
     return result;
   }
 
-  RefGraphNode ref() {
-    return RefGraphNode.node(this);
-  }
-
   TideChartNode pack() {
     TideChartNode result = TideChartNode();
     result.type = type.toString().split(".").last;

@@ -147,13 +147,14 @@ class GraphController with MouseController, KeyboardController {
     var dx = dropping.pos.dx;
     var dy = dropping.pos.dy;
 
+    print("Drop at $dx, $dy");
     var cmd = TideChartCommand()..group = TideChartGroupCommand();
 
     for (var node in dropping.nodes) {
       var next = graph.clone(node);
       next.moveBy(dx, dy);
 
-      cmd.group.commands.add(GraphCommand.addNode(node));
+      cmd.group.commands.add(GraphCommand.addNode(next));
     }
 
     if (cmd.group.commands.isNotEmpty) {
@@ -179,7 +180,6 @@ class GraphController with MouseController, KeyboardController {
     if (!graph.history.canRedo) return;
     graph.beginUpdate();
     var cmd = graph.history.redo();
-    print("Redo: $cmd");
 
     applyCommand(cmd);
     graph.history.push(cmd, false);

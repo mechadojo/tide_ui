@@ -97,7 +97,7 @@ class GraphEditorControllerBase {
   String platform;
   bool isAutoPanning = false;
   Offset cursor = Offset.zero; // last position of cursor in screen coord
-  FileSourceType lastSource = FileSourceType.file;
+  FileSourceType lastSource = FileSourceType.local;
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -353,6 +353,16 @@ class GraphEditorController extends GraphEditorControllerBase
   @override
   bool onKeyDown(GraphEvent evt) {
     var key = evt.key.toLowerCase();
+
+    if (key == "o" && evt.ctrlKey) {
+      editor.dispatch(GraphEditorCommand.openFile());
+      return true;
+    }
+
+    if (key == "s" && evt.ctrlKey) {
+      editor.dispatch(GraphEditorCommand.saveFile());
+      return true;
+    }
 
     if (key == "h") {
       zoomHome();
