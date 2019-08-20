@@ -162,7 +162,7 @@ class CanvasTabsController with MouseController, KeyboardController {
 
     // Ctrl+n = Open new tab
     if (key == "n" && evt.ctrlKey) {
-      editor.dispatch(GraphEditorCommand.newTab());
+      editor.dispatch(GraphEditorCommand.newTab(evt.shiftKey));
       return true;
     }
 

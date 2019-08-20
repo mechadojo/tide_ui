@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_web/material.dart';
 import 'package:flutter_web/rendering.dart';
 import 'package:flutter_web_ui/ui.dart' as ui;
+import 'package:tide_chart/tide_chart.dart';
 
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
@@ -32,6 +33,7 @@ class GraphSelection {
 class PackedGraph {
   String id;
   String name;
+  String type;
   String title;
   String icon;
   List<PackedGraphNode> nodes = [];
@@ -43,6 +45,7 @@ class PackedGraph {
     name = graph.name;
     title = graph.title;
     icon = graph.icon;
+    type = graph.type;
     nodes = [...graph.nodes.map((x) => x.pack())];
     links = [...graph.links.map((x) => x.pack())];
     history.version = graph.history.version;
@@ -50,8 +53,21 @@ class PackedGraph {
     history.redoCmds = [...graph.history.redoCmds];
   }
 
+  PackedGraph.chart(TideChartGraph graph) {
+    id = graph.id;
+    name = graph.name;
+    title = graph.title;
+    icon = graph.icon;
+    type = graph.type;
+
+    nodes = [...graph.nodes.map((x) => PackedGraphNode.chart(x))];
+    links = [...graph.links.map((x) => PackedGraphLink.chart(x))];
+    history.undoCmds = [...graph.history.map((x) => GraphCommand.chart(x))];
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
+        'type': type,
         'name': name,
         'title': title,
         'icon': icon,
@@ -59,6 +75,21 @@ class PackedGraph {
         'links': links,
         'history': history.undoCmds,
       };
+
+  TideChartGraph toChart() {
+    TideChartGraph result = TideChartGraph();
+    result.id = id;
+    result.name = name;
+    result.icon = icon;
+
+    if (title != null) result.title = title;
+    if (type != null) result.type = type;
+
+    result.nodes.addAll(nodes.map((x) => x.toChart()));
+    result.links.addAll(links.map((x) => x.toChart()));
+    result.history.addAll(history.undoCmds.map((x) => x.toChart()));
+    return result;
+  }
 }
 
 class GraphState extends UpdateNotifier {
@@ -70,21 +101,21 @@ class GraphState extends UpdateNotifier {
   String name = GraphNode.randomName();
   String title = "";
   String icon = VectorIcons.getRandomName();
+  String type = "";
 
   int version = 0;
 
   List<GraphNode> nodes = [];
   List<GraphLink> links = [];
 
-  double paddingRight = 0;
-
   // access nodes by reference where nodes may not be fully defined
   // allows reconstructing the recursively defined graph objects
   Map<String, GraphNode> referenced = {};
   GraphHistory history = GraphHistory();
 
-  GraphState() {
-    nodes.addAll(random(10));
+  GraphState();
+  GraphState.random() {
+    nodes.addAll(randomNodes(10));
     var rand = Random();
     for (int i = 0; i < 10; i++) {
       var fromNode = nodes[rand.nextInt(nodes.length)];
@@ -142,6 +173,19 @@ class GraphState extends UpdateNotifier {
     var packed = node.pack();
     node.name = GraphNode.randomName();
     return unpackNode(packed);
+  }
+
+  void unpackGraph(PackedGraph graph) {
+    id = graph.id;
+    name = graph.name;
+    title = graph.title;
+    icon = graph.icon;
+    type = graph.type;
+
+    nodes = [...graph.nodes.map((x) => unpackNode(x))];
+    links = [...graph.links.map((x) => unpackLink(x))];
+
+    history = graph.history;
   }
 
   GraphNode unpackNode(PackedGraphNode node) {
@@ -244,7 +288,7 @@ class GraphState extends UpdateNotifier {
     }
   }
 
-  static Iterable<GraphNode> random(int count) sync* {
+  static Iterable<GraphNode> randomNodes(int count) sync* {
     var rnd = Random();
 
     for (int i = 0; i < count; i++) {
@@ -252,8 +296,8 @@ class GraphState extends UpdateNotifier {
           inputs: List.filled(rnd.nextInt(6) + 1, ""),
           outputs: List.filled(rnd.nextInt(6) + 1, ""))
         ..moveTo(rnd.nextInt(750) + 50.0, rnd.nextInt(750) + 50.0)
-        ..logging = rnd.nextBool()
-        ..debugging = rnd.nextBool()
+        ..isLogging = rnd.nextBool()
+        ..isDebugging = rnd.nextBool()
         ..method = rnd.nextBool()
             ? GraphNode.randomName()
             : rnd.nextBool() ? "really_long_method_name" : ""
@@ -294,6 +338,7 @@ class GraphState extends UpdateNotifier {
     title = other.title;
     icon = other.icon;
     name = other.name;
+    type = other.type;
 
     version = other.version;
     nodes = [...other.nodes];

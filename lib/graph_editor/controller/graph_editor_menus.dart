@@ -20,9 +20,9 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
         command: GraphEditorCommand.print("View History"),
       ),
       MenuItem(
-        icon: "cog",
-        title: "Settings",
-        command: GraphEditorCommand.print("Open Settings"),
+        icon: "save",
+        title: "Save",
+        command: GraphEditorCommand.pushMenu(getSaveFileMenu()),
       ),
       MenuItem(
         icon: "folder-open-solid",
@@ -48,27 +48,58 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
         icon: "github-brands",
         title: "GitHub",
-        command: GraphEditorCommand.openFolder(FileSourceType.github),
+        command: GraphEditorCommand.openFile(FileSourceType.github),
       ),
       MenuItem(
         icon: "google-drive-brands",
         title: "Google",
-        command: GraphEditorCommand.openFolder(FileSourceType.google),
+        command: GraphEditorCommand.openFile(FileSourceType.google),
       ),
       MenuItem(
         icon: "dropbox-brands",
         title: "DropBox",
-        command: GraphEditorCommand.openFolder(FileSourceType.dropbox),
+        command: GraphEditorCommand.openFile(FileSourceType.dropbox),
       ),
       MenuItem(
         icon: "microsoft-brands",
         title: "One Drive",
-        command: GraphEditorCommand.openFolder(FileSourceType.onedrive),
+        command: GraphEditorCommand.openFile(FileSourceType.onedrive),
       ),
       MenuItem(
         icon: "slack-brands",
         title: "Slack",
-        command: GraphEditorCommand.openFolder(FileSourceType.slack),
+        command: GraphEditorCommand.openFile(FileSourceType.slack),
+      ),
+    ])
+      ..icon = "cloud";
+  }
+
+  MenuItemSet getSaveCloudMenu() {
+    return MenuItemSet([
+      MenuItem(
+        icon: "github-brands",
+        title: "GitHub",
+        command: GraphEditorCommand.saveFile(FileSourceType.github),
+      ),
+      MenuItem(
+        icon: "google-drive-brands",
+        title: "Google",
+        command: GraphEditorCommand.saveFile(FileSourceType.google),
+      ),
+      MenuItem(
+        icon: "dropbox-brands",
+        title: "DropBox",
+        command: GraphEditorCommand.saveFile(FileSourceType.dropbox),
+      ),
+      MenuItem(
+        icon: "microsoft-brands",
+        title: "One Drive",
+        command: GraphEditorCommand.saveFile(FileSourceType.onedrive),
+      ),
+      MenuItem(
+        icon: "slack-brands",
+        title: "Slack",
+        command: GraphEditorCommand.saveFile(FileSourceType.slack),
       ),
     ])
       ..icon = "cloud";
@@ -79,15 +110,15 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "code-branch",
           title: "Branch",
-          command: GraphEditorCommand.openFolder(FileSourceType.branch)),
+          command: GraphEditorCommand.openFile(FileSourceType.branch)),
       MenuItem(
           icon: editor.platformIcon,
           title: "Local",
-          command: GraphEditorCommand.openFolder(FileSourceType.local)),
+          command: GraphEditorCommand.openFile(FileSourceType.local)),
       MenuItem(
           icon: "file-archive",
           title: "File",
-          command: GraphEditorCommand.openFolder(FileSourceType.file)),
+          command: GraphEditorCommand.openFile(FileSourceType.file)),
       MenuItem(
           icon: "cloud",
           title: "Cloud",
@@ -95,7 +126,33 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "mobile-alt",
           title: "Device",
-          command: GraphEditorCommand.openFolder(FileSourceType.device)),
+          command: GraphEditorCommand.openFile(FileSourceType.device)),
+    ])
+      ..icon = "folder-open-solid";
+  }
+
+  MenuItemSet getSaveFileMenu() {
+    return MenuItemSet([
+      MenuItem(
+          icon: "code-branch",
+          title: "Branch",
+          command: GraphEditorCommand.saveFile(FileSourceType.branch)),
+      MenuItem(
+          icon: editor.platformIcon,
+          title: "Local",
+          command: GraphEditorCommand.saveFile(FileSourceType.local)),
+      MenuItem(
+          icon: "file-archive",
+          title: "File",
+          command: GraphEditorCommand.saveFile(FileSourceType.file)),
+      MenuItem(
+          icon: "cloud",
+          title: "Cloud",
+          command: GraphEditorCommand.pushMenu(getSaveCloudMenu())),
+      MenuItem(
+          icon: "mobile-alt",
+          title: "Device",
+          command: GraphEditorCommand.saveFile(FileSourceType.device)),
     ])
       ..icon = "folder-open-solid";
   }
@@ -194,7 +251,11 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
   MenuItemSet getGraphMenu(GraphState graph) {
     return MenuItemSet([
       MenuItem(icon: "edit"),
-      MenuItem(icon: "save"),
+      MenuItem(
+        icon: "cog",
+        title: "Settings",
+        command: GraphEditorCommand.print("Open Settings"),
+      ),
       MenuItem(
           icon: "redo",
           title: "Redo",

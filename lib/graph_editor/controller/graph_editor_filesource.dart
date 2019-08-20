@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:html';
+import 'dart:typed_data';
 
-import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/data/graph_file.dart';
 import 'graph_editor_controller.dart';
 
@@ -18,59 +18,102 @@ enum FileSourceType {
 }
 
 mixin GraphEditorFileSource on GraphEditorControllerBase {
-  void saveFile() {
-    var json = JsonEncoder.withIndent("  ");
-
-    List data = List();
-
+  void updateChartFile() {
     editor.saveChanges();
 
     var packed = GraphFile.editor(editor);
-    data.add(json.convert(packed));
+    chartFile.chart = packed.toChart();
+  }
 
-    var file = Blob(data, "text/json", "native");
-    var url = Url.createObjectUrlFromBlob(file);
+  String getChartJson() {
+    updateChartFile();
+    return chartFile.writeToJson();
+  }
 
+  void loadChartBytes(Uint8List bytes) {
+    chartFile.clear();
+    chartFile.mergeFromBuffer(bytes);
+    editor.controller.loadChart();
+  }
+
+  Uint8List getChartBytes() {
+    updateChartFile();
+    return chartFile.writeToBuffer();
+  }
+
+  String getChartBase64() {
+    updateChartFile();
+    var data = chartFile.writeToBuffer();
+    return Base64Encoder().convert(data);
+  }
+
+  String getChartObjectUrl() {
+    if (chartFile.name.endsWith(".chart")) {
+      var data = getChartBytes();
+      var file = Blob([data], "application/octet-stream");
+      return Url.createObjectUrlFromBlob(file);
+    } else if (chartFile.name.endsWith(".json")) {
+      var data = getChartJson();
+      var file = Blob([data], "application/json");
+      return Url.createObjectUrlFromBlob(file);
+    } else {
+      var data = getChartBase64();
+      var file = Blob([data], "application/base64");
+      return Url.createObjectUrlFromBlob(file);
+    }
+  }
+
+  void saveFileSystem() {
+    String url = getChartObjectUrl();
     AnchorElement link = AnchorElement();
     link.href = url;
-    link.download = "graph_${editor.controller.graph.name}.json";
+    link.download = chartFile.name;
     link.click();
   }
 
-  void loadChartJson(String content, String filename) {
-    print("Load $filename (${content.length})");
-  }
-
-  void openFileFolder() {
+  void openFileSystem() {
     FileUploadInputElement upload = FileUploadInputElement();
     upload.onChange.listen((evt) {
       if (upload.files.isNotEmpty) {
         var file = upload.files.first;
-        var blob = file.slice();
 
         FileReader reader = FileReader();
         reader.onLoad.listen((evt) {
-          editor.controller.dispatch(GraphEditorCommand.loadChartJson(
-              reader.result as String, file.name));
+          var data = reader.result as Uint8List;
+          loadChartBytes(data);
         });
 
-        reader.readAsText(blob);
+        reader.readAsArrayBuffer(file);
       }
     });
 
     upload.click();
   }
 
-  void openFolderType(FileSourceType source) {
+  void openFileType(FileSourceType source) {
     source = source ?? lastSource;
     lastSource = source;
 
     switch (source) {
       case FileSourceType.file:
-        openFileFolder();
+        openFileSystem();
         break;
       default:
-        print("Open Folder Type $source not implemented.");
+        print("Open File Type $source not implemented.");
+        break;
+    }
+  }
+
+  void saveFileType(FileSourceType source) {
+    source = source ?? lastSource;
+    lastSource = source;
+
+    switch (source) {
+      case FileSourceType.file:
+        saveFileSystem();
+        break;
+      default:
+        print("Save File Type $source not implemented.");
         break;
     }
   }

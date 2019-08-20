@@ -48,6 +48,8 @@ class GraphController with MouseController, KeyboardController {
   int dragRelease = 0; // allows extra mouse down events without canceling
   bool dragDrop = false; // allows escape to cancel and undo last action
 
+  double paddingRight = 0;
+
   bool get selecting => moveMode == MouseMoveMode.selecting;
   bool get dragging => moveMode == MouseMoveMode.dragging;
   bool get linking => moveMode == MouseMoveMode.linking;

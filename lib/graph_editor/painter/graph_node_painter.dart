@@ -118,9 +118,9 @@ class GraphNodePainter {
       //
       // Logging Icon
       //
-      if (node.logging) {
+      if (node.isLogging) {
         if (zoomedIn) {
-          cx = node.pos.dx + (node.debugging ? sz - 3 : 0);
+          cx = node.pos.dx + (node.isDebugging ? sz - 3 : 0);
         }
 
         VectorIcons.paint(
@@ -136,9 +136,9 @@ class GraphNodePainter {
       // Debugging Icon
       //
       cx = node.pos.dx - (node.size.width / 2 - sz);
-      if (node.debugging) {
+      if (node.isDebugging) {
         if (zoomedIn) {
-          cx = node.pos.dx - (node.logging ? sz - 3 : 0);
+          cx = node.pos.dx - (node.isLogging ? sz - 3 : 0);
         }
 
         VectorIcons.paint(

@@ -23,8 +23,8 @@ class CanvasPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    var screen =
-        Rect.fromLTRB(0, 0, size.width - graph.paddingRight, size.height);
+    var screen = Rect.fromLTRB(
+        0, 0, size.width - graph.controller.paddingRight, size.height);
     state.size = screen.size;
     var pan = screen.inflate(-Graph.AutoPanMargin);
 
@@ -104,7 +104,7 @@ class CanvasPainter extends CustomPainter {
     var cx = size.width -
         Graph.ZoomSliderLeftMargin -
         Graph.ZoomSliderRightMargin -
-        graph.paddingRight;
+        graph.controller.paddingRight;
 
     cx *= pos;
     cx += Graph.ZoomSliderLeftMargin;
@@ -113,7 +113,10 @@ class CanvasPainter extends CustomPainter {
     var p0 = Offset(cx, cy);
     var p1 = Offset(Graph.ZoomSliderLeftMargin, cy);
     var p2 = Offset(
-        size.width - Graph.ZoomSliderRightMargin - graph.paddingRight, cy);
+        size.width -
+            Graph.ZoomSliderRightMargin -
+            graph.controller.paddingRight,
+        cy);
 
     canvas.drawLine(p1, p0, Graph.ZoomSliderLeftLine);
     canvas.drawLine(p0, p2, Graph.ZoomSliderRightLine);

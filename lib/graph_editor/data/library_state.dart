@@ -75,7 +75,9 @@ class LibraryState extends UpdateNotifier {
 
   LibraryState() {
     int count = 10;
-    toolbox = [...GraphState.random(count).map((x) => LibraryItem.node(x))];
+    toolbox = [
+      ...GraphState.randomNodes(count).map((x) => LibraryItem.node(x))
+    ];
     toolbox[Random().nextInt(count)].isDefault = true;
   }
 

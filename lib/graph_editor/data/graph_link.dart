@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_web/material.dart';
+import 'package:tide_chart/tide_chart.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'graph_node.dart';
 import 'graph_state.dart';
@@ -14,6 +15,12 @@ class PackedGraphLink {
   PackedGraphLink.link(GraphLink link) {
     outPort = link.outPort.pack();
     inPort = link.inPort.pack();
+    group = link.group;
+  }
+
+  PackedGraphLink.chart(TideChartLink link) {
+    outPort = PackedNodePort.named(link.outNode, link.outPort, "outport");
+    inPort = PackedNodePort.named(link.inNode, link.inPort, "inport");
     group = link.group;
   }
 
@@ -31,6 +38,20 @@ class PackedGraphLink {
         'inPort': inPort.name,
         'group': group,
       };
+
+  List<TideChartLink> toChanges(PackedGraphLink last) {
+    return [last.toChart(), this.toChart()];
+  }
+
+  TideChartLink toChart() {
+    TideChartLink result = TideChartLink();
+    result.outNode = outPort.node.name;
+    result.outPort = outPort.name;
+    result.inNode = inPort.node.name;
+    result.inPort = inPort.name;
+    result.group = group;
+    return result;
+  }
 }
 
 class GraphLink extends GraphObject {
@@ -47,6 +68,7 @@ class GraphLink extends GraphObject {
   Offset pathStart;
   Offset pathEnd;
   List<Offset> pathControl = [];
+  PackedGraphLink last;
 
   bool get changed => outPort.pos != pathStart || inPort.pos != pathEnd;
 

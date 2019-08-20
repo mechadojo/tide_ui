@@ -18,27 +18,21 @@ class GraphEditorCommand {
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
 
-  GraphEditorCommand.loadChartJson(String content, String filename) {
-    handler = (GraphEditorController editor) {
-      editor.loadChartJson(content, filename);
-    };
-  }
-
   GraphEditorCommand.saveChanges() {
     handler = (GraphEditorController editor) {
       editor.saveChanges();
     };
   }
 
-  GraphEditorCommand.saveFile() {
+  GraphEditorCommand.saveFile([FileSourceType source]) {
     handler = (GraphEditorController editor) {
-      editor.saveFile();
+      editor.saveFileType(source);
     };
   }
 
-  GraphEditorCommand.openFolder([FileSourceType source]) {
+  GraphEditorCommand.openFile([FileSourceType source]) {
     handler = (GraphEditorController editor) {
-      editor.openFolderType(source);
+      editor.openFileType(source);
     };
   }
 
@@ -113,12 +107,6 @@ class GraphEditorCommand {
   GraphEditorCommand.setCursor(String cursor) {
     handler = (GraphEditorController editor) {
       editor.setCursor(cursor);
-    };
-  }
-
-  GraphEditorCommand.openFile() {
-    handler = (GraphEditorController editor) {
-      print("Open File");
     };
   }
 
@@ -272,9 +260,9 @@ class GraphEditorCommand {
   //
   // ************************************************************
 
-  GraphEditorCommand.newTab() {
+  GraphEditorCommand.newTab([bool random = false]) {
     handler = (GraphEditorController editor) {
-      editor.newTab();
+      editor.newTab(random);
     };
   }
 

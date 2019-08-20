@@ -1,5 +1,6 @@
 import 'package:provider/provider.dart';
 import 'package:flutter_web/material.dart';
+import 'package:tide_chart/tide_chart.dart';
 
 import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_browser.dart';
@@ -10,6 +11,7 @@ import 'package:tide_ui/graph_editor/data/canvas_tab.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
+import 'package:tide_ui/graph_editor/data/graph_file.dart';
 import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
@@ -20,6 +22,7 @@ import 'package:tide_ui/graph_editor/data/focus_state.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'package:tide_ui/main.dart' show AppVersion;
+import 'package:uuid/uuid.dart';
 
 import 'canvas_controller.dart';
 import 'graph_controller.dart';
@@ -49,7 +52,7 @@ class GraphEditorControllerBase {
         name: "open",
         icon: "solidFolderOpen",
         iconAlt: "folderOpen",
-        command: GraphEditorCommand.openFolder()),
+        command: GraphEditorCommand.openFile()),
     MenuItem(
         name: "tab-prev",
         icon: "angleLeft",
@@ -80,6 +83,10 @@ class GraphEditorControllerBase {
   bool get isTouchMode => editor.touchMode;
   bool get isMultiMode => editor.multiMode;
   bool get isModalActive => menu.visible;
+
+  TideChartFile chartFile = TideChartFile()
+    ..id = Uuid().v1().toString()
+    ..name = "chart_${GraphNode.randomName()}.chart";
 
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
@@ -124,6 +131,54 @@ class GraphEditorController extends GraphEditorControllerBase
 
     dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.collapsed),
         afterTicks: 5);
+  }
+
+  void loadChart() {
+    beginUpdateAll();
+
+    var file = GraphFile.chart(chartFile);
+
+    editor.tabs.clear();
+    tabs.clear();
+    library.sheets.clear();
+
+    for (var sheet in file.sheets) {
+      var tab = CanvasTab();
+
+      tab.graph.unpackGraph(sheet);
+      tab.graph.layout();
+      var rect = tab.graph.extents.inflate(50);
+      tab.canvas.zoomToFit(rect, canvas.size);
+
+      editor.tabs[tab.graph.name] = tab;
+
+      if (tabs.isEmpty) {
+        editor.currentTab = tab;
+        tabs.addTab(tab, true, false);
+        graph.copy(tab.graph);
+        canvas.copy(tab.canvas);
+      }
+
+      library.controller.addSheet(tab.graph);
+    }
+
+    endUpdateAll();
+  }
+
+  void beginUpdateAll() {
+    editor.beginUpdate();
+    tabs.beginUpdate();
+    canvas.beginUpdate();
+    library.beginUpdate();
+    graph.beginUpdate();
+  }
+
+  void endUpdateAll() {
+    graph.endUpdate(true);
+    library.endUpdate(true);
+    canvas.endUpdate(true);
+    tabs.endUpdate(true);
+    editor.endUpdate(true);
   }
 
   void handleLongPress() {
@@ -368,9 +423,9 @@ class GraphEditorController extends GraphEditorControllerBase
     library.controller.show();
     library.endUpdate(true);
 
-    if (graph.paddingRight != library.controller.width) {
+    if (graph.controller.paddingRight != library.controller.width) {
       graph.beginUpdate();
-      graph.paddingRight = library.controller.width;
+      graph.controller.paddingRight = library.controller.width;
       graph.endUpdate(true);
     }
   }
@@ -378,32 +433,33 @@ class GraphEditorController extends GraphEditorControllerBase
   void hideLibrary() {
     library.controller.hide();
 
-    if (graph.paddingRight != library.controller.width) {
+    if (graph.controller.paddingRight != library.controller.width) {
       graph.beginUpdate();
-      graph.paddingRight = library.controller.width;
+      graph.controller.paddingRight = library.controller.width;
       graph.endUpdate(true);
     }
   }
 
-  void newTab() {
+  void newTab([bool random = false]) {
     editor.beginUpdate();
 
     var tab = CanvasTab();
-    tab.graph.copy(GraphState()
+    var graph = (random ? GraphState.random() : GraphState())
       ..name = GraphNode.randomName()
       ..icon = VectorIcons.getRandomName()
-      ..title = "Untitled - ${nextChart++}");
+      ..title = "Untitled - ${nextChart++}";
+
+    tab.graph.copy(graph);
+    if (graph.nodes.isNotEmpty) {
+      graph.layout();
+      var rect = graph.extents.inflate(50);
+      tab.canvas.zoomToFit(rect, canvas.size);
+    }
 
     editor.tabs[tab.name] = tab;
 
     tabs.beginUpdate();
-
-    tab.graph.layout();
-    var rect = tab.graph.extents.inflate(50);
-    tab.canvas.zoomToFit(rect, canvas.size);
-
     tabs.addTab(tab, true);
-
     library.controller.addSheet(tab.graph);
     tabs.endUpdate(true);
 
