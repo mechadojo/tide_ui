@@ -46,7 +46,7 @@ class Graph {
   static const double LibraryCollapsedItemRadius = 5;
   static const double LibraryCollapsedItemSize = 30;
   static const double LibraryCollapsedItemIconSize = 20;
-  static const double LibraryCollapsedItemSpacing = 30;
+  static const double LibraryCollapsedItemSpacing = 50;
   static const double LibraryCollapsedItemMaxSpacing = 75;
 
   static const double LibraryDragIconSize = 40;
@@ -62,6 +62,8 @@ class Graph {
     ..color = Color(0xff333333).withAlpha(150);
 
   static Paint LibraryItemIconHoverColor = Paint()..color = Colors.black;
+
+  static Paint LibraryItemIconAlertColor = Paint()..color = GroupColors[0];
 
   static Paint LibraryTopIconColor = Paint()
     ..color = Color(0xff333333).withAlpha(150);
@@ -246,6 +248,8 @@ class Graph {
   //
   static var font = SourceSansProFont;
   static Paint blackPaint = Paint()..color = Colors.black;
+  static Paint whitePaint = Paint()..color = Colors.white;
+
   static Paint redPen = Paint()
     ..color = Colors.red
     ..style = PaintingStyle.stroke;

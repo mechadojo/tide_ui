@@ -1,10 +1,12 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_filesource.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
+import 'package:tide_ui/graph_editor/data/node_port.dart';
 
 import 'graph_controller.dart';
 import 'graph_editor_controller.dart';
@@ -12,23 +14,156 @@ import 'graph_editor_controller.dart';
 mixin GraphEditorMenus on GraphEditorControllerBase {
   MenuItemSet getAppMenu() {
     return MenuItemSet([
-      MenuItem(icon: "history"),
-      MenuItem(icon: "sync-alt", command: GraphEditorCommand.refreshWindow()),
-      MenuItem(icon: "code-branch"),
-      MenuItem(icon: "print"),
       MenuItem(
-          icon: "upload",
-          command: GraphEditorCommand.pushMenu(getUploadMenu())),
+        icon: "history",
+        title: "History",
+        command: GraphEditorCommand.print("View History"),
+      ),
+      MenuItem(
+        icon: "save",
+        title: "Save",
+        command: GraphEditorCommand.pushMenu(getSaveFileMenu()),
+      ),
+      MenuItem(
+        icon: "folder-open-solid",
+        title: "Open",
+        command: GraphEditorCommand.pushMenu(getOpenFileMenu()),
+      ),
+      MenuItem(
+        icon: "print",
+        title: "Print",
+        command: GraphEditorCommand.print("Print"),
+      ),
+      MenuItem(
+        icon: "upload",
+        title: "Connect",
+        command: GraphEditorCommand.pushMenu(getConnectMenu()),
+      ),
     ])
       ..icon = "tools";
   }
 
-  MenuItemSet getUploadMenu() {
+  MenuItemSet getOpenCloudMenu() {
     return MenuItemSet([
+      MenuItem(
+        icon: "github-brands",
+        title: "GitHub",
+        command: GraphEditorCommand.openFile(FileSourceType.github),
+      ),
+      MenuItem(
+        icon: "google-drive-brands",
+        title: "Google",
+        command: GraphEditorCommand.openFile(FileSourceType.google),
+      ),
+      MenuItem(
+        icon: "dropbox-brands",
+        title: "DropBox",
+        command: GraphEditorCommand.openFile(FileSourceType.dropbox),
+      ),
+      MenuItem(
+        icon: "microsoft-brands",
+        title: "One Drive",
+        command: GraphEditorCommand.openFile(FileSourceType.onedrive),
+      ),
+      MenuItem(
+        icon: "slack-brands",
+        title: "Slack",
+        command: GraphEditorCommand.openFile(FileSourceType.slack),
+      ),
+    ])
+      ..icon = "cloud";
+  }
+
+  MenuItemSet getSaveCloudMenu() {
+    return MenuItemSet([
+      MenuItem(
+        icon: "github-brands",
+        title: "GitHub",
+        command: GraphEditorCommand.saveFile(FileSourceType.github),
+      ),
+      MenuItem(
+        icon: "google-drive-brands",
+        title: "Google",
+        command: GraphEditorCommand.saveFile(FileSourceType.google),
+      ),
+      MenuItem(
+        icon: "dropbox-brands",
+        title: "DropBox",
+        command: GraphEditorCommand.saveFile(FileSourceType.dropbox),
+      ),
+      MenuItem(
+        icon: "microsoft-brands",
+        title: "One Drive",
+        command: GraphEditorCommand.saveFile(FileSourceType.onedrive),
+      ),
+      MenuItem(
+        icon: "slack-brands",
+        title: "Slack",
+        command: GraphEditorCommand.saveFile(FileSourceType.slack),
+      ),
+    ])
+      ..icon = "cloud";
+  }
+
+  MenuItemSet getOpenFileMenu() {
+    return MenuItemSet([
+      MenuItem(
+          icon: "code-branch",
+          title: "Branch",
+          command: GraphEditorCommand.openFile(FileSourceType.branch)),
+      MenuItem(
+          icon: editor.platformIcon,
+          title: "Local",
+          command: GraphEditorCommand.openFile(FileSourceType.local)),
+      MenuItem(
+          icon: "file-archive",
+          title: "File",
+          command: GraphEditorCommand.openFile(FileSourceType.file)),
+      MenuItem(
+          icon: "cloud",
+          title: "Cloud",
+          command: GraphEditorCommand.pushMenu(getOpenCloudMenu())),
+      MenuItem(
+          icon: "mobile-alt",
+          title: "Device",
+          command: GraphEditorCommand.openFile(FileSourceType.device)),
+    ])
+      ..icon = "folder-open-solid";
+  }
+
+  MenuItemSet getSaveFileMenu() {
+    return MenuItemSet([
+      MenuItem(
+          icon: "code-branch",
+          title: "Branch",
+          command: GraphEditorCommand.saveFile(FileSourceType.branch)),
+      MenuItem(
+          icon: editor.platformIcon,
+          title: "Local",
+          command: GraphEditorCommand.saveFile(FileSourceType.local)),
+      MenuItem(
+          icon: "file-archive",
+          title: "File",
+          command: GraphEditorCommand.saveFile(FileSourceType.file)),
+      MenuItem(
+          icon: "cloud",
+          title: "Cloud",
+          command: GraphEditorCommand.pushMenu(getSaveCloudMenu())),
+      MenuItem(
+          icon: "mobile-alt",
+          title: "Device",
+          command: GraphEditorCommand.saveFile(FileSourceType.device)),
+    ])
+      ..icon = "folder-open-solid";
+  }
+
+  MenuItemSet getConnectMenu() {
+    return MenuItemSet([
+      MenuItem(icon: "lightbulb-solid"),
+      MenuItem(icon: "bug"),
+      MenuItem(icon: "cloud"),
+      MenuItem(icon: "wifi"),
       MenuItem(icon: "mobile-alt"),
-      MenuItem(icon: "edit"),
-      MenuItem(icon: "link"),
-      MenuItem(icon: "trash-alt"),
     ])
       ..icon = "upload";
   }
@@ -40,13 +175,34 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
           MenuItem(icon: "edit"),
           MenuItem(icon: "chevron-circle-right"),
           MenuItem(
-              icon: "trash-alt", command: GraphEditorCommand.removeNode(node)),
+            icon: "trash-alt",
+            title: "Delete",
+            command: GraphEditorCommand.removeNode(node),
+          ),
           MenuItem(icon: "chevron-circle-left"),
+        ]);
+      case GraphNodeType.behavior:
+        return MenuItemSet([
+          MenuItem(icon: "edit"),
+          MenuItem(
+            icon: "folder-open",
+            title: "Open",
+            command: GraphEditorCommand.showTab(node.method),
+          ),
+          MenuItem(
+            icon: "trash-alt",
+            title: "Delete",
+            command: GraphEditorCommand.removeNode(node),
+          ),
         ]);
       default:
         return MenuItemSet([
           MenuItem(icon: "edit"),
-          MenuItem(icon: "trash-alt"),
+          MenuItem(
+            icon: "trash-alt",
+            title: "Delete",
+            command: GraphEditorCommand.removeNode(node),
+          ),
         ]);
     }
   }
@@ -55,22 +211,65 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
     return MenuItemSet([
       MenuItem(icon: "edit"),
       MenuItem(icon: "link"),
-      MenuItem(icon: "trash-alt", command: GraphEditorCommand.removeLink(link)),
+      MenuItem(
+        icon: "trash-alt",
+        title: "Delete",
+        command: GraphEditorCommand.removeLink(link),
+      ),
     ]);
+  }
+
+  MenuItemSet getInportMenu(NodePort port) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(icon: "trash-alt"),
+      MenuItem(
+          icon: "sign-in-alt",
+          command: GraphEditorCommand.addGraphInport(attach: port, drag: true)),
+    ]);
+  }
+
+  MenuItemSet getOutportMenu(NodePort port) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "sign-out-alt",
+          command:
+              GraphEditorCommand.addGraphOutport(attach: port, drag: true)),
+      MenuItem(icon: "trash-alt"),
+    ]);
+  }
+
+  MenuItemSet getPortMenu(NodePort port) {
+    if (port.isInport) {
+      return getInportMenu(port);
+    } else {
+      return getOutportMenu(port);
+    }
   }
 
   MenuItemSet getGraphMenu(GraphState graph) {
     return MenuItemSet([
       MenuItem(icon: "edit"),
-      MenuItem(icon: "save"),
+      MenuItem(
+        icon: "cog",
+        title: "Settings",
+        command: GraphEditorCommand.print("Open Settings"),
+      ),
       MenuItem(
           icon: "redo",
+          title: "Redo",
           command:
               graph.history.canRedo ? GraphEditorCommand.redoHistory() : null),
       MenuItem(
           icon: "undo",
+          title: "Undo",
           command:
               graph.history.canUndo ? GraphEditorCommand.undoHistory() : null),
+      MenuItem(
+        icon: "tools",
+        command: GraphEditorCommand.pushMenu(getAppMenu()),
+      ),
     ]);
   }
 

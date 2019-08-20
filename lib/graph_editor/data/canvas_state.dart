@@ -13,7 +13,7 @@ class CanvasState extends UpdateNotifier {
   double get stepSize => 100 / scale;
 
   Size size = Size.zero;
-  Offset pos = Offset(-10000, 10000); // prevent flash loading zoom to fit
+  Offset pos = Offset.zero;
   Offset get screenPos => toScreenCoord(pos);
   double scale = 1.0;
 

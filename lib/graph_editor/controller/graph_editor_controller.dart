@@ -1,24 +1,32 @@
 import 'package:provider/provider.dart';
 import 'package:flutter_web/material.dart';
+import 'package:tide_chart/tide_chart.dart';
 
 import 'package:tide_ui/graph_editor/controller/canvas_tabs_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_browser.dart';
 import 'package:tide_ui/graph_editor/controller/radial_menu_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_state.dart';
+import 'package:tide_ui/graph_editor/data/canvas_tab.dart';
 
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
+import 'package:tide_ui/graph_editor/data/graph_file.dart';
+import 'package:tide_ui/graph_editor/data/graph_link.dart';
+import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/focus_state.dart';
+import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'package:tide_ui/main.dart' show AppVersion;
+import 'package:uuid/uuid.dart';
 
 import 'canvas_controller.dart';
 import 'graph_controller.dart';
+import 'graph_editor_filesource.dart';
 import 'library_controller.dart';
 import 'graph_editor_comand.dart';
 import 'graph_editor_menus.dart';
@@ -35,8 +43,16 @@ class GraphEditorControllerBase {
         name: "app-menu",
         icon: "ellipsisV",
         command: GraphEditorCommand.showAppMenu()),
-    MenuItem(name: "save", icon: "solidSave", iconAlt: "save"),
-    MenuItem(name: "open", icon: "solidFolderOpen", iconAlt: "folderOpen"),
+    MenuItem(
+        name: "save",
+        icon: "solidSave",
+        iconAlt: "save",
+        command: GraphEditorCommand.saveFile()),
+    MenuItem(
+        name: "open",
+        icon: "solidFolderOpen",
+        iconAlt: "folderOpen",
+        command: GraphEditorCommand.openFile()),
     MenuItem(
         name: "tab-prev",
         icon: "angleLeft",
@@ -68,14 +84,20 @@ class GraphEditorControllerBase {
   bool get isMultiMode => editor.multiMode;
   bool get isModalActive => menu.visible;
 
+  TideChartFile chartFile = TideChartFile()
+    ..id = Uuid().v1().toString()
+    ..name = "chart_${GraphNode.randomName()}.chart";
+
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
   Duration timer = Duration.zero;
-
+  int nextChart = 1;
   int ticks = 0;
 
+  String platform;
   bool isAutoPanning = false;
   Offset cursor = Offset.zero; // last position of cursor in screen coord
+  FileSourceType lastSource = FileSourceType.file;
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -83,6 +105,7 @@ class GraphEditorController extends GraphEditorControllerBase
         MouseController,
         KeyboardController,
         GraphEditorMenus,
+        GraphEditorFileSource,
         GraphEditorBrowser {
   GraphEditorController() {
     editor.controller = this;
@@ -106,10 +129,56 @@ class GraphEditorController extends GraphEditorControllerBase
 
     dispatch(GraphEditorCommand.restoreCharts(), afterTicks: 5);
 
-    dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.toolbox),
+    dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.collapsed),
         afterTicks: 5);
+  }
 
-    dispatch(GraphEditorCommand.zoomToFit(), afterTicks: 10);
+  void loadChart() {
+    beginUpdateAll();
+
+    var file = GraphFile.chart(chartFile);
+
+    editor.tabs.clear();
+    tabs.clear();
+    library.sheets.clear();
+
+    for (var sheet in file.sheets) {
+      var tab = CanvasTab();
+
+      tab.graph.unpackGraph(sheet);
+      tab.graph.layout();
+      var rect = tab.graph.extents.inflate(50);
+      tab.canvas.zoomToFit(rect, canvas.size);
+
+      editor.tabs[tab.graph.name] = tab;
+
+      if (tabs.isEmpty) {
+        editor.currentTab = tab;
+        tabs.addTab(tab, true, false);
+        graph.copy(tab.graph);
+        canvas.copy(tab.canvas);
+      }
+
+      library.controller.addSheet(tab.graph);
+    }
+
+    endUpdateAll();
+  }
+
+  void beginUpdateAll() {
+    editor.beginUpdate();
+    tabs.beginUpdate();
+    canvas.beginUpdate();
+    library.beginUpdate();
+    graph.beginUpdate();
+  }
+
+  void endUpdateAll() {
+    graph.endUpdate(true);
+    library.endUpdate(true);
+    canvas.endUpdate(true);
+    tabs.endUpdate(true);
+    editor.endUpdate(true);
   }
 
   void handleLongPress() {
@@ -158,6 +227,10 @@ class GraphEditorController extends GraphEditorControllerBase
     commands.add(cmd);
   }
 
+  void saveChanges() {
+    editor.saveChanges();
+  }
+
   void previewDrop(GraphSelection dropping) {
     graph.controller.previewDrop(dropping);
   }
@@ -198,7 +271,9 @@ class GraphEditorController extends GraphEditorControllerBase
   }
 
   void onChangeTabs() {
+    library.beginUpdate();
     editor.onChangeTab(tabs.current, canvas, graph);
+    library.endUpdate(library.controller.update());
   }
 
   List<SingleChildCloneableWidget> get providers {
@@ -314,6 +389,9 @@ class GraphEditorController extends GraphEditorControllerBase
     editor.touchMode = mode;
     editor.moveCounter = 0;
     editor.endUpdate(true);
+
+    library.beginUpdate(); // library displays hover labels in touch mode
+    library.endUpdate(true);
     return true;
   }
 
@@ -345,9 +423,9 @@ class GraphEditorController extends GraphEditorControllerBase
     library.controller.show();
     library.endUpdate(true);
 
-    if (graph.paddingRight != library.controller.width) {
+    if (graph.controller.paddingRight != library.controller.width) {
       graph.beginUpdate();
-      graph.paddingRight = library.controller.width;
+      graph.controller.paddingRight = library.controller.width;
       graph.endUpdate(true);
     }
   }
@@ -355,10 +433,90 @@ class GraphEditorController extends GraphEditorControllerBase
   void hideLibrary() {
     library.controller.hide();
 
-    if (graph.paddingRight != library.controller.width) {
+    if (graph.controller.paddingRight != library.controller.width) {
       graph.beginUpdate();
-      graph.paddingRight = library.controller.width;
+      graph.controller.paddingRight = library.controller.width;
       graph.endUpdate(true);
     }
+  }
+
+  void newTab([bool random = false]) {
+    editor.beginUpdate();
+
+    var tab = CanvasTab();
+    var graph = (random ? GraphState.random() : GraphState())
+      ..name = GraphNode.randomName()
+      ..icon = VectorIcons.getRandomName()
+      ..title = "Untitled - ${nextChart++}";
+
+    tab.graph.copy(graph);
+    if (graph.nodes.isNotEmpty) {
+      graph.layout();
+      var rect = graph.extents.inflate(50);
+      tab.canvas.zoomToFit(rect, canvas.size);
+    }
+
+    editor.tabs[tab.name] = tab;
+
+    tabs.beginUpdate();
+    tabs.addTab(tab, true);
+    library.controller.addSheet(tab.graph);
+    tabs.endUpdate(true);
+
+    editor.endUpdate(true);
+  }
+
+  bool isTabSelected(String name) {
+    return tabs.selected == name;
+  }
+
+  void showTab(String name, {bool reload = false}) {
+    if (tabs.selected == name && !reload) return;
+    if (!editor.tabs.containsKey(name)) return;
+
+    tabs.beginUpdate();
+    if (tabs.hasTab(name)) {
+      tabs.select(name);
+    } else {
+      var tab = editor.tabs[name];
+
+      tab.graph.layout();
+      var rect = tab.graph.extents.inflate(50);
+      tab.canvas.zoomToFit(rect, canvas.size);
+
+      tabs.addTab(tab, true);
+    }
+
+    for (var item in tabs.interactive()) {
+      item.clearInteractive();
+    }
+
+    tabs.endUpdate(true);
+  }
+
+  void addNode(GraphNode node,
+      {List<GraphLink> links, bool drag = false, double offset = 0}) {
+    graph.beginUpdate();
+
+    if (drag) {
+      var gpt = canvas.controller.toGraphCoord(cursor);
+
+      if (isTouchMode) {
+        gpt = gpt.translate(node.size.width * offset, 0);
+        node.moveTo(gpt.dx, gpt.dy);
+      } else {
+        node.moveTo(gpt.dx, gpt.dy);
+
+        graph.controller.setSelection(node);
+        bool mouseDown = graph.controller.moveMode != MouseMoveMode.none;
+        graph.controller.startDragging(gpt);
+        graph.controller.dragRelease = mouseDown ? 0 : 1;
+        graph.controller.dragDrop = true;
+      }
+    }
+
+    graph.controller.addNode(node, links: links);
+
+    graph.endUpdate(true);
   }
 }

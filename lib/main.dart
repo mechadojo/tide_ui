@@ -2,7 +2,7 @@ import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/icons/font_awesome_icons.dart';
 import 'graph_editor/graph_editor.dart';
 
-const String AppVersion = "0.14";
+const String AppVersion = "0.18";
 const String ReleaseVersion = "0.$AppVersion";
 
 void main() => runApp(TheApp());
@@ -22,6 +22,7 @@ class _TheAppState extends State<TheApp> {
   void initState() {
     _editorPage = GraphEditorPage();
     _aboutPage = AboutPage();
+
     super.initState();
   }
 

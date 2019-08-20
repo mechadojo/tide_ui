@@ -16,6 +16,9 @@ class CanvasTabsState extends UpdateNotifier {
   String version;
   int nextTab = 1;
   int get length => tabs.length;
+  bool get isEmpty => tabs.isEmpty;
+  bool get isNotEmpty => tabs.isNotEmpty;
+
   bool requirePaint = false;
 
   CanvasTabsState({this.selected, this.tabs, this.menu}) {
@@ -61,12 +64,17 @@ class CanvasTabsState extends UpdateNotifier {
     nextTab = tabs.length + 1;
   }
 
+  bool hasTab(String name) {
+    return tabs.any((x) => x.name == name);
+  }
+
   /// Add a new tab and optionally [select] it.
-  void add({String title, String name, String icon, bool select}) {
+  CanvasTab add({String title, String name, String icon, bool select}) {
     if (name == null) name = "tab${nextTab++}";
 
     var tab = CanvasTab(title: title, name: name, icon: icon);
     addTab(tab, select);
+    return tab;
   }
 
   /// Get the currently selected tab.
@@ -172,14 +180,17 @@ class CanvasTabsState extends UpdateNotifier {
     selectTab(tab);
   }
 
-  void addTab(CanvasTab tab, [bool select = false, bool replace = true]) {
+  void addTab(CanvasTab tab,
+      [bool select = false, bool replace = true, bool notify = true]) {
     tabs = replace
         ? [...tabs.where((x) => x.name != tab.name), tab]
         : [...tabs, tab];
 
     if (select) selected = tab.name;
 
-    notifyListeners();
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   void removeAll(List<String> names, [String select]) {

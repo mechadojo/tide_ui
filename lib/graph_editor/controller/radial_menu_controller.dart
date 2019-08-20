@@ -57,6 +57,12 @@ class RadialMenuController with MouseController, KeyboardController {
   @override
   bool onContextMenu(GraphEvent evt) {
     // allow graph to select a different menu
+    var dist = (menu.pos - evt.pos).distance;
+    if (dist < Graph.RadialMenuSize) {
+      editor.dispatch(menu.center.command);
+      return true;
+      
+    }
     return editor.graph.controller.onContextMenu(evt);
   }
 

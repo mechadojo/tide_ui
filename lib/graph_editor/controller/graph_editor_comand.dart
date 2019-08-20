@@ -5,6 +5,7 @@ import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/node_port.dart';
 import 'graph_editor_controller.dart';
+import 'graph_editor_filesource.dart';
 import 'graph_event.dart';
 import 'library_controller.dart';
 
@@ -17,9 +18,49 @@ class GraphEditorCommand {
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
 
+  GraphEditorCommand.saveChanges() {
+    handler = (GraphEditorController editor) {
+      editor.saveChanges();
+    };
+  }
+
+  GraphEditorCommand.saveFile([FileSourceType source]) {
+    handler = (GraphEditorController editor) {
+      editor.saveFileType(source);
+    };
+  }
+
+  GraphEditorCommand.openFile([FileSourceType source]) {
+    handler = (GraphEditorController editor) {
+      editor.openFileType(source);
+    };
+  }
+
+  GraphEditorCommand.showTab(String name) {
+    handler = (GraphEditorController editor) {
+      editor.showTab(name);
+    };
+  }
+
   GraphEditorCommand.showLibrary([LibraryDisplayMode mode]) {
     handler = (GraphEditorController editor) {
       editor.showLibrary(mode);
+    };
+  }
+
+  GraphEditorCommand.expandLibrary() {
+    handler = (GraphEditorController editor) {
+      if (!editor.library.isExpanded) {
+        editor.showLibrary(editor.library.lastExpanded);
+      }
+    };
+  }
+
+  GraphEditorCommand.collapseLibrary() {
+    handler = (GraphEditorController editor) {
+      if (!editor.library.isCollapsed) {
+        editor.showLibrary(editor.library.lastCollapsed);
+      }
     };
   }
 
@@ -69,18 +110,6 @@ class GraphEditorCommand {
     };
   }
 
-  GraphEditorCommand.saveFile() {
-    handler = (GraphEditorController editor) {
-      print("Save File");
-    };
-  }
-
-  GraphEditorCommand.openFile() {
-    handler = (GraphEditorController editor) {
-      print("Open File");
-    };
-  }
-
   // ************************************************************
   //
   //  Graph Commands
@@ -97,6 +126,35 @@ class GraphEditorCommand {
     handler = (GraphEditorController editor) {
       editor.graph.controller.removeNode(node);
     };
+  }
+
+  GraphEditorCommand.addNode(GraphNode node,
+      {List<GraphLink> links, bool drag = false, double offset = 0}) {
+    handler = (GraphEditorController editor) {
+      editor.addNode(node, links: links, drag: drag, offset: offset);
+    };
+  }
+
+  factory GraphEditorCommand.addGraphOutport(
+      {NodePort attach, bool drag = false}) {
+    var node = GraphNode.outport();
+    List<GraphLink> links = [];
+    if (attach != null) {
+      links.add(GraphLink.link(attach, node.defaultInport));
+    }
+    return GraphEditorCommand.addNode(node,
+        links: links, drag: drag, offset: 2);
+  }
+
+  factory GraphEditorCommand.addGraphInport(
+      {NodePort attach, bool drag = false}) {
+    var node = GraphNode.inport();
+    List<GraphLink> links = [];
+    if (attach != null) {
+      links.add(GraphLink.link(node.defaultOutport, attach));
+    }
+    return GraphEditorCommand.addNode(node,
+        links: links, drag: drag, offset: -2);
   }
 
   // ************************************************************
@@ -162,9 +220,12 @@ class GraphEditorCommand {
   }
 
   GraphEditorCommand.showPortMenu(NodePort port, Offset pt) {
-    print("show port menu: $port");
     handler = (GraphEditorController editor) {
-      editor.showMenu(pt);
+      var menu = editor.getPortMenu(port)
+        ..icon = port.node.icon
+        ..title = port.name;
+
+      editor.openMenu(menu, pt);
     };
   }
 
@@ -199,10 +260,9 @@ class GraphEditorCommand {
   //
   // ************************************************************
 
-  GraphEditorCommand.newTab() {
+  GraphEditorCommand.newTab([bool random = false]) {
     handler = (GraphEditorController editor) {
-      editor.tabs.add(select: true);
-      editor.dispatch(GraphEditorCommand.zoomToFit(), afterTicks: 1);
+      editor.newTab(random);
     };
   }
 
@@ -244,7 +304,7 @@ class GraphEditorCommand {
 
   GraphEditorCommand.restoreCharts() {
     handler = (GraphEditorController editor) {
-      editor.tabs.add(select: true);
+      editor.dispatch(GraphEditorCommand.newTab());
     };
   }
 }

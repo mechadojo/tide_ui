@@ -34,12 +34,13 @@ class NodePortPainter {
     }
 
     var zoomedIn = Graph.isZoomedIn(scale);
+    bool isBehavior = port.node.type == GraphNodeType.behavior;
 
     // Draw node label
-    if (zoomedIn || port.hovered) {
+    if (zoomedIn || port.hovered || isBehavior) {
       double offset = Graph.DefaultPortSize + 1;
 
-      if (!zoomedIn) offset = -offset;
+      if (!zoomedIn && !isBehavior) offset = -offset;
 
       if (port.type == NodePortType.outport) {
         offset = -offset;
@@ -49,9 +50,9 @@ class NodePortPainter {
           offset < 0 ? Alignment.centerRight : Alignment.centerLeft;
 
       var pt = port.pos.translate(offset, -0.5);
-      var fsz = zoomedIn ? 6 : 10 / scale;
+      var fsz = (zoomedIn || isBehavior) ? 6 : 10 / scale;
 
-      if (!zoomedIn) {
+      if (!zoomedIn && !isBehavior) {
         var rect = font.limits(port.name, pt, fsz, alignment: alignment);
         var rrect = RRect.fromRectXY(rect.inflate(2), 4, 4);
         canvas.drawRRect(rrect, Graph.PortLabelShadow);

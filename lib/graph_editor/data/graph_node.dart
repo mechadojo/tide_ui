@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter_web/material.dart';
+import 'package:tide_chart/tide_chart.dart';
 
 import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
@@ -22,6 +23,7 @@ enum GraphNodeType {
   trigger,
   event,
   gamepad,
+  unknown,
 }
 
 enum NodePortType { inport, outport }
@@ -32,6 +34,8 @@ class GraphObject with CanvasInteractive {
 
 class RefGraphNode {
   String name;
+
+  RefGraphNode();
 
   RefGraphNode.node(GraphNode node) {
     name = node.name;
@@ -47,16 +51,18 @@ class PackedGraphNode {
   String title;
   String icon;
   String method;
+  String library;
   String comment;
 
-  bool logging = true;
-  bool debugging = true;
+  bool isLogging = false;
+  bool isDebugging = false;
+  bool isPaused = false;
+  bool isDisabled = false;
 
   double delay = 0;
 
   List<PackedNodePort> inports = [];
   List<PackedNodePort> outports = [];
-  int version = 0;
 
   PackedGraphNode.node(GraphNode node) {
     pos = node.pos;
@@ -65,14 +71,37 @@ class PackedGraphNode {
     title = node.title;
     icon = node.icon;
     method = node.method;
-    comment = node.comment;
-    logging = node.logging;
-    debugging = node.debugging;
-    version = node.version;
+    library = node.library;
+
+    isLogging = node.isLogging;
+    isDebugging = node.isDebugging;
+    isPaused = node.isPaused;
+    isDisabled = node.isDisabled;
+
     delay = node.delay;
 
     inports = [...node.inports.map((x) => x.pack())];
     outports = [...node.outports.map((x) => x.pack())];
+  }
+
+  PackedGraphNode.chart(TideChartNode node) {
+    pos = Offset(node.posX.toDouble(), node.posY.toDouble());
+    type = GraphNode.parseNodeType(node.type);
+    name = node.name;
+    title = node.title;
+    icon = node.icon;
+    method = node.method;
+    library = node.library;
+
+    isLogging = node.isLogging;
+    isDebugging = node.isDebugging;
+    isPaused = node.isPaused;
+    isDisabled = node.isDisabled;
+
+    delay = node.delay / 100.0;
+
+    inports = [...node.inports.map((x) => PackedNodePort.chart(x))];
+    outports = [...node.outports.map((x) => PackedNodePort.chart(x))];
   }
 
   GraphNode unpack(GetNodeByName lookup) {
@@ -83,9 +112,13 @@ class PackedGraphNode {
     node.title = title;
     node.icon = icon;
     node.method = method;
-    node.comment = comment;
-    node.logging = logging;
-    node.debugging = debugging;
+    node.library = library;
+
+    node.isLogging = isLogging;
+    node.isDebugging = isDebugging;
+    node.isPaused = isPaused;
+    node.isDisabled = isDisabled;
+
     node.delay = delay;
 
     node.inports = [...inports.map((x) => x.unpack(lookup))];
@@ -93,8 +126,54 @@ class PackedGraphNode {
     node.resize();
     node.moveTo(pos.dx, pos.dy);
 
-    node.version = version;
     return node;
+  }
+
+  Map<String, dynamic> toJson() => {
+        'type': type.toString().split(".").last,
+        'name': name,
+        'title': title,
+        'icon': icon,
+        'method': method,
+        'library': library,
+        'isLogging': isLogging,
+        'isDebugging': isDebugging,
+        'isPaused': isPaused,
+        'isDisabled': isDisabled,
+        'delay': delay,
+        'inports': inports,
+        'outports': outports,
+        'pos': [pos.dx, pos.dy],
+      };
+
+  List<TideChartNode> toChanges(PackedGraphNode last) {
+    return [last.toChart(), this.toChart()];
+  }
+
+  TideChartNode toChart() {
+    TideChartNode result = TideChartNode();
+    result.type = type.toString().split(".").last;
+    result.name = name;
+    result.icon = icon;
+
+    if (title != null) result.title = title;
+    if (method != null) result.method = method;
+    if (library != null) result.library = library;
+
+    result.isLogging = isLogging;
+    result.isDebugging = isDebugging;
+    result.isPaused = isPaused;
+    result.isDisabled = isDisabled;
+
+    result.posX = pos.dx.round();
+    result.posY = pos.dy.round();
+
+    result.delay = (delay * 100).round();
+
+    result.inports.addAll(inports.map((x) => x.toChart()));
+    result.outports.addAll(outports.map((x) => x.toChart()));
+
+    return result;
   }
 }
 
@@ -107,16 +186,20 @@ class GraphNode extends GraphObject {
   String title;
   String icon;
   String method;
-  String comment;
+  String library;
 
-  bool logging = true;
-  bool debugging = true;
+  bool isLogging = false;
+  bool isDebugging = false;
+  bool isPaused = false;
+  bool isDisabled = false;
 
   double delay = 0;
 
   List<NodePort> inports = [];
   List<NodePort> outports = [];
   int version = 0;
+
+  PackedGraphNode last;
 
   bool get hasMethod => method != null && method.isNotEmpty;
   bool get hasTitle => title != null && title.isNotEmpty;
@@ -127,7 +210,70 @@ class GraphNode extends GraphObject {
     return number.toRadixString(36);
   }
 
+  NodePort get defaultInport {
+    if (inports.isEmpty) return null;
+    return inports.firstWhere((x) => x.isDefault, orElse: () => inports.first);
+  }
+
+  NodePort get defaultOutport {
+    if (outports.isEmpty) return null;
+    return outports.firstWhere((x) => x.isDefault,
+        orElse: () => outports.first);
+  }
+
   GraphNode();
+
+  GraphNode.outport([String method]) {
+    name = GraphNode.randomName();
+    this.method = method ?? name;
+    icon = "sign-out-alt";
+    type = GraphNodeType.outport;
+
+    this.inports.add(NodePort.input(this, 1, "in"));
+    resize();
+  }
+
+  GraphNode.inport([String method]) {
+    name = GraphNode.randomName();
+    this.method = method ?? name;
+    icon = "sign-in-alt";
+    type = GraphNodeType.inport;
+
+    this.outports.add(NodePort.output(this, 1, "out"));
+    resize();
+  }
+
+  GraphNode.behavior(GraphState graph) {
+    name = GraphNode.randomName();
+    icon = graph.icon;
+    title = graph.title;
+    type = GraphNodeType.behavior;
+    method = graph.name;
+
+    List<String> inputs = [];
+    List<String> outputs = [];
+
+    for (var node in graph.nodes) {
+      if (node.type == GraphNodeType.inport) {
+        print("Inport: ${node.method}");
+        inputs.add(node.method);
+      }
+
+      if (node.type == GraphNodeType.outport) {
+        outputs.add(node.method);
+      }
+    }
+
+    for (int i = 0; i < inputs.length; i++) {
+      this.inports.add(NodePort.input(this, i + 1, inputs[i]));
+    }
+
+    for (int i = 0; i < outputs.length; i++) {
+      this.outports.add(NodePort.output(this, i + 1, outputs[i]));
+    }
+
+    resize();
+  }
 
   GraphNode.action(
       {this.name,
@@ -162,6 +308,27 @@ class GraphNode extends GraphObject {
   @override
   String toString() {
     return "$name";
+  }
+
+  static GraphNodeType parseNodeType(String type) {
+    switch (type) {
+      case "action":
+        return GraphNodeType.action;
+      case "behavior":
+        return GraphNodeType.behavior;
+      case "inport":
+        return GraphNodeType.inport;
+      case "outport":
+        return GraphNodeType.outport;
+      case "trigger":
+        return GraphNodeType.trigger;
+      case "event":
+        return GraphNodeType.event;
+      case "gamepad":
+        return GraphNodeType.gamepad;
+    }
+
+    return GraphNodeType.unknown;
   }
 
   NodePort getInport(String name) {

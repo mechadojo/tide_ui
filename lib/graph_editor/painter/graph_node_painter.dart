@@ -65,6 +65,10 @@ class GraphNodePainter {
     if (zoomedOut) return;
 
     var label = node.hasTitle ? node.title : node.name;
+    if (node.isAnyType(Inport_Outport)) {
+      label = node.method;
+    }
+
     var pos = Offset(node.pos.dx, node.pos.dy + node.size.height / 2 + 4);
 
     var rect = font.limits(label, pos, 8, alignment: Alignment.topCenter);
@@ -85,6 +89,10 @@ class GraphNodePainter {
       var label = node.method;
 
       if (label.isNotEmpty) {
+        if (node.type == GraphNodeType.behavior) {
+          label = "#$label";
+        }
+
         var pt = Offset(node.pos.dx, node.pos.dy + node.size.height / 2 - 3);
 
         font.paint(canvas, label, pt, 5,
@@ -110,9 +118,9 @@ class GraphNodePainter {
       //
       // Logging Icon
       //
-      if (node.logging) {
+      if (node.isLogging) {
         if (zoomedIn) {
-          cx = node.pos.dx + (node.debugging ? sz - 3 : 0);
+          cx = node.pos.dx + (node.isDebugging ? sz - 3 : 0);
         }
 
         VectorIcons.paint(
@@ -128,9 +136,9 @@ class GraphNodePainter {
       // Debugging Icon
       //
       cx = node.pos.dx - (node.size.width / 2 - sz);
-      if (node.debugging) {
+      if (node.isDebugging) {
         if (zoomedIn) {
-          cx = node.pos.dx - (node.logging ? sz - 3 : 0);
+          cx = node.pos.dx - (node.isLogging ? sz - 3 : 0);
         }
 
         VectorIcons.paint(

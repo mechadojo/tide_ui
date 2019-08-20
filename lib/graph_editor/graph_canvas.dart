@@ -25,6 +25,7 @@ class GraphCanvas extends StatelessWidget {
 
     //print("Rebuild Canvas");
     return RepaintBoundary(
+      key: graph.graphKey,
       child: CustomPaint(
         painter: CanvasPainter(
           canvas,

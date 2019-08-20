@@ -121,9 +121,12 @@ class MouseHandler {
 
     // first touch is the control point ... if it is stable then we
     // we use the second touch point and modify its ctrl/shift keys
-    var meta = evt.touches[1];
+    var keys = evt.touches.keys.toList();
 
-    if (meta != null) {
+    if (keys.length > 1) {
+      keys.sort();
+      var meta = evt.touches[keys[1]];
+
       evt.pos = meta.pos;
       // need to save this value for the mouseup/touchup events
 
@@ -174,8 +177,12 @@ class MouseHandler {
   void onTouchStart(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
 
-    var touch = evt.touches[0];
+    var keys = evt.touches.keys.toList();
+    if (keys.isEmpty) return;
+    keys.sort();
+    var touch = evt.touches[keys.first];
     if (touch == null) return;
+
     evt.pos = touch.pos;
     GraphEvent.last.pos = evt.pos;
 
@@ -190,8 +197,12 @@ class MouseHandler {
   void onTouchMove(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
 
-    var touch = evt.touches[0];
+    var keys = evt.touches.keys.toList();
+    if (keys.isEmpty) return;
+    keys.sort();
+    var touch = evt.touches[keys.first];
     if (touch == null) return;
+
     evt.pos = touch.pos;
     GraphEvent.last.pos = evt.pos;
 
@@ -206,10 +217,9 @@ class MouseHandler {
   void onTouchEnd(GraphEvent evt, BuildContext context, bool isActive) {
     if (!isActive) return;
 
-    var touch = evt.touches[0];
-    if (touch != null) {
-      return;
-    }
+    var keys = evt.touches.keys.toList();
+    if (keys.isNotEmpty) return;
+
     evt.pos = GraphEvent.last.pos;
 
     dispatchEvent(
@@ -342,7 +352,9 @@ class MouseHandler {
       return;
     }
 
-    if (!library.isHovered(evt.pos) && !editor.isViewMode) {
+    int release = editor.graph.controller.dragRelease;
+
+    if (!library.isHovered(evt.pos) && !editor.isViewMode && release <= 0) {
       GraphEvent.start = evt;
       editor.startLongPress(evt);
     }

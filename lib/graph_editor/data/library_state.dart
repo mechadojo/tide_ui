@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_event.dart';
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'graph_node.dart';
@@ -9,6 +10,8 @@ import 'update_notifier.dart';
 
 class LibraryItem extends MenuItem {
   GraphNode node;
+  GraphState graph;
+
   String name;
   bool isDefault = false;
   List<LibraryItem> items = [];
@@ -16,6 +19,20 @@ class LibraryItem extends MenuItem {
   LibraryItem.node(this.node) {
     icon = node.icon;
     name = node.hasTitle ? node.title : node.name;
+  }
+
+  LibraryItem.graph(GraphState graph) {
+    this.graph = graph;
+    icon = graph.icon;
+    name = graph.title;
+  }
+
+  GraphNode get dropNode {
+    if (graph != null) {
+      return GraphNode.behavior(graph);
+    }
+
+    return node;
   }
 }
 
@@ -58,7 +75,26 @@ class LibraryState extends UpdateNotifier {
 
   LibraryState() {
     int count = 10;
-    toolbox = [...GraphState.random(count).map((x) => LibraryItem.node(x))];
+    toolbox = [
+      ...GraphState.randomNodes(count).map((x) => LibraryItem.node(x))
+    ];
     toolbox[Random().nextInt(count)].isDefault = true;
+  }
+
+  GraphNode getDefaultNode([GraphEvent evt]) {
+    if (toolbox.isEmpty) return null;
+
+    var item =
+        toolbox.firstWhere((x) => x.isDefault, orElse: () => toolbox.first);
+    return item.dropNode;
+  }
+
+  GraphNode getToolboxNode([int hotkey = -1, GraphEvent evt]) {
+    if (hotkey == -1) return getDefaultNode(evt);
+
+    if (toolbox.isEmpty) return null;
+
+    var item = toolbox[hotkey % toolbox.length];
+    return item.dropNode;
   }
 }

@@ -63,9 +63,7 @@ class LibraryPainter {
 
     var spacing = Graph.LibraryCollapsedItemSpacing;
 
-    if (items.length > 1) {
-      spacing = (rect.height - cy) / (items.length);
-    }
+    spacing = (rect.height - cy) / (items.length);
 
     if (spacing < Graph.LibraryCollapsedItemSpacing) {
       spacing = Graph.LibraryCollapsedItemSpacing;
@@ -76,19 +74,33 @@ class LibraryPainter {
     }
 
     cy += spacing / 2;
-
+    int hotkey = 0;
     for (var item in items) {
+      hotkey = (hotkey + 1) % 10;
       var icon = item.hoveredIcon;
       var fill = item.hovered
           ? Graph.LibraryItemIconHoverColor
           : Graph.LibraryItemIconColor;
 
-      var factor = item.hovered ? .875 : .5;
+      bool defaultShowLabel = library.controller.editor.isTouchMode ||
+          library.mode == LibraryDisplayMode.collapsed;
 
+      bool showLabel = item.hovered || defaultShowLabel;
+      bool showHotkey = !library.controller.editor.isTouchMode &&
+          !item.hovered &&
+          library.mode == LibraryDisplayMode.toolbox;
+
+      var factor = item.hovered ? .875 : .5;
       if (library.controller.mouseMode != LibraryMouseMode.none) {
         icon = item.icon;
         fill = Graph.LibraryItemIconColor;
         factor = .5;
+        showLabel = defaultShowLabel;
+        showHotkey = false;
+      }
+
+      if (item.alerted) {
+        fill = Graph.LibraryItemIconAlertColor;
       }
 
       var size = spacing * factor;
@@ -103,8 +115,34 @@ class LibraryPainter {
 
       item.resizeTo(size, size);
       item.moveTo(cx, cy);
+      var iconSize = size * .75;
+      VectorIcons.paint(canvas, icon, item.pos, iconSize, fill: fill);
 
-      VectorIcons.paint(canvas, icon, item.pos, size * .75, fill: fill);
+      if (showLabel) {
+        var labelPos = item.pos.translate(0, iconSize / 2 + 4);
+        var labelWidth = rect.width - 8;
+
+        Graph.font.paint(canvas, item.name, labelPos, 8,
+            fill: fill, width: labelWidth, alignment: Alignment.topCenter);
+      }
+
+      if (showHotkey) {
+        var labelPos = Offset(rect.left + 10, item.pos.dy - iconSize / 2 - 4);
+        var labelRect = Graph.font.limits(hotkey.toString(), labelPos, 8,
+            style: "Bold", alignment: Alignment.centerLeft);
+
+        var rrect = RRect.fromRectXY(labelRect.inflate(2), 2, 2);
+
+        if (item.isDefault) {
+          VectorIcons.paint(canvas, "star-solid", rrect.center, 12, fill: fill);
+        } else {
+          canvas.drawRRect(rrect, fill);
+          Graph.font.paint(canvas, hotkey.toString(), labelPos, 8,
+              fill: Graph.whitePaint,
+              style: "Bold",
+              alignment: Alignment.centerLeft);
+        }
+      }
 
       cy += spacing;
     }
