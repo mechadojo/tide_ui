@@ -226,6 +226,18 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
+  void changeNodeType(GraphNode node, GraphNodeType type) {
+    graph.beginUpdate();
+    node.type = type;
+    if (type == GraphNodeType.inport) node.icon = "sign-in-alt";
+    if (type == GraphNodeType.outport) node.icon = "sign-out-alt";
+    if (type == GraphNodeType.event || type == GraphNodeType.trigger) {
+      node.icon = "bolt";
+    }
+    node.resize();
+    graph.endUpdate(true);
+  }
+
   void removeNode(GraphNode node, {bool save = true, bool relink = false}) {
     var idx = graph.findNode(node);
     if (idx < 0) return;

@@ -13,6 +13,9 @@ class NodePort extends GraphObject {
   String name = "";
   int ordinal = 0;
   bool isDefault = false;
+  String get icon => type == NodePortType.inport
+      ? "chevron-circle-left"
+      : "chevron-circle-right";
 
   bool get isInport => type == NodePortType.inport;
   bool get isOutport => type == NodePortType.outport;

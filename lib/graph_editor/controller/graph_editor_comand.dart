@@ -134,6 +134,12 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.changeNodeType(GraphNode node, GraphNodeType type) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.changeNodeType(node, type);
+    };
+  }
+
   GraphEditorCommand.addNode(GraphNode node,
       {List<GraphLink> links, bool drag = false, double offset = 0}) {
     handler = (GraphEditorController editor) {
@@ -141,26 +147,25 @@ class GraphEditorCommand {
     };
   }
 
-  factory GraphEditorCommand.addGraphOutport(
+  GraphEditorCommand.copyNode(GraphNode node,
       {NodePort attach, bool drag = false}) {
-    var node = GraphNode.outport();
-    List<GraphLink> links = [];
-    if (attach != null) {
-      links.add(GraphLink.link(attach, node.defaultInport));
-    }
-    return GraphEditorCommand.addNode(node,
-        links: links, drag: drag, offset: 2);
-  }
+    handler = (GraphEditorController editor) {
+      double offset = 0;
+      node = editor.graph.clone(node);
 
-  factory GraphEditorCommand.addGraphInport(
-      {NodePort attach, bool drag = false}) {
-    var node = GraphNode.inport();
-    List<GraphLink> links = [];
-    if (attach != null) {
-      links.add(GraphLink.link(node.defaultOutport, attach));
-    }
-    return GraphEditorCommand.addNode(node,
-        links: links, drag: drag, offset: -2);
+      List<GraphLink> links = [];
+      if (attach != null) {
+        if (attach.isInport) {
+          offset = -2;
+          links.add(GraphLink.link(node.defaultOutport, attach));
+        } else {
+          offset = 2;
+          links.add(GraphLink.link(attach, node.defaultInport));
+        }
+      }
+
+      editor.addNode(node, links: links, drag: drag, offset: offset);
+    };
   }
 
   // ************************************************************
@@ -173,6 +178,13 @@ class GraphEditorCommand {
     handler = (GraphEditorController editor) {
       editor.openMenu(items, pt);
     };
+  }
+
+  factory GraphEditorCommand.pushIfNotEmpty(MenuItemSet menu, [Offset pt]) {
+    if (menu.items.isEmpty) return null;
+    if (menu.items.length == 1) return menu.items.first.command;
+
+    return GraphEditorCommand.pushMenu(menu, pt);
   }
 
   GraphEditorCommand.pushMenu(MenuItemSet items, [Offset pt]) {
@@ -231,9 +243,7 @@ class GraphEditorCommand {
 
   GraphEditorCommand.showPortMenu(NodePort port, Offset pt) {
     handler = (GraphEditorController editor) {
-      var menu = editor.getPortMenu(port)
-        ..icon = port.node.icon
-        ..title = port.name;
+      var menu = editor.getPortMenu(port);
 
       editor.openMenu(menu, pt);
     };
@@ -314,7 +324,7 @@ class GraphEditorCommand {
 
   GraphEditorCommand.restoreCharts() {
     handler = (GraphEditorController editor) {
-      editor.dispatch(GraphEditorCommand.newTab());
+      editor.dispatch(GraphEditorCommand.openFile(FileSourceType.local));
     };
   }
 }

@@ -92,6 +92,16 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
 
   /// Save the current file to local storage
   void saveLocalFile() {
+    if (window.navigator.userAgent.contains("iPhone") ||
+        !IdbFactory.supported) {
+      var base64 = getChartBase64();
+      window.localStorage["LastChartFile"] = chartFile.name;
+      window.localStorage["charts:${chartFile.name}"] = base64;
+
+      print("Saved ${chartFile.name} to Local Storage");
+      return;
+    }
+
     window.indexedDB
         .open("charts", version: 1, onUpgradeNeeded: initChartsStore)
         .then((db) {
@@ -125,6 +135,18 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     if (!window.localStorage.containsKey("LastChartFile")) return;
 
     var lastFile = window.localStorage["LastChartFile"];
+
+    if (window.navigator.userAgent.contains("iPhone") ||
+        !IdbFactory.supported) {
+      var path = "charts:${lastFile}";
+      if (!window.localStorage.containsKey(path)) return;
+
+      var base64 = window.localStorage[path];
+      loadChartBytes(Base64Decoder().convert(base64));
+
+      print("Loaded ${lastFile} from Local Storage");
+      return;
+    }
 
     window.indexedDB
         .open("charts", version: 1, onUpgradeNeeded: initChartsStore)

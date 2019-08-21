@@ -131,6 +131,17 @@ class Graph {
   // Node Styling
   //
   static double NodeCornerRadius = 10;
+  static double NodeTriggerLabelSize = 12;
+  static double NodeTriggerIconSize = 22;
+  static double NodeTriggerIconPadding = 5;
+  static double NodeTriggerLabelPadding = 15;
+  static double NodeTriggerPaddingLeft = 30;
+  static double NodeTriggerPaddingRight = 5;
+  static double NodeTriggerPaddingVertical = 10;
+  static double NodeTriggerRadius = 6.5;
+
+  static double NodeTriggerHeight = 35;
+
   static Paint NodeColor = Paint()..color = Colors.white;
   static Paint NodeDarkColor = Paint()..color = Color(0xFF333333);
   static Paint NodeHoverColor = Paint()..color = Color(0xFFDFFEFE);

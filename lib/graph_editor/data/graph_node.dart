@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter_web/material.dart';
 import 'package:tide_chart/tide_chart.dart';
 
 import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
@@ -126,11 +127,31 @@ class GraphNode extends GraphObject {
     resize();
   }
 
+  GraphNode.event([String method]) {
+    name = GraphNode.randomName();
+    this.method = method ?? name;
+    icon = "bolt";
+    type = GraphNodeType.event;
+
+    this.inports.add(NodePort.input(this, 1, "in"));
+    resize();
+  }
+
   GraphNode.inport([String method]) {
     name = GraphNode.randomName();
     this.method = method ?? name;
     icon = "sign-in-alt";
     type = GraphNodeType.inport;
+
+    this.outports.add(NodePort.output(this, 1, "out"));
+    resize();
+  }
+
+  GraphNode.trigger([String method]) {
+    name = GraphNode.randomName();
+    this.method = method ?? name;
+    icon = "bolt";
+    type = GraphNodeType.trigger;
 
     this.outports.add(NodePort.output(this, 1, "out"));
     resize();
@@ -340,9 +361,17 @@ class GraphNode extends GraphObject {
       width = type == GraphNodeType.action
           ? Graph.DefaultNodeSize
           : Graph.DefaultNodeSize * 2.5;
-    } else if (type == GraphNodeType.trigger || type == GraphNodeType.action) {
-      width = Graph.DefaultNodeSize * 2.5;
-      height = Graph.DefaultNodeSize * .25;
+    } else if (type == GraphNodeType.trigger || type == GraphNodeType.event) {
+      var label = hasMethod ? method : name;
+      var rect = Graph.font.limits(label, pos, Graph.NodeTriggerLabelSize,
+          alignment: Alignment.center);
+
+      width = rect.width +
+          Graph.NodeTriggerPaddingLeft +
+          Graph.NodeTriggerPaddingRight +
+          Graph.NodeTriggerLabelPadding;
+
+      height = Graph.NodeTriggerHeight;
     } else if (type == GraphNodeType.gamepad) {
       width = Graph.DefaultGamepadWidth;
       height = Graph.DefaultGamepadHeight;
@@ -351,8 +380,7 @@ class GraphNode extends GraphObject {
       height = Graph.DefaultNodeSize;
     }
 
-    bool changed = false;
-
+    var changed = false;
     //
     // update position of inports
     //
