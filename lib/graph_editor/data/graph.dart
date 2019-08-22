@@ -203,6 +203,9 @@ class Graph {
     ..style = PaintingStyle.stroke;
 
   static Paint PortValueLabelColor = Paint()..color = Colors.yellow[200];
+  static Paint PortTriggerLabelColor = Paint()..color = Colors.green[200];
+  static Paint PortLinkLabelColor = Paint()..color = Colors.purple[100];
+  static Paint PortEventLabelColor = Paint()..color = Colors.orange[200];
 
   //
   // Link Styles

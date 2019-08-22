@@ -224,6 +224,20 @@ class GraphNode extends GraphObject {
     return "$name";
   }
 
+  Iterable<GraphObject> walkNode() sync* {
+    for (var port in inports) {
+      if (port.showFlag) yield port.flag;
+      yield port;
+    }
+
+    for (var port in outports) {
+      if (port.showFlag) yield port.flag;
+      yield port;
+    }
+
+    yield this;
+  }
+
   static GraphNodeType parseNodeType(String type) {
     switch (type) {
       case "action":

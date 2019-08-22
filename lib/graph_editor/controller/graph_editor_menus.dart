@@ -363,6 +363,61 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
     ]);
   }
 
+  MenuItemSet getOutportValueMenu(NodePort port) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "link",
+          title: "Link",
+          command: port.hasLink
+              ? null
+              : GraphEditorCommand.setPortLink(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+      MenuItem(
+          icon: "trash-alt", command: GraphEditorCommand.removePortFlag(port)),
+      MenuItem(
+          icon: "bolt",
+          title: "Event",
+          command: port.hasEvent
+              ? null
+              : GraphEditorCommand.setPortEvent(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+    ])
+      ..title = port.name
+      ..icon = port.icon;
+  }
+
+  MenuItemSet getInportValueMenu(NodePort port) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "bolt",
+          title: "Trigger",
+          command: port.hasTrigger
+              ? null
+              : GraphEditorCommand.setPortTrigger(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+      MenuItem(
+          icon: "link",
+          title: "Link",
+          command: port.hasLink
+              ? null
+              : GraphEditorCommand.setPortLink(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+      MenuItem(
+          icon: "trash-alt", command: GraphEditorCommand.removePortFlag(port)),
+      MenuItem(
+          icon: "hashtag",
+          title: "Value",
+          command: port.hasValue
+              ? null
+              : GraphEditorCommand.setPortValue(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+    ])
+      ..title = port.name
+      ..icon = port.icon;
+  }
+
   MenuItemSet getInportMenu(NodePort port) {
     var toolboxMenu = getAttachToolboxMenu(port);
 
@@ -374,9 +429,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "hashtag",
           title: "Value",
-          command: port.allowSetValue()
-              ? GraphEditorCommand.setPortValue(port, GraphNode.randomName())
-              : null),
+          command: GraphEditorCommand.pushMenu(getInportValueMenu(port))),
       MenuItem(
           icon: "toolbox",
           title: "Toolbox",
@@ -416,6 +469,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
           icon: "toolbox",
           title: "Toolbox",
           command: GraphEditorCommand.pushIfNotEmpty(toolboxMenu)),
+      MenuItem(
+          icon: "link",
+          title: "Link",
+          command: GraphEditorCommand.pushMenu(getOutportValueMenu(port))),
     ]);
   }
 

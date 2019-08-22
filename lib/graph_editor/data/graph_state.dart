@@ -220,18 +220,14 @@ class GraphState extends UpdateNotifier {
   Iterable<GraphObject> walkGraph() sync* {
     for (var node in nodes.reversed) {
       if (node.selected) continue;
-      yield* node.inports;
-      yield* node.outports;
-      yield node;
+      yield* node.walkNode();
     }
 
     yield* links.reversed;
 
     for (var node in nodes.reversed) {
       if (!node.selected) continue;
-      yield* node.inports;
-      yield* node.outports;
-      yield node;
+      yield* node.walkNode();
     }
   }
 

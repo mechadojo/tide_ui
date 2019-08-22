@@ -145,6 +145,28 @@ class GraphEditorCommand {
       editor.graph.controller.setPortValue(port, value);
     };
   }
+  GraphEditorCommand.setPortLink(NodePort port, String link) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.setPortLink(port, link);
+    };
+  }
+  GraphEditorCommand.setPortTrigger(NodePort port, String trigger) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.setPortTrigger(port, trigger);
+    };
+  }
+
+  GraphEditorCommand.setPortEvent(NodePort port, String event) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.setPortEvent(port, event);
+    };
+  }
+
+  GraphEditorCommand.removePortFlag(NodePort port) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.removePortFlag(port);
+    };
+  }
 
   GraphEditorCommand.addNode(GraphNode node,
       {List<GraphLink> links, bool drag = false, double offset = 0}) {

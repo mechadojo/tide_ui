@@ -237,7 +237,64 @@ class GraphController with MouseController, KeyboardController {
 
     graph.beginUpdate();
 
-    port.value = value;
+    port.setValue(value);
+    graph.endUpdate(true);
+  }
+
+  void setPortTrigger(NodePort port, String trigger, {bool save = true}) {
+    // not allowed to set a value on a port that also has a link
+    if (trigger != null) {
+      if (graph.links
+          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+        return;
+      }
+    }
+
+    graph.beginUpdate();
+
+    port.setTrigger(trigger);
+    graph.endUpdate(true);
+  }
+
+  void setPortLink(NodePort port, String link, {bool save = true}) {
+    // not allowed to set a value on a port that also has a link
+    if (link != null) {
+      if (graph.links
+          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+        return;
+      }
+    }
+
+    graph.beginUpdate();
+
+    port.setLink(link);
+    graph.endUpdate(true);
+  }
+
+  void setPortEvent(NodePort port, String event, {bool save = true}) {
+    // not allowed to set a value on a port that also has a link
+    if (event != null) {
+      if (graph.links
+          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+        return;
+      }
+    }
+
+    graph.beginUpdate();
+
+    port.setEvent(event);
+    graph.endUpdate(true);
+  }
+
+  void removePortFlag(NodePort port, {bool save = true}) {
+    // not allowed to set a value on a port that also has a link
+    graph.beginUpdate();
+
+    port.event = null;
+    port.value = null;
+    port.trigger = null;
+    port.link = null;
+
     graph.endUpdate(true);
   }
 
@@ -381,9 +438,7 @@ class GraphController with MouseController, KeyboardController {
 
   Iterable<GraphObject> walkSelection() sync* {
     for (GraphNode node in selection) {
-      yield* node.inports;
-      yield* node.outports;
-      yield node;
+      yield* node.walkNode();
     }
 
     for (GraphLink link in graph.links) {
