@@ -131,6 +131,7 @@ class Graph {
   // Node Styling
   //
   static double NodeCornerRadius = 10;
+
   static double NodeTriggerLabelSize = 12;
   static double NodeTriggerIconSize = 22;
   static double NodeTriggerIconPadding = 5;
@@ -139,8 +140,8 @@ class Graph {
   static double NodeTriggerPaddingRight = 5;
   static double NodeTriggerPaddingVertical = 10;
   static double NodeTriggerRadius = 6.5;
-
   static double NodeTriggerHeight = 35;
+  static Paint NodeTriggerLabelColor = Paint()..color = Colors.white;
 
   static Paint NodeColor = Paint()..color = Colors.white;
   static Paint NodeDarkColor = Paint()..color = Color(0xFF333333);
@@ -189,6 +190,19 @@ class Graph {
 
   static Paint PortLabelShadow = Paint()
     ..color = CanvasColor.color.withAlpha(200);
+
+  static double PortValueLabelSize = 10;
+  static double PortValueLeader = 5;
+  static double PortValueHeight = 20;
+  static double PortValueFlagWidth = 10;
+  static double PortValuePaddingLeft = 5;
+  static double PortValuePaddingRight = 5;
+  static Paint PortValueBorder = Paint()
+    ..color = Color(0xFF333333)
+    ..strokeWidth = 1.5
+    ..style = PaintingStyle.stroke;
+
+  static Paint PortValueLabelColor = Paint()..color = Colors.yellow[200];
 
   //
   // Link Styles

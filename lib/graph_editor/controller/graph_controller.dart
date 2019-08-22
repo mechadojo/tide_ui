@@ -226,7 +226,22 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
-  void changeNodeType(GraphNode node, GraphNodeType type) {
+  void setPortValue(NodePort port, String value, {bool save = true}) {
+    // not allowed to set a value on a port that also has a link
+    if (value != null) {
+      if (graph.links
+          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+        return;
+      }
+    }
+
+    graph.beginUpdate();
+
+    port.value = value;
+    graph.endUpdate(true);
+  }
+
+  void changeNodeType(GraphNode node, GraphNodeType type, {bool save = true}) {
     graph.beginUpdate();
     node.type = type;
     if (type == GraphNodeType.inport) node.icon = "sign-in-alt";
@@ -242,21 +257,22 @@ class GraphController with MouseController, KeyboardController {
     var idx = graph.findNode(node);
     if (idx < 0) return;
 
+    List<TideChartCommand> cmds = [];
+
     graph.beginUpdate();
     node = graph.nodes.removeAt(idx);
+    cmds.add(GraphCommand.removeNode(node));
 
     var links = graph.getNodeLinks(node).toList();
     for (var link in links) {
       removeLink(link.outPort, link.inPort, save: false);
+      cmds.add(GraphCommand.removeLink(link));
     }
+
     graph.endUpdate(true);
 
     if (save) {
-      var cmd = TideChartGroupCommand()
-        ..commands.add(GraphCommand.removeNode(node))
-        ..commands.addAll(links.map((x) => GraphCommand.removeLink(x)));
-
-      graph.history.push(TideChartCommand()..group = cmd);
+      graph.history.push(GraphCommand.all(cmds));
     }
   }
 
@@ -265,23 +281,23 @@ class GraphController with MouseController, KeyboardController {
     var idx = graph.findNode(node);
     if (idx >= 0 || replace) return;
 
+    List<TideChartCommand> cmds = [];
+
     graph.beginUpdate();
     if (idx >= 0) graph.nodes.removeAt(idx);
     graph.nodes.add(node);
+    cmds.add(GraphCommand.addNode(node));
 
     links = links ?? [];
     for (var link in links) {
       addLink(link.outPort, link.inPort, group: link.group, save: false);
+      cmds.add(GraphCommand.addLink(link));
     }
 
     graph.endUpdate(true);
 
     if (save) {
-      var cmd = TideChartGroupCommand()
-        ..commands.add(GraphCommand.addNode(node))
-        ..commands.addAll(links.map((x) => GraphCommand.addLink(x)));
-
-      graph.history.push(TideChartCommand()..group = cmd);
+      graph.history.push(GraphCommand.all(cmds));
     }
   }
 
@@ -293,16 +309,26 @@ class GraphController with MouseController, KeyboardController {
     var idx = graph.findLink(outport, inport);
     if (idx >= 0 || replace) return;
 
+    List<TideChartCommand> cmds = [];
+
     graph.beginUpdate();
     if (idx >= 0) graph.links.removeAt(idx);
 
+    if (outPort.value != null) {
+      setPortValue(outPort, null, save: false);
+    }
+
+    if (inPort.value != null) {
+      setPortValue(inPort, null, save: false);
+    }
+
     var link = graph.addLink(outport, inport, group);
+    cmds.add(GraphCommand.addLink(link));
 
     graph.endUpdate(true);
 
     if (save) {
-      var cmd = GraphCommand.addLink(link);
-      graph.history.push(cmd);
+      graph.history.push(GraphCommand.all(cmds));
     }
   }
 

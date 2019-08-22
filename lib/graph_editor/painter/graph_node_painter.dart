@@ -222,10 +222,10 @@ class GraphNodePainter {
     var radius = Graph.NodeTriggerRadius;
 
     if (zoomedOut) {
-      canvas.drawRect(r, Graph.CanvasColor);
+      canvas.drawRect(r, Graph.NodeTriggerLabelColor);
     } else {
       var rr = RRect.fromRectXY(r, radius, radius);
-      canvas.drawRRect(rr, Graph.CanvasColor);
+      canvas.drawRRect(rr, Graph.NodeTriggerLabelColor);
     }
     var label = node.hasMethod ? node.method : node.name;
 

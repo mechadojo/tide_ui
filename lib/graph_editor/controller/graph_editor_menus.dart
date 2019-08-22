@@ -372,6 +372,12 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
           title: "Edit",
           command: GraphEditorCommand.print("Edit $port")),
       MenuItem(
+          icon: "hashtag",
+          title: "Value",
+          command: port.allowSetValue()
+              ? GraphEditorCommand.setPortValue(port, GraphNode.randomName())
+              : null),
+      MenuItem(
           icon: "toolbox",
           title: "Toolbox",
           command: GraphEditorCommand.pushIfNotEmpty(toolboxMenu)),

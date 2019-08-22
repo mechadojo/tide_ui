@@ -9,6 +9,12 @@ class GraphCommand {
     return TideChartCommand()..version = Uuid().v1().toString();
   }
 
+  static TideChartCommand all(Iterable<TideChartCommand> cmds) {
+    var inner = TideChartGroupCommand()..commands.addAll(cmds);
+
+    return command()..group = inner;
+  }
+
   static TideChartCommand moveAll(Iterable<GraphNode> nodes) {
     var inner = TideChartGroupCommand()
       ..commands.addAll(nodes.map((x) => GraphCommand.moveNode(x)));

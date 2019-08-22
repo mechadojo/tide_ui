@@ -13,6 +13,10 @@ class NodePort extends GraphObject {
   String name = "";
   int ordinal = 0;
   bool isDefault = false;
+  String value;
+
+  bool get hasValue => value != null && value.isNotEmpty;
+
   String get icon => type == NodePortType.inport
       ? "chevron-circle-left"
       : "chevron-circle-right";
@@ -23,6 +27,10 @@ class NodePort extends GraphObject {
   @override
   String toString() {
     return "${node}:$name";
+  }
+
+  bool allowSetValue() {
+    return !hasValue && node.isAnyType(Action_Behavior);
   }
 
   bool canLinkTo(NodePort other) {
@@ -45,6 +53,7 @@ class NodePort extends GraphObject {
         packed.name, NodePort.parsePortType(packed.type),
         autoResize: false);
     result.isDefault = packed.isDefault;
+    result.value = packed.value;
     return result;
   }
 
@@ -68,7 +77,6 @@ class NodePort extends GraphObject {
 
   bool equalTo(NodePort other) {
     if (node.name != other.node.name) return false;
-    if (type != other.type) return false;
     if (name != other.name) return false;
 
     return true;
@@ -81,6 +89,7 @@ class NodePort extends GraphObject {
     result.name = name;
     result.ordinal = ordinal;
     result.isDefault = isDefault;
+    if (value != null) result.value = value;
     return result;
   }
 

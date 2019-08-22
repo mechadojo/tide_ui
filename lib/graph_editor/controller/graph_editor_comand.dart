@@ -140,6 +140,12 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.setPortValue(NodePort port, String value) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.setPortValue(port, value);
+    };
+  }
+
   GraphEditorCommand.addNode(GraphNode node,
       {List<GraphLink> links, bool drag = false, double offset = 0}) {
     handler = (GraphEditorController editor) {

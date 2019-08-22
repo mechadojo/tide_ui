@@ -16,6 +16,44 @@ class NodePortPainter {
   Paint get fillPaint => port.hovered ? Graph.PortHoverColor : Graph.PortColor;
   VectorFont get font => Graph.font;
 
+  void drawValue(Canvas canvas, NodePort port) {
+    var cx = port.pos.dx - Graph.DefaultPortSize / 2 - Graph.PortValueLeader;
+    var cy = port.pos.dy;
+
+    var label = port.value;
+    var rect = Graph.font.limits(label, Offset.zero, Graph.PortValueLabelSize);
+
+    var path = Path();
+    path.moveTo(cx, cy);
+
+    cy += Graph.PortValueHeight / 2;
+    cx -= Graph.PortValueFlagWidth;
+    path.lineTo(cx, cy);
+    cx -= Graph.PortValuePaddingRight;
+    var right = cx;
+    cx -= rect.width;
+    var left = cx;
+    cx -= Graph.PortValuePaddingLeft;
+    path.lineTo(cx, cy);
+    cy -= Graph.PortValueHeight;
+    path.lineTo(cx, cy);
+    cx = right + Graph.PortValuePaddingRight;
+    path.lineTo(cx, cy);
+    path.close();
+
+    canvas.drawPath(path, Graph.PortValueLabelColor);
+    canvas.drawPath(path, Graph.PortValueBorder);
+
+    cx = port.pos.dx - Graph.DefaultPortSize / 2;
+    cy = port.pos.dy;
+    var p1 = Offset(cx, cy);
+    var p2 = Offset(cx - Graph.PortValueLeader, cy);
+    canvas.drawLine(p1, p2, Graph.PortValueBorder);
+    Graph.font.paint(canvas, label, Offset((left + right) / 2, port.pos.dy),
+        Graph.PortValueLabelSize,
+        fill: Graph.NodeDarkColor, alignment: Alignment.center);
+  }
+
   void paint(Canvas canvas, double scale, NodePort port) {
     this.port = port;
 
@@ -23,6 +61,10 @@ class NodePortPainter {
 
     var sz = Graph.DefaultPortSize / 2;
     if (port.hovered) sz *= 1.5;
+
+    if (port.hasValue && (Graph.isZoomedIn(scale) || !port.hovered)) {
+      drawValue(canvas, port);
+    }
 
     canvas.drawCircle(port.pos, sz, fillPaint);
     canvas.drawCircle(port.pos, sz, borderPaint);

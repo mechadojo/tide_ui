@@ -175,7 +175,6 @@ class GraphState extends UpdateNotifier {
   GraphLink addLink(NodePort fromPort, NodePort toPort, [int group = -1]) {
     var link = GraphLink.link(fromPort, toPort);
     if (group >= 0) link.group = group;
-
     links.add(link);
     return link;
   }
