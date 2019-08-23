@@ -1,72 +1,67 @@
+import 'package:flutter_web/material.dart';
 import 'package:tide_chart/tide_chart.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 
 import 'graph.dart';
 import 'graph_node.dart';
 
-class PackedNodePort {
-  NodePortType type;
-  RefGraphNode node;
-  String name;
-  int ordinal = 0;
-  bool isDefault = false;
+class PortFlag extends GraphObject {
+  String text = "";
+  Path path;
+  List<Offset> leader = [];
+  Offset textPos = Offset.zero;
+  Offset iconPos = Offset.zero;
 
-  PackedNodePort.port(NodePort port) {
-    type = port.type;
-    node = port.node.ref();
-    name = port.name;
-    ordinal = port.ordinal;
-    isDefault = port.isDefault;
-  }
+  double direction = -1.0;
 
-  PackedNodePort.chart(TideChartPort port) {
-    this.type =
-        port.type == "inport" ? NodePortType.inport : NodePortType.outport;
-    this.node = RefGraphNode()..name = port.node;
-    name = port.name;
-    ordinal = port.ordinal;
-    isDefault = port.isDefault;
-  }
+  void update() {
+    path = Path();
 
-  PackedNodePort.named(String node, String name, String type) {
-    this.type = type == "inport" ? NodePortType.inport : NodePortType.outport;
-    this.node = RefGraphNode()..name = node;
-    this.name = name;
-  }
+    leader.clear();
+    var cx = pos.dx + (Graph.DefaultPortSize / 2 * direction);
+    var cy = pos.dy;
+    var rect = Graph.font.limits(text, Offset.zero, Graph.PortValueLabelSize);
 
-  NodePort unpack(GetNodeByName lookup) {
-    GraphNode target = lookup(node.name) as GraphNode;
-    NodePort result = target.getOrAddPort(name, type);
-    result.isDefault = isDefault;
-    return result;
-  }
+    leader.add(Offset(cx, cy));
+    cx += Graph.PortValueLeader * direction;
+    leader.add(Offset(cx, cy));
+    path.moveTo(cx, cy);
 
-  Map<String, dynamic> toJson() => {
-        'type': type.toString().split(".").last,
-        'node': node.name,
-        'name': name,
-        'ordinal': ordinal,
-        'isDefault': isDefault
-      };
+    cy += Graph.PortValueHeight / 2;
+    var bottomY = cy;
+    cx += Graph.PortValueFlagWidth * direction;
+    path.lineTo(cx, cy);
+    var startX = cx;
+    cx += Graph.PortValuePaddingStart * direction;
+    var textStart = cx;
 
-  List<TideChartPort> toChanges(PackedNodePort last) {
-    return [last.toChart(), this.toChart()];
-  }
+    cx += rect.width * direction;
+    var textEnd = cx;
+    cx += Graph.PortValuePaddingEnd * direction;
+    var endX = cx;
+    path.lineTo(cx, cy);
+    cy -= Graph.PortValueHeight;
+    var topY = cy;
+    path.lineTo(cx, cy);
 
-  TideChartPort toChart() {
-    TideChartPort result = TideChartPort();
-    result.type = type.toString().split(".").last;
-    result.node = node.name;
-    result.name = name;
-    result.ordinal = ordinal;
-    result.isDefault = isDefault;
-    return result;
+    cx = startX;
+    path.lineTo(cx, cy);
+    path.close();
+
+    textPos = Offset((textStart + textEnd) / 2, pos.dy);
+    iconPos = Offset(
+        endX +
+            ((Graph.PortValueIconSize / 2 + Graph.PortValueIconPadding) *
+                direction),
+        pos.dy);
+    hitbox = Rect.fromPoints(Offset(startX, topY), Offset(endX, bottomY));
   }
 }
 
 class NodePort extends GraphObject {
   static NodePort none = NodePort()..name = "<none>";
 
+  PortFlag flag = PortFlag();
   NodePortType type = NodePortType.inport;
   GraphNode node = GraphNode.none;
 
@@ -74,16 +69,75 @@ class NodePort extends GraphObject {
   int ordinal = 0;
   bool isDefault = false;
 
+  String value;
+  String trigger;
+  String link;
+  String event;
+
+  bool get showFlag => hasValue || hasTrigger || hasLink || hasEvent;
+  bool get hasValue => value != null && value.isNotEmpty;
+  bool get hasTrigger => trigger != null && trigger.isNotEmpty;
+  bool get hasLink => link != null && link.isNotEmpty;
+  bool get hasEvent => event != null && event.isNotEmpty;
+
+  String get flagLabel {
+    if (hasValue) return value;
+    if (hasTrigger) return trigger;
+    if (hasLink) return link;
+    if (hasEvent) return event;
+    return null;
+  }
+
+  void setValue(String value) {
+    this.value = value;
+    if (value != null) {
+      trigger = null;
+      link = null;
+      event = null;
+    }
+  }
+
+  void setTrigger(String trigger) {
+    this.trigger = trigger;
+    if (trigger != null) {
+      value = null;
+      link = null;
+      event = null;
+    }
+  }
+
+  void setLink(String link) {
+    this.link = link;
+    if (link != null) {
+      value = null;
+      trigger = null;
+      event = null;
+    }
+  }
+
+  void setEvent(String event) {
+    this.event = event;
+    if (event != null) {
+      value = null;
+      trigger = null;
+      link = null;
+    }
+  }
+
+  String get icon => type == NodePortType.inport
+      ? "chevron-circle-left"
+      : "chevron-circle-right";
+
   bool get isInport => type == NodePortType.inport;
   bool get isOutport => type == NodePortType.outport;
-
-  PackedNodePort pack() {
-    return PackedNodePort.port(this);
-  }
 
   @override
   String toString() {
     return "${node}:$name";
+  }
+
+  bool allowSetValue() {
+    return !hasValue && node.isAnyType(Action_Behavior);
   }
 
   bool canLinkTo(NodePort other) {
@@ -91,6 +145,29 @@ class NodePort extends GraphObject {
   }
 
   NodePort();
+
+  static NodePort unpackByName(
+      String node, String port, String type, GetNodeByName lookup) {
+    GraphNode target = lookup(node) as GraphNode;
+    NodePort result = target.getOrAddPort(port, NodePort.parsePortType(type),
+        autoResize: false);
+    return result;
+  }
+
+  static NodePort unpack(TideChartPort packed, GetNodeByName lookup) {
+    GraphNode target = lookup(packed.node) as GraphNode;
+    NodePort result = target.getOrAddPort(
+        packed.name, NodePort.parsePortType(packed.type),
+        autoResize: false);
+    result.isDefault = packed.isDefault;
+    result.value = packed.value;
+    result.trigger = packed.trigger;
+    result.event = packed.event;
+    result.link = packed.link;
+
+    return result;
+  }
+
   NodePort.input(this.node, this.ordinal, [this.name]) {
     type = NodePortType.inport;
     if (name == null || name.isEmpty) {
@@ -111,9 +188,35 @@ class NodePort extends GraphObject {
 
   bool equalTo(NodePort other) {
     if (node.name != other.node.name) return false;
-    if (type != other.type) return false;
     if (name != other.name) return false;
 
     return true;
+  }
+
+  TideChartPort pack() {
+    TideChartPort result = TideChartPort();
+    result.type = type.toString().split(".").last;
+    result.node = node.name;
+    result.name = name;
+    result.ordinal = ordinal;
+    result.isDefault = isDefault;
+
+    if (value != null) result.value = value;
+    if (trigger != null) result.trigger = trigger;
+    if (link != null) result.link = link;
+    if (event != null) result.event = event;
+
+    return result;
+  }
+
+  static NodePortType parsePortType(String type) {
+    switch (type) {
+      case "inport":
+        return NodePortType.inport;
+      case "outport":
+        return NodePortType.outport;
+      default:
+        return NodePortType.unknown;
+    }
   }
 }

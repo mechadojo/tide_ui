@@ -25,7 +25,10 @@ class GraphNodePainter {
   }
 
   bool get darkNode =>
-      node.type == GraphNodeType.inport || node.type == GraphNodeType.outport;
+      node.type == GraphNodeType.inport ||
+      node.type == GraphNodeType.outport ||
+      node.type == GraphNodeType.event ||
+      node.type == GraphNodeType.trigger;
 
   bool get zoomedIn => Graph.isZoomedIn(scale);
   bool get zoomedOut => Graph.isZoomedOut(scale);
@@ -41,7 +44,9 @@ class GraphNodePainter {
       height: node.size.height,
     );
 
-    drawNameLabel(canvas);
+    if (node.isNotType(Trigger_Event)) {
+      drawNameLabel(canvas);
+    }
 
     drawBody(canvas, body, shadowPaint);
 
@@ -49,8 +54,13 @@ class GraphNodePainter {
     drawBody(canvas, body, borderPaint);
 
     drawIcon(canvas);
-    drawStatusIcons(canvas);
-    drawMethodLabel(canvas);
+
+    if (node.isAnyType(Trigger_Event)) {
+      drawTriggerEventLabel(canvas);
+    } else {
+      drawStatusIcons(canvas);
+      drawMethodLabel(canvas);
+    }
 
     for (var port in node.inports) {
       portPainter.paint(canvas, scale, port);
@@ -195,6 +205,34 @@ class GraphNodePainter {
     }
   }
 
+  void drawTriggerEventLabel(Canvas canvas) {
+    var right = node.type == GraphNodeType.trigger
+        ? node.pos.dx + node.size.width / 2 - Graph.NodeTriggerPaddingRight
+        : node.pos.dx + node.size.width / 2 - Graph.NodeTriggerPaddingLeft;
+    var left = node.type == GraphNodeType.trigger
+        ? node.pos.dx - node.size.width / 2 + Graph.NodeTriggerPaddingLeft
+        : node.pos.dx - node.size.width / 2 + Graph.NodeTriggerPaddingRight;
+
+    var cx = (right + left) / 2;
+    var cy = node.pos.dy;
+    var hh = (node.size.height - Graph.NodeTriggerPaddingVertical) / 2;
+    var top = node.pos.dy - hh;
+    var bottom = node.pos.dy + hh;
+    var r = Rect.fromLTRB(left, top, right, bottom);
+    var radius = Graph.NodeTriggerRadius;
+
+    if (zoomedOut) {
+      canvas.drawRect(r, Graph.NodeTriggerLabelColor);
+    } else {
+      var rr = RRect.fromRectXY(r, radius, radius);
+      canvas.drawRRect(rr, Graph.NodeTriggerLabelColor);
+    }
+    var label = node.hasMethod ? node.method : node.name;
+
+    Graph.font.paint(canvas, label, Offset(cx, cy), Graph.NodeTriggerLabelSize,
+        fill: Graph.NodeDarkColor, alignment: Alignment.center);
+  }
+
   void drawIcon(Canvas canvas) {
     var sz = Graph.DefaultNodeSize;
     var cx = node.pos.dx;
@@ -204,8 +242,20 @@ class GraphNodePainter {
       sz /= 1.5;
     } else if (node.isAnyType(Action_Behavior)) {
       sz = sz / (zoomedIn ? 3 : zoomedOut ? 1.5 : 2);
-    } else if (node.isAnyType(Trigger_Event)) {
-      sz = node.size.height / 1.5;
+    } else if (node.type == GraphNodeType.trigger) {
+      sz = Graph.NodeTriggerIconSize;
+
+      cx = node.pos.dx -
+          node.size.width / 2 +
+          sz / 2 +
+          Graph.NodeTriggerIconPadding;
+    } else if (node.type == GraphNodeType.event) {
+      sz = Graph.NodeTriggerIconSize;
+
+      cx = node.pos.dx +
+          node.size.width / 2 -
+          sz / 2 -
+          Graph.NodeTriggerIconPadding;
     }
 
     VectorIcons.paint(canvas, node.icon, Offset(cx, cy), sz, fill: iconPaint);

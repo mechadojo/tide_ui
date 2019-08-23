@@ -32,6 +32,7 @@ class _GraphEditorPageState extends State<GraphEditorPage>
     editor.platform = Theme.of(context).platform.toString();
 
     return Scaffold(
+      key: editor.scaffold,
       body: MultiProvider(
         providers: [...editor.providers],
         child: Row(
@@ -121,6 +122,7 @@ class ZoomActionButton extends StatelessWidget {
       child: Consumer<GraphEditorState>(
         builder: (context, GraphEditorState editor, widget) {
           return FloatingActionButton(
+            heroTag: "zoomToFitBtn",
             backgroundColor: Graph.getGroupColor(1),
             child: Icon(FontAwesomeIcons.search),
             onPressed: () {
@@ -143,6 +145,7 @@ class DragModeButton extends StatelessWidget {
       child: Consumer<GraphEditorState>(
         builder: (context, GraphEditorState editor, widget) {
           return FloatingActionButton(
+            heroTag: "dragModeBtn",
             backgroundColor: Graph.getGroupColor(
                 editor.multiMode ? 1 : editor.touchMode ? 4 : 10),
             child: Icon(editor.dragMode == GraphDragMode.panning

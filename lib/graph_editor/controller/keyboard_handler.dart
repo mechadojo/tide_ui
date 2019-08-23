@@ -51,7 +51,26 @@ class KeyboardHandler {
       }
       return;
     }
+
+    if (evt.key == "Escape" && editor.closeBottomSheet != null) {
+      editor.closeBottomSheet(false);
+      return;
+    }
+
+    if (evt.key == "Tab") {
+      evt.preventDefault();
+    }
+
+    if (evt.key == "Tab" && !evt.ctrlKey && editor.tabFocus != null) {
+      editor.tabFocus(evt.shiftKey);
+      return;
+    }
+
     if (editor.isModalActive) return;
+
+    if (evt.key == "Space" && evt.ctrlKey && editor.autoComplete != null) {
+      editor.autoComplete(evt.shiftKey);
+    }
 
     // Ctrl+? switches to the about / help page
     if (evt.key == "?" && evt.ctrlKey) {

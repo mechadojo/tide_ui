@@ -12,7 +12,7 @@ import 'graph_controller.dart';
 import 'graph_editor_controller.dart';
 
 mixin GraphEditorMenus on GraphEditorControllerBase {
-  MenuItemSet getAppMenu() {
+  MenuItemSet getToolsMenu() {
     return MenuItemSet([
       MenuItem(
         icon: "history",
@@ -30,9 +30,9 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
         command: GraphEditorCommand.pushMenu(getOpenFileMenu()),
       ),
       MenuItem(
-        icon: "print",
-        title: "Print",
-        command: GraphEditorCommand.print("Print"),
+        icon: "file",
+        title: "New",
+        command: GraphEditorCommand.newFile(),
       ),
       MenuItem(
         icon: "upload",
@@ -168,33 +168,180 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       ..icon = "upload";
   }
 
+  MenuItemSet getSelectOutportMenu(GraphNode node) {
+    if (node.outports.length == 1) {
+      return getOutportMenu(node.outports.first);
+    }
+
+    var result = MenuItemSet();
+
+    for (var port in node.outports) {
+      result.items.add(MenuItem(
+          title: port.name,
+          command: GraphEditorCommand.pushMenu(getPortMenu(port))));
+    }
+    return result
+      ..icon = node.icon
+      ..title = node.title ?? node.name;
+  }
+
+  MenuItemSet getSelectInportMenu(GraphNode node) {
+    if (node.inports.length == 1) {
+      return getInportMenu(node.inports.first);
+    }
+
+    var result = MenuItemSet();
+    for (var port in node.inports) {
+      result.items.add(MenuItem(
+          title: port.name,
+          command: GraphEditorCommand.pushMenu(getPortMenu(port))));
+    }
+    return result
+      ..icon = node.icon
+      ..title = node.hasTitle ? node.title : node.name;
+  }
+
+  MenuItemSet getAttachToolboxMenu(NodePort port) {
+    var nodes = library.toolbox.map((x) => x.dropNode);
+    return getAttachNodesMenu(port, nodes);
+  }
+
+  MenuItemSet getAttachNodesMenu(NodePort port, Iterable<GraphNode> nodes) {
+    var result = MenuItemSet();
+    for (var node in nodes) {
+      if (port.isInport) {
+        if (node.outports.isEmpty) continue;
+      } else {
+        if (node.inports.isEmpty) continue;
+      }
+
+      result.items.add(MenuItem(
+          icon: node.icon,
+          title: node.hasTitle ? node.title : node.name,
+          command:
+              GraphEditorCommand.copyNode(node, attach: port, drag: true)));
+    }
+
+    return result
+      ..icon = port.icon
+      ..title = port.name;
+  }
+
+  MenuItemSet getActionNodeMenu(GraphNode node) {
+    return MenuItemSet([
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(node)),
+      MenuItem(
+          icon: "chevron-circle-right",
+          command: GraphEditorCommand.pushMenu(getSelectOutportMenu(node))),
+      MenuItem(
+        icon: "trash-alt",
+        title: "Delete",
+        command: GraphEditorCommand.removeNode(node),
+      ),
+      MenuItem(
+          icon: "chevron-circle-left",
+          command: GraphEditorCommand.pushMenu(getSelectInportMenu(node))),
+    ]);
+  }
+
+  MenuItemSet getTriggerNodeMenu(GraphNode node) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "chevron-circle-right",
+          command: GraphEditorCommand.pushMenu(getSelectOutportMenu(node))),
+      MenuItem(
+        icon: "trash-alt",
+        title: "Delete",
+        command: GraphEditorCommand.removeNode(node),
+      ),
+      MenuItem(
+          icon: "sign-in-alt",
+          command:
+              GraphEditorCommand.changeNodeType(node, GraphNodeType.inport)),
+    ]);
+  }
+
+  MenuItemSet getEventNodeMenu(GraphNode node) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "sign-out-alt",
+          command:
+              GraphEditorCommand.changeNodeType(node, GraphNodeType.outport)),
+      MenuItem(
+          icon: "trash-alt",
+          title: "Delete",
+          command: GraphEditorCommand.removeNode(node)),
+      MenuItem(
+          icon: "chevron-circle-left",
+          command: GraphEditorCommand.pushMenu(getSelectInportMenu(node))),
+    ]);
+  }
+
+  MenuItemSet getInportNodeMenu(GraphNode node) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "chevron-circle-right",
+          command: GraphEditorCommand.pushMenu(getSelectOutportMenu(node))),
+      MenuItem(
+        icon: "trash-alt",
+        title: "Delete",
+        command: GraphEditorCommand.removeNode(node),
+      ),
+      MenuItem(
+          icon: "bolt",
+          command:
+              GraphEditorCommand.changeNodeType(node, GraphNodeType.trigger)),
+    ]);
+  }
+
+  MenuItemSet getOutportNodeMenu(GraphNode node) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "bolt",
+          command:
+              GraphEditorCommand.changeNodeType(node, GraphNodeType.event)),
+      MenuItem(
+          icon: "trash-alt",
+          title: "Delete",
+          command: GraphEditorCommand.removeNode(node)),
+      MenuItem(
+          icon: "chevron-circle-left",
+          command: GraphEditorCommand.pushMenu(getSelectInportMenu(node))),
+    ]);
+  }
+
+  MenuItemSet getBehaviorNodeMenu(GraphNode node) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(
+        icon: "trash-alt",
+        title: "Delete",
+        command: GraphEditorCommand.removeNode(node),
+      ),
+    ]);
+  }
+
   MenuItemSet getNodeMenu(GraphNode node) {
     switch (node.type) {
       case GraphNodeType.action:
-        return MenuItemSet([
-          MenuItem(icon: "edit"),
-          MenuItem(icon: "chevron-circle-right"),
-          MenuItem(
-            icon: "trash-alt",
-            title: "Delete",
-            command: GraphEditorCommand.removeNode(node),
-          ),
-          MenuItem(icon: "chevron-circle-left"),
-        ]);
+        return getActionNodeMenu(node);
       case GraphNodeType.behavior:
-        return MenuItemSet([
-          MenuItem(icon: "edit"),
-          MenuItem(
-            icon: "folder-open",
-            title: "Open",
-            command: GraphEditorCommand.showTab(node.method),
-          ),
-          MenuItem(
-            icon: "trash-alt",
-            title: "Delete",
-            command: GraphEditorCommand.removeNode(node),
-          ),
-        ]);
+        return getBehaviorNodeMenu(node);
+      case GraphNodeType.inport:
+        return getInportNodeMenu(node);
+      case GraphNodeType.outport:
+        return getOutportNodeMenu(node);
+      case GraphNodeType.trigger:
+        return getTriggerNodeMenu(node);
+      case GraphNodeType.event:
+        return getEventNodeMenu(node);
       default:
         return MenuItemSet([
           MenuItem(icon: "edit"),
@@ -219,32 +366,128 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
     ]);
   }
 
-  MenuItemSet getInportMenu(NodePort port) {
+  MenuItemSet getOutportValueMenu(NodePort port) {
     return MenuItemSet([
       MenuItem(icon: "edit"),
-      MenuItem(icon: "trash-alt"),
+      MenuItem(
+          icon: "link",
+          title: "Link",
+          command: port.hasLink
+              ? null
+              : GraphEditorCommand.setPortLink(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+      MenuItem(
+          icon: "trash-alt", command: GraphEditorCommand.removePortFlag(port)),
+      MenuItem(
+          icon: "bolt",
+          title: "Event",
+          command: port.hasEvent
+              ? null
+              : GraphEditorCommand.setPortEvent(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+    ])
+      ..title = port.name
+      ..icon = port.icon;
+  }
+
+  MenuItemSet getInportValueMenu(NodePort port) {
+    return MenuItemSet([
+      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "bolt",
+          title: "Trigger",
+          command: port.hasTrigger
+              ? null
+              : GraphEditorCommand.setPortTrigger(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+      MenuItem(
+          icon: "link",
+          title: "Link",
+          command: port.hasLink
+              ? null
+              : GraphEditorCommand.setPortLink(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+      MenuItem(
+          icon: "trash-alt", command: GraphEditorCommand.removePortFlag(port)),
+      MenuItem(
+          icon: "hashtag",
+          title: "Value",
+          command: port.hasValue
+              ? null
+              : GraphEditorCommand.setPortValue(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+    ])
+      ..title = port.name
+      ..icon = port.icon;
+  }
+
+  MenuItemSet getInportMenu(NodePort port) {
+    var toolboxMenu = getAttachToolboxMenu(port);
+
+    return MenuItemSet([
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.print("Edit $port")),
+      MenuItem(
+          icon: "hashtag",
+          title: "Value",
+          command: GraphEditorCommand.pushMenu(getInportValueMenu(port))),
+      MenuItem(
+          icon: "toolbox",
+          title: "Toolbox",
+          command: GraphEditorCommand.pushIfNotEmpty(toolboxMenu)),
+      MenuItem(
+          icon: "bolt",
+          title: "Trigger",
+          command: GraphEditorCommand.copyNode(GraphNode.trigger(),
+              attach: port, drag: true)),
       MenuItem(
           icon: "sign-in-alt",
-          command: GraphEditorCommand.addGraphInport(attach: port, drag: true)),
+          title: "Inport",
+          command: GraphEditorCommand.copyNode(GraphNode.inport(),
+              attach: port, drag: true)),
     ]);
   }
 
   MenuItemSet getOutportMenu(NodePort port) {
+    var toolboxMenu = getAttachToolboxMenu(port);
+
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.print("Edit $port")),
       MenuItem(
           icon: "sign-out-alt",
-          command:
-              GraphEditorCommand.addGraphOutport(attach: port, drag: true)),
-      MenuItem(icon: "trash-alt"),
+          title: "Outport",
+          command: GraphEditorCommand.copyNode(GraphNode.outport(),
+              attach: port, drag: true)),
+      MenuItem(
+          icon: "bolt",
+          title: "Event",
+          command: GraphEditorCommand.copyNode(GraphNode.event(),
+              attach: port, drag: true)),
+      MenuItem(
+          icon: "toolbox",
+          title: "Toolbox",
+          command: GraphEditorCommand.pushIfNotEmpty(toolboxMenu)),
+      MenuItem(
+          icon: "link",
+          title: "Link",
+          command: GraphEditorCommand.pushMenu(getOutportValueMenu(port))),
     ]);
   }
 
   MenuItemSet getPortMenu(NodePort port) {
     if (port.isInport) {
-      return getInportMenu(port);
+      return getInportMenu(port)
+        ..icon = port.icon
+        ..title = port.name;
     } else {
-      return getOutportMenu(port);
+      return getOutportMenu(port)
+        ..icon = port.icon
+        ..title = port.name;
     }
   }
 
@@ -252,9 +495,9 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
     return MenuItemSet([
       MenuItem(icon: "edit"),
       MenuItem(
-        icon: "cog",
-        title: "Settings",
-        command: GraphEditorCommand.print("Open Settings"),
+        icon: "tools",
+        title: "File",
+        command: GraphEditorCommand.pushMenu(getToolsMenu()),
       ),
       MenuItem(
           icon: "redo",
@@ -267,8 +510,9 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
           command:
               graph.history.canUndo ? GraphEditorCommand.undoHistory() : null),
       MenuItem(
-        icon: "tools",
-        command: GraphEditorCommand.pushMenu(getAppMenu()),
+        icon: "cog",
+        title: "Settings",
+        command: GraphEditorCommand.print("Open Settings"),
       ),
     ]);
   }

@@ -316,6 +316,12 @@ class MouseHandler {
     canvas.stopPanning();
     editor.hideMenu();
     editor.cancelEditing();
+
+    if (editor.closeBottomSheet != null) {
+      if (evt.pos.dy < canvas.size.height - editor.bottomSheetHeight) {
+        editor.closeBottomSheet(true);
+      }
+    }
   }
 
   void onMouseDownTabs(GraphEvent evt) {
@@ -342,6 +348,17 @@ class MouseHandler {
     return editor.isPanMode;
   }
 
+  bool allowLongPress(GraphEvent evt) {
+    if (library.isHovered(evt.pos)) return false;
+
+    if (editor.isModalActive && !editor.menu.visible) return false;
+    int release = editor.graph.controller.dragRelease;
+    if (release > 0) return false;
+    if (editor.isViewMode) return false;
+
+    return true;
+  }
+
   void onMouseDownCanvas(GraphEvent evt) {
     onMouseOutTabs();
 
@@ -352,10 +369,9 @@ class MouseHandler {
       return;
     }
 
-    int release = editor.graph.controller.dragRelease;
+    GraphEvent.start = evt;
 
-    if (!library.isHovered(evt.pos) && !editor.isViewMode && release <= 0) {
-      GraphEvent.start = evt;
+    if (allowLongPress(evt)) {
       editor.startLongPress(evt);
     }
 

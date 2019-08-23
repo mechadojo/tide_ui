@@ -88,9 +88,11 @@ class RadialMenuState extends UpdateNotifier {
     for (int i = 0; i < items.length; i++) {
       var next = RadialMenuItem.sector(i, items.length)..copy(items.get(i));
 
+/*
       if (!next.hasIcon) {
         next.icon = VectorIcons.getRandomName();
       }
+*/
 
       sectors.add(next);
     }

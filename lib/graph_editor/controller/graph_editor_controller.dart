@@ -19,6 +19,7 @@ import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/focus_state.dart';
+import 'package:tide_ui/graph_editor/edit_node_dialog.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'package:tide_ui/main.dart' show AppVersion;
@@ -36,13 +37,17 @@ import 'keyboard_handler.dart';
 import 'mouse_controller.dart';
 import 'mouse_handler.dart';
 
+typedef GraphDialogResult(bool save);
+typedef GraphTabFocus(bool reverse);
+typedef GraphAutoComplete(bool reverse);
+
 class GraphEditorControllerBase {
   final GraphEditorState editor = GraphEditorState();
   final CanvasTabsState tabs = CanvasTabsState(menu: [
     MenuItem(
-        name: "app-menu",
-        icon: "ellipsisV",
-        command: GraphEditorCommand.showAppMenu()),
+      name: "app-menu",
+      icon: "ellipsisV",
+    ),
     MenuItem(
         name: "save",
         icon: "solidSave",
@@ -82,22 +87,29 @@ class GraphEditorControllerBase {
 
   bool get isTouchMode => editor.touchMode;
   bool get isMultiMode => editor.multiMode;
-  bool get isModalActive => menu.visible;
+  bool get isModalActive => menu.visible || bottomSheetActive;
 
   TideChartFile chartFile = TideChartFile()
     ..id = Uuid().v1().toString()
-    ..name = "chart_${GraphNode.randomName()}.chart";
+    ..name = "tide_${GraphNode.randomName()}.chart";
 
   List<GraphEditorCommand> commands = [];
   List<GraphEditorCommand> waiting = [];
   Duration timer = Duration.zero;
-  int nextChart = 1;
+  int nextSheet = 1;
   int ticks = 0;
 
   String platform;
   bool isAutoPanning = false;
   Offset cursor = Offset.zero; // last position of cursor in screen coord
-  FileSourceType lastSource = FileSourceType.file;
+  FileSourceType lastSource = FileSourceType.local;
+
+  final scaffold = GlobalKey<ScaffoldState>();
+  bool bottomSheetActive = false;
+  double bottomSheetHeight = 0;
+  GraphDialogResult closeBottomSheet;
+  GraphTabFocus tabFocus;
+  GraphAutoComplete autoComplete;
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -133,22 +145,37 @@ class GraphEditorController extends GraphEditorControllerBase
         afterTicks: 5);
   }
 
+  void newFile() {
+    chartFile = TideChartFile()
+      ..id = Uuid().v1().toString()
+      ..name = "tide_${GraphNode.randomName()}.chart";
+    nextSheet = 0;
+    loadChart();
+  }
+
   void loadChart() {
     beginUpdateAll();
 
-    var file = GraphFile.chart(chartFile);
+    setTitle("Tide Chart Editor - ${chartFile.name}");
+    var file = GraphFile(chartFile.chart);
 
     editor.tabs.clear();
     tabs.clear();
     library.sheets.clear();
+    if (file.sheets.isEmpty) {
+      newTab();
+    }
 
     for (var sheet in file.sheets) {
       var tab = CanvasTab();
 
       tab.graph.unpackGraph(sheet);
-      tab.graph.layout();
-      var rect = tab.graph.extents.inflate(50);
-      tab.canvas.zoomToFit(rect, canvas.size);
+
+      if (tab.graph.nodes.isNotEmpty) {
+        tab.graph.layout();
+        var rect = tab.graph.extents.inflate(50);
+        tab.canvas.zoomToFit(rect, canvas.size);
+      }
 
       editor.tabs[tab.graph.name] = tab;
 
@@ -339,6 +366,16 @@ class GraphEditorController extends GraphEditorControllerBase
   bool onKeyDown(GraphEvent evt) {
     var key = evt.key.toLowerCase();
 
+    if (key == "o" && evt.ctrlKey) {
+      editor.dispatch(GraphEditorCommand.openFile());
+      return true;
+    }
+
+    if (key == "s" && evt.ctrlKey) {
+      editor.dispatch(GraphEditorCommand.saveFile());
+      return true;
+    }
+
     if (key == "h") {
       zoomHome();
     }
@@ -447,7 +484,7 @@ class GraphEditorController extends GraphEditorControllerBase
     var graph = (random ? GraphState.random() : GraphState())
       ..name = GraphNode.randomName()
       ..icon = VectorIcons.getRandomName()
-      ..title = "Untitled - ${nextChart++}";
+      ..title = "Untitled - ${nextSheet++}";
 
     tab.graph.copy(graph);
     if (graph.nodes.isNotEmpty) {
@@ -518,5 +555,45 @@ class GraphEditorController extends GraphEditorControllerBase
     graph.controller.addNode(node, links: links);
 
     graph.endUpdate(true);
+  }
+
+  void editNode(GraphNode node) {
+    bottomSheetActive = true;
+    var rect = graph.getExtents(node.walkNode());
+    var pos = canvas.pos;
+    var scale = canvas.scale;
+
+    canvas.zoomToFit(
+        rect.inflate(25),
+        Size(canvas.size.width,
+            canvas.size.height - EditNodeDialog.EditNodeDialogHeight));
+
+    var controller = scaffold.currentState.showBottomSheet((context) {
+      return EditNodeDialog(this, node, closeBottomSheet);
+    });
+
+    controller.closed.then((evt) {
+      controller = null;
+      if (closeBottomSheet != null) {
+        print("Swipe closing bottom");
+        closeBottomSheet(true);
+      }
+    });
+
+    closeBottomSheet = (bool save) {
+      canvas.beginUpdate();
+      canvas.pos = pos;
+      canvas.scale = scale;
+      canvas.endUpdate(true);
+      bottomSheetActive = false;
+
+      closeBottomSheet = null;
+      autoComplete = null;
+      tabFocus = null;
+
+      if (controller != null) {
+        controller.close();
+      }
+    };
   }
 }

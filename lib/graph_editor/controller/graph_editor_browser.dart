@@ -10,6 +10,11 @@ mixin GraphEditorBrowser on GraphEditorControllerBase {
     result.location.reload();
   }
 
+  void setTitle(String title) {
+    var result = js.context["window"];
+    result.document.title = title;
+  }
+
   void setCursor(String next) {
     if (pointer != next) {
       var result = js.context["window"];

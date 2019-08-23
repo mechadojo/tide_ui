@@ -19,6 +19,12 @@ class RadialMenuPainter {
         ((sectors > 6) ? ((sectors > 10) ? .3 : .4) : .5);
   }
 
+  double getSectorLabelSize(int total) {
+    if (total < 4) return 16;
+
+    return 12;
+  }
+
   void paint(Canvas canvas, RadialMenuState menu) {
     if (!menu.visible) return;
 
@@ -28,6 +34,8 @@ class RadialMenuPainter {
     var rect = Rect.fromCircle(center: menu.pos, radius: Graph.RadialMenuSize);
 
     var title = menu.center.hasTitle ? menu.center.title : "";
+    var centerIcon = menu.center.icon;
+    var labelSize = getSectorLabelSize(menu.sectors.length);
     for (var sector in menu.sectors) {
       var disabled = sector.command == null;
 
@@ -35,8 +43,9 @@ class RadialMenuPainter {
         canvas.drawArc(rect, sector.startAngle, sector.sectorTheta, true,
             Graph.RadialMenuHoverColor);
 
-        if (sector.hasTitle) {
+        if (sector.hasTitle && sector.hasIcon) {
           title = sector.title;
+          centerIcon = sector.icon;
         }
       }
 
@@ -47,14 +56,23 @@ class RadialMenuPainter {
       pos = Offset.fromDirection(
           (sector.startAngle + sector.endAngle) / 2, Graph.RadialMenuIconPos);
       pos = pos.translate(menu.pos.dx, menu.pos.dy);
+      var iconPaint = getIconPaint(sector, disabled);
 
-      VectorIcons.paint(
-        canvas,
-        sector.icon,
-        pos,
-        sector.hovered && !disabled ? iconSize * 1.25 : iconSize,
-        fill: getIconPaint(sector, disabled),
-      );
+      if (sector.hasIcon) {
+        VectorIcons.paint(
+          canvas,
+          sector.icon,
+          pos,
+          sector.hovered && !disabled ? iconSize * 1.25 : iconSize,
+          fill: iconPaint,
+        );
+      } else if (sector.hasTitle) {
+        Graph.font.paint(canvas, sector.title, pos, labelSize,
+            fill: iconPaint,
+            alignment: Alignment.center,
+            width: Graph.RadialMenuSize,
+            style: "Bold");
+      }
     }
     canvas.drawCircle(menu.pos, Graph.RadialMenuSize, Graph.RadialMenuBorder);
     canvas.drawCircle(
@@ -82,7 +100,7 @@ class RadialMenuPainter {
           alignment: Alignment.topCenter);
     }
 
-    VectorIcons.paint(canvas, menu.center.icon, centerPos, centerSize,
+    VectorIcons.paint(canvas, centerIcon, centerPos, centerSize,
         fill: centerPaint);
   }
 }

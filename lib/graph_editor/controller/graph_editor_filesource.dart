@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:html';
+import 'dart:indexed_db';
 import 'dart:typed_data';
 
 import 'package:tide_ui/graph_editor/data/graph_file.dart';
@@ -28,6 +29,16 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
   String getChartJson() {
     updateChartFile();
     return chartFile.writeToJson();
+  }
+
+  void loadChartBlob(Blob blob) {
+    FileReader reader = FileReader();
+    reader.onLoad.listen((evt) {
+      var data = reader.result as Uint8List;
+      loadChartBytes(data);
+    });
+
+    reader.readAsArrayBuffer(blob);
   }
 
   void loadChartBytes(Uint8List bytes) {
@@ -63,7 +74,8 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     }
   }
 
-  void saveFileSystem() {
+  /// Save the current file to the file system
+  void saveSystemFile() {
     String url = getChartObjectUrl();
     AnchorElement link = AnchorElement();
     link.href = url;
@@ -71,23 +83,82 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     link.click();
   }
 
-  void openFileSystem() {
+  void initChartsStore(VersionChangeEvent evt) {
+    Database db = evt.target.result;
+    var store = db.createObjectStore("charts", keyPath: "filename");
+    store.createIndex("file_index", "filename", unique: true);
+    print("Created object store 'charts'");
+  }
+
+  /// Save the current file to local storage
+  void saveLocalFile() {
+    if (window.navigator.userAgent.contains("iPhone") ||
+        !IdbFactory.supported) {
+      var base64 = getChartBase64();
+      window.localStorage["LastChartFile"] = chartFile.name;
+      window.localStorage["charts:${chartFile.name}"] = base64;
+
+      print("Saved ${chartFile.name} to Local Storage");
+      return;
+    }
+
+    window.indexedDB
+        .open("charts", version: 1, onUpgradeNeeded: initChartsStore)
+        .then((db) {
+      Transaction txn = db.transaction("charts", "readwrite");
+      var store = txn.objectStore("charts");
+
+      var data = getChartBytes();
+      var blob = Blob([data], "application/octet-stream");
+      store.put({"filename": chartFile.name, "content": blob}).then((evt) {
+        window.localStorage["LastChartFile"] = chartFile.name;
+        print("Saved ${chartFile.name} to IndexedDB");
+      });
+    });
+  }
+
+  void openSystemFile() {
     FileUploadInputElement upload = FileUploadInputElement();
+    upload.accept = ".chart";
+
     upload.onChange.listen((evt) {
       if (upload.files.isNotEmpty) {
-        var file = upload.files.first;
-
-        FileReader reader = FileReader();
-        reader.onLoad.listen((evt) {
-          var data = reader.result as Uint8List;
-          loadChartBytes(data);
-        });
-
-        reader.readAsArrayBuffer(file);
+        loadChartBlob(upload.files.first);
       }
     });
 
     upload.click();
+  }
+
+  /// Open a file from local storage
+  void openLocalFile() {
+    if (!window.localStorage.containsKey("LastChartFile")) return;
+
+    var lastFile = window.localStorage["LastChartFile"];
+
+    if (window.navigator.userAgent.contains("iPhone") ||
+        !IdbFactory.supported) {
+      var path = "charts:${lastFile}";
+      if (!window.localStorage.containsKey(path)) return;
+
+      var base64 = window.localStorage[path];
+      loadChartBytes(Base64Decoder().convert(base64));
+
+      print("Loaded ${lastFile} from Local Storage");
+      return;
+    }
+
+    window.indexedDB
+        .open("charts", version: 1, onUpgradeNeeded: initChartsStore)
+        .then((db) {
+      Transaction txn = db.transaction("charts", "readonly");
+      var store = txn.objectStore("charts");
+
+      store.getObject(lastFile).then((data) {
+        loadChartBlob(data["content"]);
+        print("Loaded ${data['filename']} from IndexedDB");
+      });
+    });
   }
 
   void openFileType(FileSourceType source) {
@@ -96,7 +167,10 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
 
     switch (source) {
       case FileSourceType.file:
-        openFileSystem();
+        openSystemFile();
+        break;
+      case FileSourceType.local:
+        openLocalFile();
         break;
       default:
         print("Open File Type $source not implemented.");
@@ -110,7 +184,10 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
 
     switch (source) {
       case FileSourceType.file:
-        saveFileSystem();
+        saveSystemFile();
+        break;
+      case FileSourceType.local:
+        saveLocalFile();
         break;
       default:
         print("Save File Type $source not implemented.");

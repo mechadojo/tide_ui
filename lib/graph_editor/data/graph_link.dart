@@ -7,53 +7,6 @@ import 'graph_node.dart';
 import 'graph_state.dart';
 import 'node_port.dart';
 
-class PackedGraphLink {
-  PackedNodePort outPort;
-  PackedNodePort inPort;
-  int group = 0;
-
-  PackedGraphLink.link(GraphLink link) {
-    outPort = link.outPort.pack();
-    inPort = link.inPort.pack();
-    group = link.group;
-  }
-
-  PackedGraphLink.chart(TideChartLink link) {
-    outPort = PackedNodePort.named(link.outNode, link.outPort, "outport");
-    inPort = PackedNodePort.named(link.inNode, link.inPort, "inport");
-    group = link.group;
-  }
-
-  GraphLink unpack(GetNodeByName lookup) {
-    return GraphLink()
-      ..outPort = outPort.unpack(lookup)
-      ..inPort = inPort.unpack(lookup)
-      ..group = group;
-  }
-
-  Map<String, dynamic> toJson() => {
-        'outNode': outPort.node.name,
-        'outPort': outPort.name,
-        'inNode': inPort.node.name,
-        'inPort': inPort.name,
-        'group': group,
-      };
-
-  List<TideChartLink> toChanges(PackedGraphLink last) {
-    return [last.toChart(), this.toChart()];
-  }
-
-  TideChartLink toChart() {
-    TideChartLink result = TideChartLink();
-    result.outNode = outPort.node.name;
-    result.outPort = outPort.name;
-    result.inNode = inPort.node.name;
-    result.inPort = inPort.name;
-    result.group = group;
-    return result;
-  }
-}
-
 class GraphLink extends GraphObject {
   static GraphLink none = GraphLink();
 
@@ -68,7 +21,7 @@ class GraphLink extends GraphObject {
   Offset pathStart;
   Offset pathEnd;
   List<Offset> pathControl = [];
-  PackedGraphLink last;
+  TideChartLink last;
 
   bool get changed => outPort.pos != pathStart || inPort.pos != pathEnd;
 
@@ -78,8 +31,23 @@ class GraphLink extends GraphObject {
     this.inPort = inPort;
   }
 
-  PackedGraphLink pack() {
-    return PackedGraphLink.link(this);
+  TideChartLink pack() {
+    TideChartLink result = TideChartLink();
+    result.outNode = outPort.node.name;
+    result.outPort = outPort.name;
+    result.inNode = inPort.node.name;
+    result.inPort = inPort.name;
+    result.group = group;
+    return result;
+  }
+
+  static GraphLink unpack(TideChartLink packed, GetNodeByName lookup) {
+    return GraphLink()
+      ..outPort = NodePort.unpackByName(
+          packed.outNode, packed.outPort, "outport", lookup)
+      ..inPort =
+          NodePort.unpackByName(packed.inNode, packed.inPort, "inport", lookup)
+      ..group = packed.group;
   }
 
   bool equalTo(GraphLink other) {

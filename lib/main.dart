@@ -56,6 +56,7 @@ class AboutPage extends StatelessWidget {
             children: <Widget>[
               Text("Tide Charts UI"),
               IconButton(
+                key: GlobalKey(),
                 icon: Icon(FontAwesomeIcons.home),
                 onPressed: () {
                   Navigator.pop(context);
