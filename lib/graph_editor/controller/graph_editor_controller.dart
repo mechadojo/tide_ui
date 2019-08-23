@@ -37,6 +37,10 @@ import 'keyboard_handler.dart';
 import 'mouse_controller.dart';
 import 'mouse_handler.dart';
 
+typedef GraphDialogResult(bool save);
+typedef GraphTabFocus(bool reverse);
+typedef GraphAutoComplete(bool reverse);
+
 class GraphEditorControllerBase {
   final GraphEditorState editor = GraphEditorState();
   final CanvasTabsState tabs = CanvasTabsState(menu: [
@@ -102,7 +106,10 @@ class GraphEditorControllerBase {
 
   final scaffold = GlobalKey<ScaffoldState>();
   bool bottomSheetActive = false;
-  VoidCallback closeBottomSheet;
+  double bottomSheetHeight = 0;
+  GraphDialogResult closeBottomSheet;
+  GraphTabFocus tabFocus;
+  GraphAutoComplete autoComplete;
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -562,17 +569,31 @@ class GraphEditorController extends GraphEditorControllerBase
             canvas.size.height - EditNodeDialog.EditNodeDialogHeight));
 
     var controller = scaffold.currentState.showBottomSheet((context) {
-      return EditNodeDialog(node.pack(), closeBottomSheet);
+      return EditNodeDialog(this, node, closeBottomSheet);
     });
 
-    closeBottomSheet = () {
-      controller.close();
+    controller.closed.then((evt) {
+      controller = null;
+      if (closeBottomSheet != null) {
+        print("Swipe closing bottom");
+        closeBottomSheet(true);
+      }
+    });
+
+    closeBottomSheet = (bool save) {
       canvas.beginUpdate();
       canvas.pos = pos;
       canvas.scale = scale;
       canvas.endUpdate(true);
       bottomSheetActive = false;
+
       closeBottomSheet = null;
+      autoComplete = null;
+      tabFocus = null;
+
+      if (controller != null) {
+        controller.close();
+      }
     };
   }
 }

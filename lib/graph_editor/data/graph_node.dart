@@ -70,6 +70,7 @@ class GraphNode extends GraphObject {
 
   TideChartNode last;
 
+  bool get hasLibrary => library != null && library.isNotEmpty;
   bool get hasMethod => method != null && method.isNotEmpty;
   bool get hasTitle => title != null && title.isNotEmpty;
 
