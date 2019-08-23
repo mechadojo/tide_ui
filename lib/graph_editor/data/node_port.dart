@@ -10,6 +10,8 @@ class PortFlag extends GraphObject {
   Path path;
   List<Offset> leader = [];
   Offset textPos = Offset.zero;
+  Offset iconPos = Offset.zero;
+
   double direction = -1.0;
 
   void update() {
@@ -30,12 +32,12 @@ class PortFlag extends GraphObject {
     cx += Graph.PortValueFlagWidth * direction;
     path.lineTo(cx, cy);
     var startX = cx;
-    cx += Graph.PortValuePaddingRight * direction;
+    cx += Graph.PortValuePaddingStart * direction;
     var textStart = cx;
 
     cx += rect.width * direction;
     var textEnd = cx;
-    cx += Graph.PortValuePaddingLeft * direction;
+    cx += Graph.PortValuePaddingEnd * direction;
     var endX = cx;
     path.lineTo(cx, cy);
     cy -= Graph.PortValueHeight;
@@ -47,7 +49,11 @@ class PortFlag extends GraphObject {
     path.close();
 
     textPos = Offset((textStart + textEnd) / 2, pos.dy);
-
+    iconPos = Offset(
+        endX +
+            ((Graph.PortValueIconSize / 2 + Graph.PortValueIconPadding) *
+                direction),
+        pos.dy);
     hitbox = Rect.fromPoints(Offset(startX, topY), Offset(endX, bottomY));
   }
 }

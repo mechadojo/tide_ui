@@ -19,6 +19,7 @@ import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/focus_state.dart';
+import 'package:tide_ui/graph_editor/edit_node_dialog.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'package:tide_ui/main.dart' show AppVersion;
@@ -82,7 +83,7 @@ class GraphEditorControllerBase {
 
   bool get isTouchMode => editor.touchMode;
   bool get isMultiMode => editor.multiMode;
-  bool get isModalActive => menu.visible;
+  bool get isModalActive => menu.visible || bottomSheetActive;
 
   TideChartFile chartFile = TideChartFile()
     ..id = Uuid().v1().toString()
@@ -98,6 +99,10 @@ class GraphEditorControllerBase {
   bool isAutoPanning = false;
   Offset cursor = Offset.zero; // last position of cursor in screen coord
   FileSourceType lastSource = FileSourceType.local;
+
+  final scaffold = GlobalKey<ScaffoldState>();
+  bool bottomSheetActive = false;
+  VoidCallback closeBottomSheet;
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -543,5 +548,31 @@ class GraphEditorController extends GraphEditorControllerBase
     graph.controller.addNode(node, links: links);
 
     graph.endUpdate(true);
+  }
+
+  void editNode(GraphNode node) {
+    bottomSheetActive = true;
+    var rect = graph.getExtents(node.walkNode());
+    var pos = canvas.pos;
+    var scale = canvas.scale;
+
+    canvas.zoomToFit(
+        rect.inflate(25),
+        Size(canvas.size.width,
+            canvas.size.height - EditNodeDialog.EditNodeDialogHeight));
+
+    var controller = scaffold.currentState.showBottomSheet((context) {
+      return EditNodeDialog(node.pack(), closeBottomSheet);
+    });
+
+    closeBottomSheet = () {
+      controller.close();
+      canvas.beginUpdate();
+      canvas.pos = pos;
+      canvas.scale = scale;
+      canvas.endUpdate(true);
+      bottomSheetActive = false;
+      closeBottomSheet = null;
+    };
   }
 }

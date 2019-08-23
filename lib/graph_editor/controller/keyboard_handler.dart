@@ -51,6 +51,12 @@ class KeyboardHandler {
       }
       return;
     }
+
+    if (evt.key == "Escape" && editor.closeBottomSheet != null) {
+      editor.closeBottomSheet();
+      return;
+    }
+
     if (editor.isModalActive) return;
 
     // Ctrl+? switches to the about / help page

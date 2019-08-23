@@ -192,11 +192,13 @@ class Graph {
     ..color = CanvasColor.color.withAlpha(200);
 
   static double PortValueLabelSize = 10;
+  static double PortValueIconSize = 10;
   static double PortValueLeader = 5;
   static double PortValueHeight = 20;
   static double PortValueFlagWidth = 10;
-  static double PortValuePaddingLeft = 5;
-  static double PortValuePaddingRight = 5;
+  static double PortValueIconPadding = 3;
+  static double PortValuePaddingEnd = 5;
+  static double PortValuePaddingStart = 0;
   static Paint PortValueBorder = Paint()
     ..color = Color(0xFF333333)
     ..strokeWidth = 1.5

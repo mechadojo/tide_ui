@@ -229,7 +229,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getActionNodeMenu(GraphNode node) {
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(node)),
       MenuItem(
           icon: "chevron-circle-right",
           command: GraphEditorCommand.pushMenu(getSelectOutportMenu(node))),

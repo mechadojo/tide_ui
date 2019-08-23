@@ -316,6 +316,10 @@ class MouseHandler {
     canvas.stopPanning();
     editor.hideMenu();
     editor.cancelEditing();
+
+    if (editor.closeBottomSheet != null) {
+      editor.closeBottomSheet();
+    }
   }
 
   void onMouseDownTabs(GraphEvent evt) {

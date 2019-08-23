@@ -465,11 +465,21 @@ class GraphController with MouseController, KeyboardController {
           editor.dispatch(GraphEditorCommand.showPortMenu(port, pt));
           return true;
         }
+
+        if (port.flag.isHovered(gpt)) {
+          editor.dispatch(GraphEditorCommand.showPortValueMenu(port, pt));
+          return true;
+        }
       }
 
       for (var port in node.outports) {
         if (port.isHovered(gpt)) {
           editor.dispatch(GraphEditorCommand.showPortMenu(port, pt));
+          return true;
+        }
+
+        if (port.flag.isHovered(gpt)) {
+          editor.dispatch(GraphEditorCommand.showPortValueMenu(port, pt));
           return true;
         }
       }
@@ -766,6 +776,7 @@ class GraphController with MouseController, KeyboardController {
       clearSelection();
       editor.cancelDrop();
       editor.cancelEditing();
+
       return true;
     }
     if (key == "z" && evt.ctrlKey) {

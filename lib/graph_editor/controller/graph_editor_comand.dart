@@ -122,6 +122,12 @@ class GraphEditorCommand {
   //
   // ************************************************************
 
+  GraphEditorCommand.editNode(GraphNode node) {
+    handler = (GraphEditorController editor) {
+      editor.editNode(node);
+    };
+  }
+
   GraphEditorCommand.removeLink(GraphLink link) {
     handler = (GraphEditorController editor) {
       editor.graph.controller.removeLink(link.outPort, link.inPort);
@@ -272,6 +278,17 @@ class GraphEditorCommand {
   GraphEditorCommand.showPortMenu(NodePort port, Offset pt) {
     handler = (GraphEditorController editor) {
       var menu = editor.getPortMenu(port);
+
+      editor.openMenu(menu, pt);
+    };
+  }
+
+  GraphEditorCommand.showPortValueMenu(NodePort port, Offset pt) {
+    print("Show Port value menu: $port");
+    handler = (GraphEditorController editor) {
+      var menu = port.isInport
+          ? editor.getInportValueMenu(port)
+          : editor.getOutportValueMenu(port);
 
       editor.openMenu(menu, pt);
     };

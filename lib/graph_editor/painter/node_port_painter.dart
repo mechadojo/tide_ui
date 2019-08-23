@@ -1,4 +1,5 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import '../data/graph.dart';
 import '../data/graph_node.dart';
@@ -27,6 +28,14 @@ class NodePortPainter {
     return Graph.whitePaint;
   }
 
+  String getFlagIcon() {
+    if (port.hasValue) return "hashtag";
+    if (port.hasTrigger) return "bolt";
+    if (port.hasLink) return "link";
+    if (port.hasEvent) return "bolt";
+    return "";
+  }
+
   void drawFlag(Canvas canvas, NodePort port) {
     var direction = port.type == NodePortType.inport ? -1.0 : 1.0;
     var label = port.flagLabel;
@@ -49,6 +58,9 @@ class NodePortPainter {
 
     Graph.font.paint(canvas, label, port.flag.textPos, Graph.PortValueLabelSize,
         fill: Graph.NodeDarkColor, alignment: Alignment.center);
+    var icon = getFlagIcon();
+    VectorIcons.paint(canvas, icon, port.flag.iconPos, Graph.PortValueIconSize,
+        fill: Graph.NodeDarkColor);
   }
 
   void paint(Canvas canvas, double scale, NodePort port) {
