@@ -179,6 +179,19 @@ class GraphState extends UpdateNotifier {
     return link;
   }
 
+  bool allowDeletePort(NodePort port) {
+    if (port == null) return false;
+
+    if (port.isRequired) return false;
+    if (port.showFlag) return false;
+
+    if (links.any((x) => x.outPort.equalTo(port) || x.inPort.equalTo(port))) {
+      return false;
+    }
+
+    return true;
+  }
+
   Rect getExtents(Iterable<CanvasInteractive> items) {
     double top = 0;
     double left = 0;

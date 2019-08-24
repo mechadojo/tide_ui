@@ -14,7 +14,9 @@ class NodePortPainter {
   Paint get borderPaint =>
       port.hovered ? Graph.PortHoverBorder : Graph.PortBorder;
 
-  Paint get fillPaint => port.hovered ? Graph.PortHoverColor : Graph.PortColor;
+  Paint get fillPaint => port.hovered
+      ? Graph.PortHoverColor
+      : port.isDefault ? Graph.DefaultPortColor : Graph.PortColor;
   VectorFont get font => Graph.font;
 
   Paint getFlagPaint() {
@@ -75,8 +77,14 @@ class NodePortPainter {
       drawFlag(canvas, port);
     }
 
-    canvas.drawCircle(port.pos, sz, fillPaint);
-    canvas.drawCircle(port.pos, sz, borderPaint);
+    if (port.isDefault) {
+      var rect = Rect.fromCircle(center: port.pos, radius: sz);
+      canvas.drawRect(rect, fillPaint);
+      canvas.drawRect(rect, borderPaint);
+    } else {
+      canvas.drawCircle(port.pos, sz, fillPaint);
+      canvas.drawCircle(port.pos, sz, borderPaint);
+    }
 
     if (Graph.ShowHitBox) canvas.drawRect(port.hitbox, Graph.redPen);
 

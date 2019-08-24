@@ -239,6 +239,14 @@ class GraphNode extends GraphObject {
     yield this;
   }
 
+  bool get allowAddInport {
+    return type == GraphNodeType.action;
+  }
+
+  bool get allowAddOutport {
+    return type == GraphNodeType.action || type == GraphNodeType.behavior;
+  }
+
   static GraphNodeType parseNodeType(String type) {
     switch (type) {
       case "action":
@@ -258,6 +266,50 @@ class GraphNode extends GraphObject {
     }
 
     return GraphNodeType.unknown;
+  }
+
+  void setDefaultPort(NodePort port, {bool toggle = false}) {
+    var ports = port.isInport ? inports : outports;
+
+    for (var p in ports) {
+      if (!p.equalTo(port)) {
+        p.isDefault = false;
+        continue;
+      }
+
+      p.isDefault = toggle ? !p.isDefault : true;
+    }
+  }
+
+  void movePortUp(NodePort port) {
+    var ports = port.isInport ? inports : outports;
+
+    var idx = ports.indexWhere((x) => x.equalTo(port));
+    if (idx <= 0) return;
+
+    var last = ports.removeAt(idx);
+    ports.insert(idx - 1, last);
+    int i = 1;
+    for (var p in ports) {
+      p.ordinal = i++;
+    }
+    resize();
+  }
+
+  void movePortDown(NodePort port) {
+    var ports = port.isInport ? inports : outports;
+
+    var idx = ports.indexWhere((x) => x.equalTo(port));
+    if (idx < 0 || idx >= ports.length - 1) return;
+
+    var last = ports.removeAt(idx);
+    ports.insert(idx + 1, last);
+    int i = 1;
+    for (var p in ports) {
+      p.ordinal = i++;
+    }
+
+    resize();
   }
 
   NodePort getInport(String name) {

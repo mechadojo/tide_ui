@@ -18,6 +18,12 @@ class GraphEditorCommand {
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
 
+  GraphEditorCommand.ensureVisible(GlobalKey item) {
+    handler = (GraphEditorController editor) {
+      Scrollable.ensureVisible(item.currentContext);
+    };
+  }
+
   GraphEditorCommand.saveChanges() {
     handler = (GraphEditorController editor) {
       editor.saveChanges();

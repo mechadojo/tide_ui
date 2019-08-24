@@ -68,6 +68,7 @@ class NodePort extends GraphObject {
   String name = "";
   int ordinal = 0;
   bool isDefault = false;
+  bool isRequired = true;
 
   String value;
   String trigger;
@@ -160,6 +161,7 @@ class NodePort extends GraphObject {
         packed.name, NodePort.parsePortType(packed.type),
         autoResize: false);
     result.isDefault = packed.isDefault;
+    result.isRequired = packed.isRequired;
     result.value = packed.value;
     result.trigger = packed.trigger;
     result.event = packed.event;
@@ -187,6 +189,8 @@ class NodePort extends GraphObject {
   }
 
   bool equalTo(NodePort other) {
+    if (other == null) return false;
+
     if (node.name != other.node.name) return false;
     if (name != other.name) return false;
 
@@ -200,6 +204,7 @@ class NodePort extends GraphObject {
     result.name = name;
     result.ordinal = ordinal;
     result.isDefault = isDefault;
+    result.isRequired = isRequired;
 
     if (value != null) result.value = value;
     if (trigger != null) result.trigger = trigger;
