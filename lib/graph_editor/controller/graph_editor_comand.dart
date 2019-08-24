@@ -24,6 +24,12 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.requestFocus(FocusNode item) {
+    handler = (GraphEditorController editor) {
+      item.requestFocus();
+    };
+  }
+
   GraphEditorCommand.saveChanges() {
     handler = (GraphEditorController editor) {
       editor.saveChanges();
@@ -128,9 +134,9 @@ class GraphEditorCommand {
   //
   // ************************************************************
 
-  GraphEditorCommand.editNode(GraphNode node) {
+  GraphEditorCommand.editNode(GraphNode node, {NodePort port, String focus}) {
     handler = (GraphEditorController editor) {
-      editor.editNode(node);
+      editor.editNode(node, port: port, focus: focus);
     };
   }
 

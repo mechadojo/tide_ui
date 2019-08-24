@@ -232,7 +232,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "edit",
           title: "Edit",
-          command: GraphEditorCommand.editNode(node)),
+          command: GraphEditorCommand.editNode(node, focus: "title")),
       MenuItem(
           icon: "chevron-circle-right",
           command: GraphEditorCommand.pushMenu(getSelectOutportMenu(node))),
@@ -249,7 +249,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getTriggerNodeMenu(GraphNode node) {
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(icon: "edit", title: "Edit"),
       MenuItem(
           icon: "chevron-circle-right",
           command: GraphEditorCommand.pushMenu(getSelectOutportMenu(node))),
@@ -368,7 +368,11 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getOutportValueMenu(NodePort port) {
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(port.node,
+              port: port, focus: "value")),
       MenuItem(
           icon: "link",
           title: "Link",
@@ -392,7 +396,11 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getInportValueMenu(NodePort port) {
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(port.node,
+              port: port, focus: "value")),
       MenuItem(
           icon: "bolt",
           title: "Trigger",
@@ -428,7 +436,8 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "edit",
           title: "Edit",
-          command: GraphEditorCommand.print("Edit $port")),
+          command: GraphEditorCommand.editNode(port.node,
+              port: port, focus: "name")),
       MenuItem(
           icon: "hashtag",
           title: "Value",
@@ -457,7 +466,8 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "edit",
           title: "Edit",
-          command: GraphEditorCommand.print("Edit $port")),
+          command: GraphEditorCommand.editNode(port.node,
+              port: port, focus: "name")),
       MenuItem(
           icon: "sign-out-alt",
           title: "Outport",

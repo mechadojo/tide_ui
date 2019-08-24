@@ -89,6 +89,14 @@ class NodePort extends GraphObject {
     return null;
   }
 
+  String get flagType {
+    if (hasValue) return "Value";
+    if (hasTrigger) return "Trigger";
+    if (hasLink) return "Link";
+    if (hasEvent) return "Event";
+    return null;
+  }
+
   void setValue(String value) {
     this.value = value;
     if (value != null) {

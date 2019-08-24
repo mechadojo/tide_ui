@@ -80,9 +80,9 @@ class GraphEvent {
   factory GraphEvent.wheel(WheelEvent evt, [RenderBox rb]) {
     var result = GraphEvent.mouse(evt, rb);
 
-    result.deltaX = evt.deltaX;
-    result.deltaY = evt.deltaY;
-    result.deltaZ = evt.deltaZ;
+    result.deltaX = evt.deltaX.round();
+    result.deltaY = evt.deltaY.round();
+    result.deltaZ = evt.deltaZ.round();
 
     return result;
   }

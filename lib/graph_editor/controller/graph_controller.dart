@@ -229,8 +229,7 @@ class GraphController with MouseController, KeyboardController {
   void setPortValue(NodePort port, String value, {bool save = true}) {
     // not allowed to set a value on a port that also has a link
     if (value != null) {
-      if (graph.links
-          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+      if (!graph.allowAddFlag(port)) {
         return;
       }
     }
@@ -244,8 +243,7 @@ class GraphController with MouseController, KeyboardController {
   void setPortTrigger(NodePort port, String trigger, {bool save = true}) {
     // not allowed to set a value on a port that also has a link
     if (trigger != null) {
-      if (graph.links
-          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+      if (!graph.allowAddFlag(port)) {
         return;
       }
     }
@@ -259,8 +257,7 @@ class GraphController with MouseController, KeyboardController {
   void setPortLink(NodePort port, String link, {bool save = true}) {
     // not allowed to set a value on a port that also has a link
     if (link != null) {
-      if (graph.links
-          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+      if (!graph.allowAddFlag(port)) {
         return;
       }
     }
@@ -274,8 +271,7 @@ class GraphController with MouseController, KeyboardController {
   void setPortEvent(NodePort port, String event, {bool save = true}) {
     // not allowed to set a value on a port that also has a link
     if (event != null) {
-      if (graph.links
-          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+      if (!graph.allowAddFlag(port)) {
         return;
       }
     }

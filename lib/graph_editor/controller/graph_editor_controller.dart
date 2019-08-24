@@ -16,6 +16,7 @@ import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
+import 'package:tide_ui/graph_editor/data/node_port.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/focus_state.dart';
@@ -557,7 +558,7 @@ class GraphEditorController extends GraphEditorControllerBase
     graph.endUpdate(true);
   }
 
-  void editNode(GraphNode node) {
+  void editNode(GraphNode node, {NodePort port, String focus}) {
     bottomSheetActive = true;
     var rect = graph.getExtents(node.walkNode());
     var pos = canvas.pos;
@@ -569,7 +570,8 @@ class GraphEditorController extends GraphEditorControllerBase
             canvas.size.height - EditNodeDialog.EditNodeDialogHeight));
 
     var controller = scaffold.currentState.showBottomSheet((context) {
-      return EditNodeDialog(this, node, closeBottomSheet);
+      return EditNodeDialog(this, node, closeBottomSheet,
+          port: port, focus: focus);
     });
 
     controller.closed.then((evt) {

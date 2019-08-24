@@ -78,9 +78,19 @@ class NodePortPainter {
     }
 
     if (port.isDefault) {
-      var rect = Rect.fromCircle(center: port.pos, radius: sz);
-      canvas.drawRect(rect, fillPaint);
-      canvas.drawRect(rect, borderPaint);
+      sz *= 1.125;
+      var path = Path();
+      path.moveTo(port.pos.dx, port.pos.dy - sz);
+      path.lineTo(port.pos.dx + sz, port.pos.dy);
+      path.lineTo(port.pos.dx, port.pos.dy + sz);
+      path.lineTo(port.pos.dx - sz, port.pos.dy);
+      path.close();
+      canvas.drawPath(path, fillPaint);
+      canvas.drawPath(path, borderPaint);
+
+      //var rect = Rect.fromCircle(center: port.pos, radius: sz);
+      // canvas.drawRect(rect, fillPaint);
+      // canvas.drawRect(rect, borderPaint);
     } else {
       canvas.drawCircle(port.pos, sz, fillPaint);
       canvas.drawCircle(port.pos, sz, borderPaint);
@@ -111,13 +121,17 @@ class NodePortPainter {
       var pt = port.pos.translate(offset, -0.5);
       var fsz = (zoomedIn || isBehavior) ? 6 : 10 / scale;
 
+      var width = port.node.size.width / 2;
+
       if (!zoomedIn && !isBehavior) {
-        var rect = font.limits(port.name, pt, fsz, alignment: alignment);
+        width = double.infinity;
+        var rect =
+            font.limits(port.name, pt, fsz, alignment: alignment, width: width);
         var rrect = RRect.fromRectXY(rect.inflate(2), 4, 4);
         canvas.drawRRect(rrect, Graph.PortLabelShadow);
       }
       font.paint(canvas, port.name, pt, fsz,
-          fill: Graph.blackPaint, alignment: alignment);
+          fill: Graph.blackPaint, alignment: alignment, width: width);
     }
   }
 }
