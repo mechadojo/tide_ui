@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_event.dart';
+
 import 'package:tide_ui/graph_editor/fonts/RobotoMono.dart';
 import 'package:tide_ui/graph_editor/fonts/vector_font.dart';
 
@@ -22,14 +25,17 @@ class _TextPanelState extends State<TextPanel>
   Animation<double> _animation;
   AnimationController controller;
   bool showCursor = false;
-  TextPanelCursor cursor;
+  TextPanelCursor get cursor => widget.doc.cursor;
+  TextDocumentController docController;
+  StreamSubscription<GraphEvent> keys;
 
   @override
   void initState() {
     startCursorBlink(1000);
+    docController = TextDocumentController(widget.doc, onDocUpdate);
 
     if (widget.keys != null) {
-      widget.keys.listen(onKeyPress);
+      keys = widget.keys.listen(docController.onKeyPress);
     }
     super.initState();
   }
@@ -51,156 +57,13 @@ class _TextPanelState extends State<TextPanel>
 
   @override
   void dispose() {
+    keys.cancel();
     controller?.dispose();
     super.dispose();
   }
 
-  void onKeyPress(GraphEvent evt) {
-    setState(() {
-      if (evt.key == "Home") {
-        cursor.column = 0;
-        if (evt.ctrlKey) {
-          cursor.row = 0;
-        }
-
-        widget.doc.updateCursor(cursor);
-        return;
-      }
-
-      if (evt.key == "End") {
-        cursor.column = 9999999;
-        if (evt.ctrlKey) {
-          cursor.row = 9999999;
-        }
-
-        widget.doc.updateCursor(cursor);
-        return;
-      }
-
-      if (evt.key == "ArrowLeft") {
-        cursor.column--;
-        if (cursor.column < 0) {
-          cursor.column = 0;
-        }
-
-        widget.doc.updateCursor(cursor);
-        return;
-      }
-
-      if (evt.key == "ArrowUp") {
-        cursor.row--;
-        if (cursor.row < 0) {
-          cursor.row = 0;
-        }
-
-        widget.doc.updateCursor(cursor);
-        return;
-      }
-
-      if (evt.key == "ArrowRight") {
-        cursor.column++;
-        widget.doc.updateCursor(cursor);
-        return;
-      }
-
-      if (evt.key == "ArrowDown") {
-        cursor.row++;
-        widget.doc.updateCursor(cursor);
-        return;
-      }
-
-      if (evt.key == "Backspace") {
-        if (cursor.content != null) {
-          if (cursor.column == 0) {
-          } else {
-            var item = cursor.content;
-            if (cursor.offset >= item.content.length) {
-              item.content = item.content.substring(0, item.content.length - 1);
-              cursor.column--;
-            } else {
-              var front = item.content.substring(0, cursor.offset);
-              var back = item.content.substring(cursor.offset);
-
-              item.content = front.substring(0, front.length - 1) + back;
-              cursor.column--;
-            }
-          }
-        }
-
-        widget.doc.updateCursor(cursor);
-        return;
-      }
-
-      if (evt.key == "Enter") {
-        if (cursor.content != null) {
-          var item = cursor.content;
-          if (cursor.offset >= item.content.length) {
-            var idx = cursor.block.lines.indexOf(cursor.line) + 1;
-            if (idx >= 0) {
-              cursor.block.lines.insert(idx, TextLine.text(""));
-            }
-          } else {
-            var front = item.content.substring(0, cursor.offset);
-            var back = item.content.substring(cursor.offset);
-
-            item.content = front;
-
-            var idx = cursor.block.lines.indexOf(cursor.line) + 1;
-            if (idx > 0) {
-              cursor.block.lines.insert(idx, TextLine.text(back));
-            }
-          }
-        } else if (cursor.line != null) {
-          cursor.block.lines.add(TextLine.text(""));
-        } else if (cursor.block != null) {
-          cursor.block.lines.add(TextLine.text(""));
-        } else {
-          if (widget.doc.blocks.isEmpty) {
-            widget.doc.blocks.add(TextBlock.text(""));
-          }
-          widget.doc.blocks.last.lines.add(TextLine.text(""));
-        }
-
-        cursor.row++;
-        cursor.column = 0;
-        widget.doc.updateCursor(cursor);
-        return;
-      }
-
-      if (evt.key.length == 1) {
-        if (cursor.content != null) {
-          var item = cursor.content;
-          if (cursor.offset >= item.content.length) {
-            item.content = item.content + evt.key;
-          } else {
-            item.content = item.content.substring(0, cursor.offset) +
-                evt.key +
-                item.content.substring(cursor.offset);
-          }
-        } else if (cursor.line != null) {
-          var item = TextContent.text(evt.key);
-          cursor.content = item;
-          cursor.line.content.add(item);
-        } else if (cursor.block != null) {
-          cursor.line = TextLine.text(evt.key);
-          cursor.content = cursor.line.content.first;
-          cursor.block.lines.add(cursor.line);
-        } else {
-          if (widget.doc.blocks.isEmpty) {
-            widget.doc.blocks.add(TextBlock.text(""));
-          }
-
-          widget.doc.blocks.last.lines.add(TextLine.text(evt.key));
-        }
-
-        cursor.column++;
-        widget.doc.updateCursor(cursor);
-        // cursor.start = cursor.start.translate(style.indentSize, 0);
-        // cursor.end = cursor.end.translate(style.indentSize, 0);
-      } else {
-        print(evt.key);
-      }
-    });
+  void onDocUpdate() {
+    setState(() {});
   }
 
   void onTapDown(Offset pos) {
@@ -209,7 +72,7 @@ class _TextPanelState extends State<TextPanel>
     }
 
     setState(() {
-      cursor = widget.doc.getCursor(pos);
+      widget.doc.moveCursor(pos);
       print("Cursor: ${cursor.row}, ${cursor.column}");
     });
   }
@@ -303,11 +166,17 @@ class TextPanelPainter extends CustomPainter {
       for (var line in block.lines) {
         dx = clip.left;
 
+        int idx = 0;
+
         for (var item in line.content) {
           var pos = Offset(dx, dy);
           var rect = _font.limits(item.content, pos, _size);
+          //var p = Paint()..color = Graph.getGroupColor(idx).withAlpha(150);
+          //canvas.drawRect(rect, p);
           _font.paint(canvas, item.content, pos, _size, fill: _textFill);
+
           dx += rect.width;
+          idx++;
         }
 
         dy += _lineSpacing + _size;
@@ -332,6 +201,8 @@ class TextPanelCursor {
   TextLine line;
   TextContent content;
 
+  int get lineIndex => block?.lines?.indexOf(line) ?? 0;
+
   int row = 0;
   int column = 0;
   int offset = 0;
@@ -342,9 +213,14 @@ class TextPanelCursor {
 
 class TextPanelDocument {
   List<TextBlock> blocks = [];
-  TextContentStyle style = TextContentStyle.none;
+  List<TextDocumentDelta> history = [];
+  List<TextDocumentDelta> redoHistory = [];
 
-  TextPanelCursor updateCursor(TextPanelCursor cursor, {double margin = 10}) {
+  TextContentStyle style = TextContentStyle.none;
+  TextPanelCursor cursor = TextPanelCursor();
+  double margin = 10;
+
+  TextPanelCursor updateCursor() {
     double dy = margin;
     double dx = margin;
     int row = 0;
@@ -426,7 +302,206 @@ class TextPanelDocument {
     return cursor;
   }
 
-  TextPanelCursor getCursor(Offset pos, {double margin = 10}) {
+  void removeNext() {
+    if (cursor.content != null) {
+      var item = cursor.content;
+
+      if (cursor.offset >= item.length) {
+        var idx = cursor.lineIndex + 1;
+
+        if (idx < cursor.block.lines.length) {
+          var next = cursor.block.lines.removeAt(idx);
+          cursor.line.content.addAll(next.content);
+        } else {
+          var bidx = blocks.indexOf(cursor.block) + 1;
+          if (bidx < blocks.length && blocks[bidx].lines.isNotEmpty) {
+            var next = blocks[bidx].lines.removeAt(0);
+            cursor.line.content.addAll(next.content);
+          }
+        }
+      } else {
+        var front = item.content.substring(0, cursor.offset);
+        var back = item.content.substring(cursor.offset);
+
+        if (back.length > 1) {
+          item.content = front + back.substring(1);
+        } else {
+          item.content = front;
+        }
+      }
+    }
+
+    trimContent();
+  }
+
+  void trimContent() {
+    for (var block in blocks) {
+      for (var line in block.lines) {
+        if (line.content.length > 1) {
+          line.content = line.content.where((x) => x.isNotEmpty).toList();
+        }
+      }
+    }
+
+    updateCursor();
+  }
+
+  void movePrev() {
+    cursor.column--;
+    if (cursor.column < 0) {
+      cursor.column = 9999999;
+      cursor.row--;
+    }
+    if (cursor.row < 0) {
+      cursor.row = 0;
+      cursor.column = 0;
+    }
+
+    updateCursor();
+  }
+
+  void removeText(int count) {
+    if (count < 0) {
+      count = -count;
+      for (int i = 0; i < count; i++) {
+        movePrev();
+        removeNext();
+      }
+    } else {
+      for (int i = 0; i < count; i++) {
+        removeNext();
+      }
+    }
+  }
+
+  void insertText(List<String> lines, {TextContentStyle style}) {
+    if (cursor.content != null) {
+      var item = cursor.content;
+      if (cursor.offset >= item.content.length) {
+        item.content = item.content + lines.first;
+        var idx = cursor.lineIndex + 1;
+
+        for (var line in lines.skip(1)) {
+          cursor.block.lines.insert(idx, TextLine.text(line));
+          idx++;
+        }
+      } else {
+        var front = item.content.substring(0, cursor.offset);
+        var back = item.content.substring(cursor.offset);
+
+        if (lines.length > 1) {
+          item.content = front + lines.first;
+
+          List<TextContent> after = [];
+
+          var cidx = cursor.line.content.indexOf(item) + 1;
+          if (cidx < cursor.line.content.length) {
+            var before = cursor.line.content.take(cidx).toList();
+            after = cursor.line.content.skip(cidx).toList();
+            cursor.line.content = before;
+          }
+
+          var idx = cursor.lineIndex + 1;
+
+          for (int i = 1; i < lines.length - 1; i++) {
+            cursor.block.lines.insert(idx, TextLine.text(lines[i]));
+            idx++;
+          }
+
+          var last = TextLine.text(lines.last + back);
+          last.content.addAll(after);
+          cursor.block.lines.insert(idx, last);
+        } else {
+          item.content = front + lines.first + back;
+        }
+      }
+    } else {
+      if (blocks.isEmpty) {
+        blocks.add(TextBlock.text(lines.first));
+      } else {
+        blocks.last.lines.add(TextLine.text(lines.first));
+      }
+
+      for (var line in lines.skip(1)) {
+        blocks.last.lines.add(TextLine.text(line));
+      }
+    }
+
+    if (lines.length > 1) {
+      cursor.row += lines.length - 1;
+      cursor.column = lines.last.length;
+    } else {
+      cursor.column += lines.first.length;
+    }
+
+    updateCursor();
+  }
+
+  void clear() {
+    blocks.clear();
+    history.clear();
+    redoHistory.clear();
+  }
+
+  void undo() {
+    if (history.isNotEmpty) {
+      var last = history.removeLast();
+      redoHistory.add(last);
+
+      blocks.clear();
+      for (var delta in history) {
+        apply(delta, save: false);
+      }
+    }
+  }
+
+  void redo() {
+    if (redoHistory.isNotEmpty) {
+      var last = redoHistory.removeLast();
+      apply(last, clearRedo: false);
+    }
+  }
+
+  void apply(TextDocumentDelta delta,
+      {bool save = true, bool clearRedo = true}) {
+    if (save) {
+      history.add(delta);
+      if (clearRedo) {
+        redoHistory.clear();
+      }
+    }
+
+    //print("Apply: $delta");
+
+    moveTo(delta);
+
+    switch (delta.type) {
+      case TextDeltaType.none:
+        break;
+      case TextDeltaType.add:
+        insertText(delta.lines, style: delta.style);
+        break;
+      case TextDeltaType.remove:
+        removeText(delta.count);
+        break;
+      case TextDeltaType.update:
+        break;
+      case TextDeltaType.replace:
+        break;
+    }
+  }
+
+  void moveTo(TextDocumentDelta delta) {
+    cursor.row = delta.row;
+    cursor.column = delta.column;
+    updateCursor();
+  }
+
+  void moveCursor(Offset pos) {
+    cursor = getCursor(pos);
+  }
+
+  TextPanelCursor getCursor(Offset pos) {
     double dy = margin;
     double dx = margin;
     int row = 0;
@@ -521,12 +596,81 @@ class TextPanelDocument {
       ..end = Offset(margin, dy + style.lineSpacing + style.size);
   }
 
-  void clear() {
-    blocks.clear();
+  void remove(int count) {
+    var delta = TextDocumentDelta.remove(cursor, count);
+    apply(delta);
   }
 
-  void add(String text) {
-    blocks.add(TextBlock.text(text));
+  void add(String text, {TextContentStyle style}) {
+    var delta = TextDocumentDelta.add(cursor, text, style: style);
+    apply(delta);
+  }
+}
+
+enum TextDeltaType { none, add, remove, update, replace }
+
+class TextDocumentDelta {
+  int row = 0;
+  int column = 0;
+  int count = 0;
+  List<String> lines = [];
+  TextDeltaType type = TextDeltaType.none;
+  TextContentStyle style;
+
+  set text(String text) {
+    var tabs = (this.style ?? TextContentStyle.none).tabs;
+    this.lines = text
+        .split("\n")
+        .map((x) => x.replaceAll("\r", "").replaceAll("\t", tabs))
+        .toList();
+  }
+
+  TextDocumentDelta.remove(TextPanelCursor cursor, int count) {
+    type = TextDeltaType.remove;
+    row = cursor.row;
+    column = cursor.column;
+    this.count = count;
+  }
+
+  TextDocumentDelta.add(TextPanelCursor cursor, String text,
+      {TextContentStyle style}) {
+    type = TextDeltaType.add;
+    row = cursor.row;
+    column = cursor.column;
+    this.style = style?.copy();
+    this.text = text ?? "";
+  }
+
+  TextDocumentDelta.none(TextPanelCursor cursor) {
+    row = cursor.row;
+    column = cursor.column;
+  }
+
+  TextDocumentDelta.replace(TextPanelCursor cursor, String text, int count,
+      {TextContentStyle style}) {
+    type = TextDeltaType.replace;
+    row = cursor.row;
+    column = cursor.column;
+    this.count = count;
+    this.style = style?.copy();
+    this.text = text ?? "";
+  }
+
+  TextDocumentDelta.update(TextPanelCursor cursor,
+      {TextContentStyle style, int count = 0}) {
+    type = TextDeltaType.update;
+    row = cursor.row;
+    column = cursor.column;
+    this.count = count;
+    this.style = style?.copy();
+  }
+
+  @override
+  String toString() {
+    var typename = type.toString().split(".").last;
+    var value = lines.join(r"\n");
+
+    return "[$typename] ($row,$column) : '$value'";
   }
 }
 
@@ -546,6 +690,7 @@ class TextContentStyle {
   Color _color = Colors.black;
   double _size = 10;
   double _lineSpacing = 3;
+  String _tabs = "  ";
 
   double get indentSize =>
       _font.defaultWidth * _size / font.getFontStyle(_style).height;
@@ -553,6 +698,12 @@ class TextContentStyle {
   String _style = "Regular";
   int _outline = 0;
   int _indent = 0;
+
+  String get tabs => _tabs;
+  set tabs(String tabs) {
+    _tabs = tabs ?? none.tabs;
+    hasTabs = tabs != null;
+  }
 
   VectorFont get font => _font;
   set font(VectorFont font) {
@@ -610,6 +761,7 @@ class TextContentStyle {
   bool hasStyle = false;
   bool hasOutline = false;
   bool hasIndent = false;
+  bool hasTabs = false;
 
   static TextContentStyle none = TextContentStyle();
 
@@ -620,9 +772,10 @@ class TextContentStyle {
       .._color = this.color
       .._size = this.size
       .._lineSpacing = this.lineSpacing
-      ..style = this.style
-      ..outline = this.outline
-      ..indent = this.indent
+      .._style = this.style
+      .._outline = this.outline
+      .._indent = this.indent
+      .._tabs = this.tabs
       ..hasFont = this.hasFont
       ..hasType = this.hasType
       ..hasColor = this.hasColor
@@ -630,7 +783,8 @@ class TextContentStyle {
       ..hasLineSpacing = this.hasLineSpacing
       ..hasStyle = this.hasStyle
       ..hasOutline = this.hasOutline
-      ..hasIndent = this.hasIndent;
+      ..hasIndent = this.hasIndent
+      ..hasTabs = this.hasTabs;
 
     return result;
   }
@@ -646,6 +800,7 @@ class TextContentStyle {
       if (other.hasStyle) result.style = other.style;
       if (other.hasOutline) result.outline = other.outline;
       if (other.hasIndent) result.indent = other.indent;
+      if (other.hasTabs) result.tabs = other.tabs;
     }
     return result;
   }
@@ -691,6 +846,17 @@ class TextContent {
   TextContentType type = TextContentType.text;
   String content;
 
+  bool get isNotEmpty => length > 0;
+  bool get isEmpty => length == 0;
+
+  int get length {
+    if (type == TextContentType.text) {
+      return (content ?? "").length;
+    }
+
+    return 1;
+  }
+
   TextContent.text(String text) {
     type = TextContentType.text;
     content = text;
@@ -699,5 +865,168 @@ class TextContent {
   TextContent.icon(String icon) {
     type = TextContentType.icon;
     content = icon;
+  }
+}
+
+class TextDocumentController {
+  final TextPanelDocument doc;
+  final VoidCallback update;
+  TextPanelCursor get cursor => doc.cursor;
+
+  TextDocumentController(this.doc, this.update);
+
+  void onKeyPress(GraphEvent evt) {
+    if (handleKeyPress(evt)) {
+      update();
+    }
+  }
+
+  bool handleNavigation(GraphEvent evt) {
+    if (evt.key == "Home") {
+      cursor.column = 0;
+      if (evt.ctrlKey) {
+        cursor.row = 0;
+      }
+
+      doc.updateCursor();
+      return true;
+    }
+
+    if (evt.key == "End") {
+      cursor.column = 9999999;
+      if (evt.ctrlKey) {
+        cursor.row = 9999999;
+      }
+
+      doc.updateCursor();
+      return true;
+    }
+
+    if (evt.key == "ArrowLeft") {
+      if (evt.ctrlKey && cursor.content != null) {
+        if (cursor.offset == 0) {
+          var cidx = cursor.line.content.indexOf(cursor.content);
+          if (cidx > 0) {
+            cursor.column -= cursor.line.content[cidx - 1].length;
+          }
+        } else {
+          cursor.column -= cursor.offset;
+        }
+      } else {
+        cursor.column--;
+      }
+
+      if (cursor.column < 0) {
+        cursor.column = 0;
+      }
+
+      doc.updateCursor();
+      return true;
+    }
+
+    if (evt.key == "ArrowUp") {
+      cursor.row--;
+      if (cursor.row < 0) {
+        cursor.row = 0;
+      }
+
+      doc.updateCursor();
+      return true;
+    }
+
+    if (evt.key == "ArrowRight") {
+      if (evt.ctrlKey && cursor.content != null) {
+        cursor.column += (cursor.content.length - cursor.offset);
+      } else {
+        cursor.column++;
+      }
+      doc.updateCursor();
+      return true;
+    }
+
+    if (evt.key == "ArrowDown") {
+      cursor.row++;
+      doc.updateCursor();
+      return true;
+    }
+
+    return false;
+  }
+
+  bool handleDelete() {
+    doc.remove(1);
+    return true;
+  }
+
+  bool handleBackspace() {
+    doc.remove(-1);
+    /*
+    if (cursor.content != null) {
+      if (cursor.column == 0) {
+      } else {
+        var item = cursor.content;
+        if (cursor.offset >= item.content.length) {
+          item.content = item.content.substring(0, item.content.length - 1);
+          cursor.column--;
+        } else {
+          var front = item.content.substring(0, cursor.offset);
+          var back = item.content.substring(cursor.offset);
+
+          item.content = front.substring(0, front.length - 1) + back;
+          cursor.column--;
+        }
+      }
+    }
+
+    doc.updateCursor();
+    */
+    return true;
+  }
+
+  bool handleHotkeys(GraphEvent evt) {
+    if (evt.ctrlKey) {
+      var key = evt.key.toLowerCase();
+
+      switch (key) {
+        case "v":
+          return handleInsertText("This is a test\nThis is only a test.\n");
+          break;
+        case "z":
+          doc.undo();
+          return true;
+        case "y":
+          doc.redo();
+          return true;
+      }
+      print("Ctrl+$key");
+    }
+
+    return evt.ctrlKey;
+  }
+
+  bool handleInsertText(String text) {
+    doc.add(text);
+    return true;
+  }
+
+  bool handleKeyPress(GraphEvent evt) {
+    if (evt.key == "Control" || evt.key == "Shift" || evt.key == "Alt") {
+      return true;
+    }
+
+    if (handleNavigation(evt)) return true;
+    if (evt.key == "Enter") return handleInsertText("\n");
+    if (evt.key == "Backspace") return handleBackspace();
+    if (evt.key == "Delete") return handleDelete();
+
+    if (handleHotkeys(evt)) return true;
+
+    if (evt.key.length == 1) {
+      return handleInsertText(evt.key);
+    } else {
+      print(evt.key);
+    }
+
+    return false;
   }
 }

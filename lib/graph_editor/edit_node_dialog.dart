@@ -93,6 +93,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   GlobalKey selectedPortKey = GlobalKey();
 
   bool scriptFocused = false;
+  Stream<GraphEvent> scriptKeys;
 
   @override
   void dispose() {
@@ -127,6 +128,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     selectedPort = widget.port ?? lastSelectedInport;
     selectedTab = selectedPort.isInport ? "inports" : "outports";
     lastPortFlagType = selectedPort.isInport ? "Value" : "Link";
+
+    scriptKeys = scriptController.stream.asBroadcastStream();
 
     titleController
       ..text = node.title
@@ -815,7 +818,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         scriptDocument,
         Size(width - 34, height - 42),
         scriptFocus.hasFocus,
-        keys: scriptController.stream,
+        keys: scriptKeys,
         focus: () {
           if (!scriptFocus.hasFocus) {
             FocusScope.of(context).requestFocus(scriptFocus);

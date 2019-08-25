@@ -58,13 +58,13 @@ class KeyboardHandler {
       return;
     }
 
+    if (evt.key == "Tab") {
+      evt.preventDefault();
+    }
+
     if (modalKeyHandler != null) {
       modalKeyHandler(evt);
       return;
-    }
-
-    if (evt.key == "Tab") {
-      evt.preventDefault();
     }
 
     if (evt.key == "Tab" && !evt.ctrlKey && editor.tabFocus != null) {

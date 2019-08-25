@@ -21,7 +21,7 @@ class VectorFont {
 
   final Map<String, VectorFontStyle> styles = {};
 
-  double spaceWidth = 250;
+  double spaceWidth = 0;
   int tabSpaces = 4;
   double kerning = 0;
   double lineSpacing = 250;

@@ -7,7 +7,7 @@ import 'SourceSansPro-LightItalic.dart';
 import 'SourceSansPro-Regular.dart';
 import 'SourceSansPro-RegularItalic.dart';
 
-VectorFont SourceSansProFont = VectorFont()
+VectorFont SourceSansProFont = VectorFont(defaultWidth: 25)
   ..add(SourceSansProRegularFont())
   ..add(SourceSansProRegularItalicFont())
   ..add(SourceSansProBoldFont())

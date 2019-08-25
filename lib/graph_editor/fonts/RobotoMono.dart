@@ -7,7 +7,7 @@ import 'RobotoMono-LightItalic.dart';
 import 'RobotoMono-Regular.dart';
 import 'RobotoMono-RegularItalic.dart';
 
-VectorFont RobotoMonoFont = VectorFont(defaultWidth: 1230, spaceWidth: 0)
+VectorFont RobotoMonoFont = VectorFont(defaultWidth: 1230)
   ..add(RobotoMonoRegularFont())
   ..add(RobotoMonoRegularItalicFont())
   ..add(RobotoMonoBoldFont())
