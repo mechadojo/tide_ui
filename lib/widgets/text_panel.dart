@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_web/material.dart';
+import 'package:flutter_web_ui/ui.dart';
 import 'package:tide_ui/graph_editor/controller/graph_event.dart';
 
 import 'package:tide_ui/graph_editor/fonts/RobotoMono.dart';
@@ -28,6 +29,7 @@ class _TextPanelState extends State<TextPanel>
   TextPanelCursor get cursor => widget.doc.cursor;
   TextDocumentController docController;
   StreamSubscription<GraphEvent> keys;
+  double margin = 10;
 
   @override
   void initState() {
@@ -72,8 +74,11 @@ class _TextPanelState extends State<TextPanel>
     }
 
     setState(() {
-      widget.doc.moveCursor(pos);
-      print("Cursor: ${cursor.row}, ${cursor.column}");
+      var scroll = widget.doc.scrollPos;
+
+      widget.doc
+          .moveCursor(pos.translate(-margin + scroll.dx, -margin + scroll.dy));
+      //print("Cursor: ${cursor.row}, ${cursor.column}");
     });
   }
 
@@ -106,22 +111,30 @@ class _TextPanelState extends State<TextPanel>
             width: widget.size.width,
             height: widget.size.height,
             child: CustomPaint(
-                painter: TextPanelPainter(
-                    widget.doc, widget.focused, showCursor ? cursor : null),
+                painter: TextPanelPainter(widget.doc, widget.focused,
+                    showCursor ? cursor : null, margin),
                 child: widget.child)),
       ),
     );
   }
 }
 
+typedef TextPanelAction(int row, int column, int index, Rect rect,
+    TextContentStyle style, TextContent item);
+
 class TextPanelPainter extends CustomPainter {
   final TextPanelDocument doc;
   final bool focused;
   final TextPanelCursor cursor;
+  final double margin;
 
-  TextPanelPainter(this.doc, this.focused, this.cursor);
+  TextPanelPainter(this.doc, this.focused, this.cursor, this.margin);
 
   Paint _backFill = Paint()..color = Colors.white;
+
+  Paint _scrollBack = Paint()..color = Colors.grey[300];
+
+  Paint _scrollFront = Paint()..color = Colors.grey[400];
 
   Paint _borderPen = Paint()
     ..color = Colors.black
@@ -138,56 +151,114 @@ class TextPanelPainter extends CustomPainter {
     ..strokeWidth = 2
     ..style = PaintingStyle.stroke;
 
-  Paint _textFill = Paint()..color = TextContentStyle.none.color;
-  VectorFont _font = TextContentStyle.none.font;
-  double _margin = 10;
-  double _size = TextContentStyle.none.size;
-  double _lineSpacing = TextContentStyle.none.lineSpacing;
+  Map<Color, Paint> _paint = {};
 
   void drawCursor(Canvas canvas) {
     canvas.drawLine(cursor.start, cursor.end, _cursorPen);
+  }
+
+  TextPanelAction drawDocument(Canvas canvas) {
+    return (int row, int column, int index, Rect rect, TextContentStyle style,
+        TextContent item) {
+      var color = style.color;
+      var font = style.font;
+      var size = style.size;
+
+      var paint = _paint[color];
+      if (paint == null) {
+        paint = Paint()..color = color;
+        _paint[color] = paint;
+      }
+
+      var fill = getMarkColor(row, column, index);
+      if (fill != null) {
+        canvas.drawRect(rect, fill);
+      }
+
+      font.paint(canvas, item.content, rect.bottomLeft, size, fill: paint);
+    };
   }
 
   @override
   void paint(Canvas canvas, size) {
     var clip = Rect.fromLTRB(0, 0, size.width, size.height);
     canvas.save();
-    canvas.clipRect(clip);
 
     canvas.drawRect(clip, _backFill);
-    canvas.drawRect(clip, focused ? _focusPen : _borderPen);
 
-    clip = clip.deflate(_margin);
+    clip = clip.deflate(margin - 1);
+    canvas.clipRect(clip);
 
-    double dx = clip.left;
-    double dy = clip.top + _lineSpacing + _size;
+    doc.resizeTo(clip.width, clip.height);
+    canvas.translate(margin - doc.scrollPos.dx, margin - doc.scrollPos.dy);
 
-    for (var block in doc.blocks) {
-      for (var line in block.lines) {
-        dx = clip.left;
-
-        int idx = 0;
-
-        for (var item in line.content) {
-          var pos = Offset(dx, dy);
-          var rect = _font.limits(item.content, pos, _size);
-          //var p = Paint()..color = Graph.getGroupColor(idx).withAlpha(150);
-          //canvas.drawRect(rect, p);
-          _font.paint(canvas, item.content, pos, _size, fill: _textFill);
-
-          dx += rect.width;
-          idx++;
-        }
-
-        dy += _lineSpacing + _size;
-      }
-    }
+    doc.walk(drawDocument(canvas));
 
     if (cursor != null) {
       drawCursor(canvas);
     }
 
     canvas.restore();
+
+    drawHorizontalScrollbar(clip, size, canvas);
+    drawVerticalScrollbar(clip, size, canvas);
+
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height),
+        focused ? _focusPen : _borderPen);
+  }
+
+  void drawVerticalScrollbar(Rect clip, Size size, Canvas canvas) {
+    var margin = this.margin - 2;
+
+    var limits = doc.limits;
+    var total = limits.height + (doc.cursor.end.dy - doc.cursor.start.dy);
+
+    if (total > clip.height) {
+      var ratio = size.height * clip.height / total;
+
+      var offset = doc.scrollPos.dy / (total - clip.height);
+      if (offset > 1) offset = 1;
+
+      var start = (size.height - ratio) * offset;
+
+      var rect = Rect.fromLTWH(size.width - margin, 0, margin, start);
+      canvas.drawRect(rect, _scrollBack);
+
+      rect = Rect.fromLTWH(size.width - margin, start, margin, ratio);
+      canvas.drawRect(rect, _scrollFront);
+
+      rect = Rect.fromLTWH(size.width - margin, ratio + start, margin,
+          size.height - ratio - start);
+      canvas.drawRect(rect, _scrollBack);
+    }
+  }
+
+  void drawHorizontalScrollbar(Rect clip, Size size, Canvas canvas) {
+    var margin = this.margin - 2;
+
+    var limits = doc.limits;
+    if (limits.width > clip.width) {
+      var ratio = size.width * clip.width / limits.width;
+
+      var offset = doc.scrollPos.dx / (limits.width - clip.width);
+      if (offset > 1) offset = 1;
+
+      var start = (size.width - ratio) * offset;
+
+      var rect = Rect.fromLTWH(0, size.height - margin, start, margin);
+      canvas.drawRect(rect, _scrollBack);
+
+      rect = Rect.fromLTWH(start, size.height - margin, ratio, margin);
+      canvas.drawRect(rect, _scrollFront);
+
+      rect = Rect.fromLTWH(ratio + start, size.height - margin,
+          size.width - ratio - start, margin);
+      canvas.drawRect(rect, _scrollBack);
+    }
+  }
+
+  Paint getMarkColor(int row, int column, int index) {
+    return null;
   }
 
   @override
@@ -218,11 +289,152 @@ class TextPanelDocument {
 
   TextContentStyle style = TextContentStyle.none;
   TextPanelCursor cursor = TextPanelCursor();
-  double margin = 10;
+
+  Offset scrollPos = Offset.zero;
+  Rect viewRect = Rect.zero;
+
+  String get text {
+    var buffer = StringBuffer();
+    bool first = true;
+    for (var block in blocks) {
+      for (var line in block.lines) {
+        if (!first) buffer.writeln();
+
+        for (var item in line.content) {
+          buffer.write(item.content ?? "");
+        }
+        first = false;
+      }
+    }
+    return buffer.toString();
+  }
+
+  void resizeTo(double width, double height) {
+    var dx = scrollPos.dx;
+    var dy = scrollPos.dy;
+
+    if (width != viewRect.width) {
+      dx = 0;
+    }
+    if (height != viewRect.height) {
+      dy = 0;
+    }
+    if (dx != scrollPos.dx || dy != scrollPos.dy) {
+      scrollPos = Offset(dx, dy);
+    }
+
+    viewRect = Rect.fromLTWH(scrollPos.dx, scrollPos.dy, width, height);
+    ensureVisible();
+  }
+
+  void ensureVisible() {
+    var dx = scrollPos.dx;
+    var dy = scrollPos.dy;
+
+    if (cursor.start.dy < viewRect.top) {
+      dy += cursor.start.dy - viewRect.top;
+    }
+    var scrollAt = viewRect.bottom - (cursor.end.dy - cursor.start.dy);
+
+    if (cursor.end.dy > scrollAt) {
+      var delta = cursor.end.dy - scrollAt - 3;
+      dy += delta;
+    }
+
+    if (cursor.start.dx < viewRect.left) {
+      dx += cursor.start.dx - viewRect.left;
+    }
+    if (cursor.start.dx > viewRect.right) {
+      dx += cursor.start.dx - viewRect.right + 3;
+    }
+
+    if (dx < 0) dx = 0;
+    if (dy < 0) dy = 0;
+
+    if (dx != scrollPos.dx || dy != scrollPos.dy) {
+      scrollPos = Offset(dx, dy);
+      viewRect = Rect.fromLTWH(
+          scrollPos.dx, scrollPos.dy, viewRect.width, viewRect.height);
+    }
+  }
+
+  void scrollTo(Offset pos) {
+    scrollPos = pos;
+    resizeTo(viewRect.width, viewRect.height);
+  }
+
+  void scrollBy(double dx, double dy) {
+    scrollTo(scrollPos.translate(dx, dy));
+  }
+
+  Size get limits {
+    double width = 0;
+    double height = 0;
+
+    var measure = (int row, int column, int index, Rect rect,
+        TextContentStyle style, TextContent item) {
+      if (rect.right > width) width = rect.right;
+      if (rect.bottom > height) height = rect.bottom;
+    };
+
+    walk(measure);
+    return Size(width, height);
+  }
+
+  void walk(TextPanelAction action) {
+    double dx = 0;
+    double dy = 0;
+
+    int row = 0;
+    int column = 0;
+    int index = 0;
+
+    for (var block in blocks) {
+      var blockstyle = style.copyWith(block.style);
+
+      for (var line in block.lines) {
+        var linestyle = blockstyle.copyWith(line.style);
+
+        dx = 0;
+        column = 0;
+        index = 0;
+
+        var lineHeight = linestyle.size + linestyle.lineSpacing;
+        for (var item in line.content) {
+          var contentstyle = linestyle.copyWith(item.style);
+          var itemHeight = contentstyle.size + contentstyle.lineSpacing;
+          if (itemHeight > lineHeight) {
+            lineHeight = itemHeight;
+          }
+        }
+
+        dy += lineHeight;
+
+        for (var item in line.content) {
+          var contentstyle = linestyle.copyWith(item.style);
+
+          var pos = Offset(dx, dy);
+          var font = contentstyle.font;
+          var size = contentstyle.size;
+
+          var rect = font.limits(item.content, pos, size);
+
+          action(row, column, index, rect, style, item);
+
+          dx += rect.width;
+
+          column += item.length;
+          index++;
+        }
+
+        row++;
+      }
+    }
+  }
 
   TextPanelCursor updateCursor() {
-    double dy = margin;
-    double dx = margin;
+    double dy = 0;
+    double dx = 0;
     int row = 0;
     int column = 0;
     double offsetY = 1;
@@ -237,7 +449,10 @@ class TextPanelDocument {
           block.style == null ? style : style.copyWith(block.style);
 
       cursor.line = block.lines.isEmpty ? null : block.lines.first;
-      cursor.content = cursor.line?.content?.first;
+
+      cursor.content = cursor.line == null
+          ? null
+          : cursor.line.content.isEmpty ? null : cursor.line.content.first;
 
       for (var line in block.lines) {
         var linestyle =
@@ -246,7 +461,7 @@ class TextPanelDocument {
         var startY = dy;
         var endY = startY + linestyle.size + linestyle.lineSpacing;
         column = 0;
-        dx = margin + style.indent * style.indentSize;
+        dx = style.indent * style.indentSize;
 
         if (row == cursor.row) {
           cursor.block = block;
@@ -297,8 +512,9 @@ class TextPanelDocument {
     cursor.block = null;
     cursor.line = null;
     cursor.content = null;
-    cursor.start = Offset(margin, dy + offsetY);
-    cursor.end = Offset(margin, dy + style.lineSpacing + style.size + extraY);
+    cursor.start = Offset(0, dy + offsetY);
+    cursor.end = Offset(0, dy + style.lineSpacing + style.size + extraY);
+
     return cursor;
   }
 
@@ -502,8 +718,8 @@ class TextPanelDocument {
   }
 
   TextPanelCursor getCursor(Offset pos) {
-    double dy = margin;
-    double dx = margin;
+    double dy = 0;
+    double dx = 0;
     int row = 0;
     int column = 0;
     double offsetY = 1;
@@ -530,7 +746,7 @@ class TextPanelDocument {
 
         if (pos.dy >= startY && pos.dy < endY) {
           column = 0;
-          dx = margin + style.indent * style.indentSize;
+          dx = style.indent * style.indentSize;
 
           var result = TextPanelCursor()
             ..block = block
@@ -592,8 +808,8 @@ class TextPanelDocument {
     return TextPanelCursor()
       ..row = row
       ..column = 0
-      ..start = Offset(margin, dy)
-      ..end = Offset(margin, dy + style.lineSpacing + style.size);
+      ..start = Offset(0, dy)
+      ..end = Offset(0, dy + style.lineSpacing + style.size);
   }
 
   void remove(int count) {

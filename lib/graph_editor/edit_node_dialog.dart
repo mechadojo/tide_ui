@@ -25,6 +25,7 @@ class EditNodeDialog extends StatefulWidget {
   final GraphDialogResult close;
   final NodePort port;
   final String focus;
+  final TextPanelDocument script = TextPanelDocument();
 
   EditNodeDialog(this.editor, this.node, this.close, {this.port, this.focus});
 
@@ -50,8 +51,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   final portValueFocus = FocusNode();
   final scriptFocus = FocusNode();
 
-  final TextPanelDocument scriptDocument = TextPanelDocument()
-    ..add("Hello World\n01234567890\n    [5-7]");
+  TextPanelDocument get scriptDocument => widget.script;
 
   int autoCompleteIndex = 0;
   String autoCompletePrefix;
@@ -129,6 +129,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     selectedTab = selectedPort.isInport ? "inports" : "outports";
     lastPortFlagType = selectedPort.isInport ? "Value" : "Link";
 
+    scriptDocument.add(node.script ?? "");
     scriptKeys = scriptController.stream.asBroadcastStream();
 
     titleController

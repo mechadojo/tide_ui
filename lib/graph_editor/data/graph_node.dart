@@ -56,6 +56,7 @@ class GraphNode extends GraphObject {
   String icon;
   String method;
   String library;
+  String script;
 
   bool isLogging = false;
   bool isDebugging = false;
@@ -73,6 +74,7 @@ class GraphNode extends GraphObject {
   bool get hasLibrary => library != null && library.isNotEmpty;
   bool get hasMethod => method != null && method.isNotEmpty;
   bool get hasTitle => title != null && title.isNotEmpty;
+  bool get hasScript => script != null && script.isNotEmpty;
 
   static Random nodeRandom = Random();
   static randomName() {
@@ -102,6 +104,7 @@ class GraphNode extends GraphObject {
     node.icon = packed.icon;
     node.method = packed.method;
     node.library = packed.library;
+    node.script = packed.script;
 
     node.isLogging = packed.isLogging;
     node.isDebugging = packed.isDebugging;
@@ -359,6 +362,7 @@ class GraphNode extends GraphObject {
     if (title != null) result.title = title;
     if (method != null) result.method = method;
     if (library != null) result.library = library;
+    if (script != null) result.script = script;
 
     result.isLogging = isLogging;
     result.isDebugging = isDebugging;

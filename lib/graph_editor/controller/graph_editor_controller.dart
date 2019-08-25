@@ -575,9 +575,11 @@ class GraphEditorController extends GraphEditorControllerBase
         Size(canvas.size.width,
             canvas.size.height - EditNodeDialog.EditNodeDialogHeight));
 
+    EditNodeDialog dialog;
     var controller = scaffold.currentState.showBottomSheet((context) {
-      return EditNodeDialog(this, node, closeBottomSheet,
+      dialog = EditNodeDialog(this, node, closeBottomSheet,
           port: port, focus: focus);
+      return dialog;
     });
 
     controller.closed.then((evt) {
@@ -593,13 +595,18 @@ class GraphEditorController extends GraphEditorControllerBase
       canvas.pos = pos;
       canvas.scale = scale;
       canvas.endUpdate(true);
+
+      graph.beginUpdate();
+      node.script = dialog.script.text;
+      graph.endUpdate(true);
+
       bottomSheetActive = false;
 
       closeBottomSheet = null;
       autoComplete = null;
       tabFocus = null;
       modalKeyHandler = null;
-      
+
       if (controller != null) {
         controller.close();
       }
