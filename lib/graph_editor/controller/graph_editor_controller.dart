@@ -41,6 +41,7 @@ import 'mouse_handler.dart';
 typedef GraphDialogResult(bool save);
 typedef GraphTabFocus(bool reverse);
 typedef GraphAutoComplete(bool reverse);
+typedef GraphKeyPress(GraphEvent evt);
 
 class GraphEditorControllerBase {
   final GraphEditorState editor = GraphEditorState();
@@ -111,6 +112,7 @@ class GraphEditorControllerBase {
   GraphDialogResult closeBottomSheet;
   GraphTabFocus tabFocus;
   GraphAutoComplete autoComplete;
+  GraphKeyPress modalKeyHandler;
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -144,6 +146,10 @@ class GraphEditorController extends GraphEditorControllerBase
 
     dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.collapsed),
         afterTicks: 5);
+  }
+
+  void setModalKeyHandler(GraphKeyPress handler) {
+    modalKeyHandler = handler;
   }
 
   void newFile() {
@@ -592,7 +598,8 @@ class GraphEditorController extends GraphEditorControllerBase
       closeBottomSheet = null;
       autoComplete = null;
       tabFocus = null;
-
+      modalKeyHandler = null;
+      
       if (controller != null) {
         controller.close();
       }

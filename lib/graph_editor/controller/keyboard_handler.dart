@@ -13,6 +13,7 @@ class KeyboardHandler {
   CanvasTabsController get tabs => editor.tabs.controller;
   CanvasController get canvas => editor.canvas.controller;
   GraphController get graph => editor.graph.controller;
+  GraphKeyPress get modalKeyHandler => editor.modalKeyHandler;
 
   bool ctrlKey = false;
   bool shiftKey = false;
@@ -54,6 +55,11 @@ class KeyboardHandler {
 
     if (evt.key == "Escape" && editor.closeBottomSheet != null) {
       editor.closeBottomSheet(false);
+      return;
+    }
+
+    if (modalKeyHandler != null) {
+      modalKeyHandler(evt);
       return;
     }
 

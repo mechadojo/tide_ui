@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
-import 'package:tide_ui/graph_editor/icons/font_awesome_icons.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
+import 'package:tide_ui/widgets/text_panel.dart';
+
+import 'controller/graph_event.dart';
 import 'data/graph.dart';
 import 'data/graph_node.dart';
 import 'data/node_port.dart';
@@ -11,7 +15,7 @@ import 'painter/vector_icon_painter.dart';
 
 class EditNodeDialog extends StatefulWidget {
   static double EditNodeDialogHeight = 200;
-  static double PortFormWidth = 400;
+  static double PortFormWidth = 435;
   static double NodeFormWidth = 235;
   static double CloseButtonWidth = 25;
 
@@ -36,6 +40,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   final delayController = TextEditingController();
   final portNameController = TextEditingController();
   final portValueController = TextEditingController();
+  final scriptController = StreamController<GraphEvent>();
 
   final titleFocus = FocusNode();
   final methodFocus = FocusNode();
@@ -43,6 +48,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   final delayFocus = FocusNode();
   final portNameFocus = FocusNode();
   final portValueFocus = FocusNode();
+  final scriptFocus = FocusNode();
+
+  final TextPanelDocument scriptDocument = TextPanelDocument()
+    ..add("Hello World\n01234567890\n    [5-7]");
 
   int autoCompleteIndex = 0;
   String autoCompletePrefix;
@@ -75,12 +84,35 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   bool get isOutportsTab => selectedTab == "outports";
   bool get isPropsTab => selectedTab == "props";
   bool get isScriptTab => selectedTab == "script";
-  bool get isNotPortsTab => !(isInportsTab || isOutportsTab);
+  bool get isNotPortsTab => !isPortsTab;
+  bool get isPortsTab => (isInportsTab || isOutportsTab);
 
   NodePort selectedPort;
   NodePort lastSelectedInport;
   NodePort lastSelectedOutport;
   GlobalKey selectedPortKey = GlobalKey();
+
+  bool scriptFocused = false;
+
+  @override
+  void dispose() {
+    titleFocus?.dispose();
+    methodFocus?.dispose();
+    iconFocus?.dispose();
+    delayFocus?.dispose();
+    portNameFocus?.dispose();
+    portValueFocus?.dispose();
+    scriptFocus?.dispose();
+
+    titleController?.dispose();
+    methodController?.dispose();
+    iconController?.dispose();
+    delayController?.dispose();
+    portNameController?.dispose();
+    portValueController?.dispose();
+
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -143,6 +175,18 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       ..addListener(onChangeFocus(
           portValueFocus, portValueController, portNameFocus, portNameFocus));
 
+    scriptFocus.addListener(() {
+      setState(() {
+        if (scriptFocus.hasFocus) {
+          editor.modalKeyHandler = onScriptKey;
+        } else {
+          editor.modalKeyHandler = null;
+        }
+      });
+    });
+
+    scriptFocus.attach(context);
+
     FocusNode focused;
 
     switch (widget.focus) {
@@ -167,6 +211,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     }
   }
 
+  void onScriptKey(GraphEvent evt) {
+    scriptController.add(evt);
+  }
+
   void ensureSelectedPortVisible() {
     editor.dispatch(GraphEditorCommand.ensureVisible(selectedPortKey),
         afterTicks: 2);
@@ -181,6 +229,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       updatePropsFields();
       return;
     }
+
+    if (isScriptTab) {
+      return;
+    }
+
     if (selectedPort == null) return;
 
     portNameController.value =
@@ -263,6 +316,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
       selectedPort = null;
       selectedTab = "script";
+      editor.tabFocus = (reversed) {
+        print("Script Tab: $reversed");
+      };
+
       updateScriptFields();
     });
   }
@@ -302,7 +359,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   void setDefaultPort() {
-    if (isPropsTab || selectedPort == null) return;
+    if (isNotPortsTab || selectedPort == null) return;
 
     setState(() {
       node.setDefaultPort(selectedPort, toggle: true);
@@ -312,24 +369,23 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
   void onMovePortUp() {
     setState(() {
-      if (isPropsTab) {
+      if (isNotPortsTab) {
       } else {
         node.movePortUp(selectedPort);
+        update();
+        ensureSelectedPortVisible();
       }
-      update();
-      ensureSelectedPortVisible();
     });
   }
 
   void onMovePortDown() {
     setState(() {
-      if (isPropsTab) {
+      if (isNotPortsTab) {
       } else {
         node.movePortDown(selectedPort);
+        update();
+        ensureSelectedPortVisible();
       }
-
-      update();
-      ensureSelectedPortVisible();
     });
   }
 
@@ -421,6 +477,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     node.icon = icon;
     update();
   }
+
+  void updateScript() {}
 
   void updateIcon() {
     var text = iconController.text.toLowerCase();
@@ -660,7 +718,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   bool get isLastPort {
-    if (isPropsTab) return true;
+    if (isNotPortsTab) return true;
     if (selectedPort == null) return true;
 
     if (selectedTab == "inports") {
@@ -677,7 +735,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   bool get isFirstPort {
-    if (isPropsTab) return true;
+    if (isNotPortsTab) return true;
 
     if (selectedPort == null) return true;
 
@@ -695,14 +753,14 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   Widget createPortsButtons(BuildContext context) {
-    var isDefault = !isPropsTab && selectedPort.isDefault;
+    var isDefault = isPortsTab && selectedPort.isDefault;
 
     return Column(
       children: <Widget>[
         createIconButton(
           context,
           isDefault ? "star-solid" : "star",
-          onPressed: isPropsTab ? null : setDefaultPort,
+          onPressed: isNotPortsTab ? null : setDefaultPort,
           fill: isDefault ? _defaultStarFill : null,
         ),
         createIconButton(context, "arrow-up",
@@ -727,8 +785,21 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     );
   }
 
+  Widget createScriptButtons(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        createIconButton(context, "folder-open-solid"),
+        createIconButton(context, "save-solid"),
+        createIconButton(context, "copy-solid"),
+        createIconButton(context, "cut"),
+        createIconButton(context, "paste"),
+      ],
+    );
+  }
+
   Iterable<Widget> getPortsFormFields(BuildContext context) sync* {
     if (isPropsTab) {
+    } else if (isScriptTab) {
     } else {
       yield createTextField(context, "Name", portNameController,
           focus: portNameFocus);
@@ -736,31 +807,52 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     }
   }
 
-  Widget createPortsForm(BuildContext context, {double height}) {
+  Iterable<Widget> createPortsFormItems(BuildContext context,
+      {double height, double width}) sync* {
+    if (isScriptTab) {
+      yield createScriptButtons(context);
+      yield TextPanel(
+        scriptDocument,
+        Size(width - 34, height - 42),
+        scriptFocus.hasFocus,
+        keys: scriptController.stream,
+        focus: () {
+          if (!scriptFocus.hasFocus) {
+            FocusScope.of(context).requestFocus(scriptFocus);
+          }
+        },
+      );
+    } else {
+      yield Container(
+        width: 75,
+        child: SingleChildScrollView(
+            physics: BouncingScrollPhysics(),
+            child: Column(
+              children: getPortList(),
+            )),
+      );
+      yield createPortsButtons(context);
+      yield Column(
+        children: <Widget>[...getPortsFormFields(context)],
+      );
+    }
+  }
+
+  Widget createPortsForm(BuildContext context, {double width, double height}) {
     return Form(
       child: Container(
           height: height - 1,
-          width: EditNodeDialog.PortFormWidth,
+          width: width,
           padding: EdgeInsets.only(right: 10, bottom: 5),
           child: Column(
             children: <Widget>[
-              createPortTabs(),
+              createPortTabs(width - 10),
               Container(
                   height: height - 42,
                   child: Row(
                     children: <Widget>[
-                      Container(
-                        width: 75,
-                        child: SingleChildScrollView(
-                            physics: BouncingScrollPhysics(),
-                            child: Column(
-                              children: getPortList(),
-                            )),
-                      ),
-                      createPortsButtons(context),
-                      Column(
-                        children: <Widget>[...getPortsFormFields(context)],
-                      ),
+                      ...createPortsFormItems(context,
+                          width: width - 10, height: height)
                     ],
                   ))
             ],
@@ -935,7 +1027,13 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     );
   }
 
-  Widget createPortTabs() {
+  double tabsCloseButtonSpacing(double width) {
+    var result = width - EditNodeDialog.PortFormWidth + 14;
+    if (result < 0) result = 0;
+    return result;
+  }
+
+  Widget createPortTabs(double width) {
     return Row(
       children: <Widget>[
         FlatButton(
@@ -962,26 +1060,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
               style: isScriptTab ? _selectedTabStyle : _defaultTabStyle),
           onPressed: selectScriptTab,
         ),
+        SizedBox(width: tabsCloseButtonSpacing(width)),
+        createIconButton(context, "window-close-solid", onPressed: () {
+          widget.close(false);
+        }),
       ],
-    );
-  }
-
-  Widget createCloseButton(double width, double height) {
-    return Container(
-      height: height - 1,
-      width: width,
-      alignment: Alignment.topRight,
-//                    color: Colors.red,
-      child: SizedBox(
-        child: IconButton(
-          padding: EdgeInsets.all(5),
-          alignment: Alignment.topRight,
-          icon: Icon(FontAwesomeIcons.solidWindowClose, size: 15),
-          onPressed: () {
-            widget.close(false);
-          },
-        ),
-      ),
     );
   }
 
@@ -993,11 +1076,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     var width = media.size.width;
 
     var nodeWidth = EditNodeDialog.NodeFormWidth;
-    var portsWidth = EditNodeDialog.PortFormWidth;
+    var portsWidth = width - nodeWidth;
 
-    var closeButtonWidth = width - nodeWidth - portsWidth;
-    if (closeButtonWidth < EditNodeDialog.CloseButtonWidth) {
-      closeButtonWidth = EditNodeDialog.CloseButtonWidth;
+    if (portsWidth < EditNodeDialog.PortFormWidth) {
+      portsWidth = EditNodeDialog.PortFormWidth;
     }
 
     return Container(
@@ -1010,12 +1092,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Container(
-              width: nodeWidth + portsWidth + closeButtonWidth,
+              width: nodeWidth + portsWidth,
               child: Row(
                 children: <Widget>[
                   createNodeForm(context, height: height),
-                  createPortsForm(context, height: height),
-                  createCloseButton(closeButtonWidth, height),
+                  createPortsForm(context, width: portsWidth, height: height),
                 ],
               ),
             ),

@@ -25,12 +25,14 @@ class VectorFont {
   int tabSpaces = 4;
   double kerning = 0;
   double lineSpacing = 250;
+  double defaultWidth = 1230;
 
   VectorFont(
       {this.spaceWidth = 250,
       this.kerning = 0,
       this.lineSpacing = 250,
-      this.tabSpaces = 4});
+      this.tabSpaces = 4,
+      this.defaultWidth = 1230});
 
   void add(VectorFontGlyphProvider source) {
     var style = VectorFontStyle(source);
@@ -67,7 +69,7 @@ class VectorFont {
   }
 
   Iterable<VectorFontGlyph> getGlyphs(String text, double size,
-      {String style = "Regular"}) sync* {
+      {String style = "Regular", bool debug = false}) sync* {
     for (var cp in text.codeUnits) {
       if (cp == 32) {
         yield null;
@@ -78,6 +80,7 @@ class VectorFont {
       bool hasAlternate = true;
 
       var glyph = font.glyphs.getGlyph(cp);
+
       if (glyph == null || glyph.width == 0) {
         if (hasAlternate) {
           if (alternate == null && style.endsWith("Italic")) {
@@ -87,6 +90,8 @@ class VectorFont {
           if (alternate != null) glyph = alternate.glyphs.getGlyph(cp);
         }
       }
+
+      if (glyph.width == 0) glyph.width = defaultWidth;
 
       if (glyph != null && glyph.width != 0) {
         yield glyph;
@@ -122,10 +127,12 @@ class VectorFont {
   }
 
   double drawGlyph(
-      Canvas canvas, VectorFontGlyph glyph, Paint fill, Paint stroke) {
+      Canvas canvas, VectorFontGlyph glyph, Paint fill, Paint stroke,
+      {bool debug = false}) {
     double dx = 0;
 
     if (glyph == null) {
+      if (debug) print("Space");
       dx = spaceWidth;
     } else {
       if (fill != null) {
@@ -177,8 +184,10 @@ class VectorFont {
     double width = double.infinity,
     String ellipsis = "...",
     Alignment alignment = Alignment.bottomLeft,
+    bool debug = false,
   }) {
     var font = getFontStyle(style);
+
     canvas.save();
     canvas.translate(pos.dx, pos.dy);
 
@@ -218,8 +227,8 @@ class VectorFont {
 
       line = line.replaceAll("\t", " " * tabSpaces);
       double dx = 0;
-      for (var glyph in getGlyphs(line, size, style: style)) {
-        dx += drawGlyph(canvas, glyph, fill, stroke);
+      for (var glyph in getGlyphs(line, size, style: style, debug: debug)) {
+        dx += drawGlyph(canvas, glyph, fill, stroke, debug: debug);
         if (dx > width) break;
       }
 
@@ -241,7 +250,7 @@ class VectorFont {
 
 class VectorFontGlyph {
   final String name;
-  final double width;
+  double width;
   final String svg;
   Path _path;
 
