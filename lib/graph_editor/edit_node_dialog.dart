@@ -10,6 +10,7 @@ import 'package:tide_ui/widgets/text_panel.dart';
 import 'controller/graph_event.dart';
 import 'data/graph.dart';
 import 'data/graph_node.dart';
+import 'data/graph_property_set.dart';
 import 'data/node_port.dart';
 import 'painter/vector_icon_painter.dart';
 
@@ -90,6 +91,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   NodePort selectedPort;
   NodePort lastSelectedInport;
   NodePort lastSelectedOutport;
+  GraphProperty selectedProp;
   GlobalKey selectedPortKey = GlobalKey();
 
   bool scriptFocused = false;
@@ -129,7 +131,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     selectedTab = selectedPort.isInport ? "inports" : "outports";
     lastPortFlagType = selectedPort.isInport ? "Value" : "Link";
 
-    scriptDocument.add(node.script ?? "");
+    scriptDocument
+      ..add(node.script ?? "")
+      ..home();
+
     scriptKeys = scriptController.stream.asBroadcastStream();
 
     titleController
@@ -292,6 +297,16 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     });
   }
 
+  void selectProp(GraphProperty prop) {
+    setState(() {
+      selectedProp = prop;
+      updatePropsFields();
+      if (prop != null) {
+        ensureSelectedPortVisible();
+      }
+    });
+  }
+
   void selectPropsTab() {
     setState(() {
       if (selectedTab == "inports") {
@@ -304,6 +319,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
       selectedPort = null;
       selectedTab = "props";
+      if (selectedProp == null) {
+        selectedProp =
+            node.props.values.isEmpty ? null : node.props.values.first;
+      }
+
       updatePropsFields();
     });
   }
@@ -335,9 +355,31 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       case "outports":
         return node.outports.map(getPortListItem).toList();
       case "props":
-        return [];
+        return node.props.values.map(getPropListItem).toList();
     }
     return [];
+  }
+
+  Widget getPropListItem(GraphProperty prop) {
+    bool selected = prop.name == selectedProp.name;
+
+    return Card(
+      key: selected ? selectedPortKey : null,
+      color: selected ? Colors.blue[100] : null,
+      child: FlatButton(
+        padding: EdgeInsets.all(0),
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        onPressed: () {
+          selectProp(prop);
+        },
+        child: Text(
+          prop.name,
+          style: _defaultPortListStyle,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.clip,
+        ),
+      ),
+    );
   }
 
   Widget getPortListItem(NodePort port) {
@@ -397,8 +439,22 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     print("Add new port");
   }
 
+  String get nextPropertyName {
+    var index = 1;
+    for (var val in node.props.values.whereType<GraphPropertyString>()) {
+      if (val.name.startsWith("text")) {
+        var idx = int.tryParse(val.name.substring(4));
+        if (idx != null && idx >= index) index = idx + 1;
+      }
+    }
+    return "text$index";
+  }
+
   void onAddProperty() {
-    print("Add new port");
+    var prop = GraphProperty.asString(nextPropertyName, "value");
+    node.props.add(prop);
+
+    selectProp(prop);
   }
 
   void onDeletePort() {
@@ -406,7 +462,17 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   void onDeleteProperty() {
-    print("Delete $selectedPort");
+    if (selectedProp == null) return;
+
+    var values = node.props.values.toList();
+    var idx = values.indexOf(selectedProp);
+    if (idx < 0) return;
+
+    node.props.remove(selectedProp.name);
+    values.removeAt(idx);
+    if (idx >= values.length - 1) idx = values.length - 1;
+
+    selectProp(idx < 0 ? null : values[idx]);
   }
 
   VoidCallback onChangeFocus(FocusNode focus, TextEditingController controller,
@@ -526,7 +592,13 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     if (selectedPort == null) return;
 
     setState(() {
-      selectedPort.name = portNameController.text.trim();
+      var next = portNameController.text.trim().replaceAll(" ", "_");
+      var ports = selectedPort.isInport ? node.inports : node.outports;
+
+      if (ports.any((x) => x != selectedPort && x.name == next)) {
+        next = "${next}_";
+      }
+      selectedPort.name = next;
       update();
     });
   }
@@ -756,6 +828,17 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     return true;
   }
 
+  Widget createPropsButtons(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        createIconButton(context, "plus-square-solid",
+            onPressed: onAddProperty),
+        createIconButton(context, "trash-alt-solid",
+            onPressed: onDeleteProperty),
+      ],
+    );
+  }
+
   Widget createPortsButtons(BuildContext context) {
     var isDefault = isPortsTab && selectedPort.isDefault;
 
@@ -827,15 +910,24 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         },
       );
     } else {
-      yield Container(
-        width: 75,
-        child: SingleChildScrollView(
-            physics: BouncingScrollPhysics(),
-            child: Column(
-              children: getPortList(),
-            )),
-      );
-      yield createPortsButtons(context);
+      var ports = getPortList();
+
+      if (ports.isNotEmpty) {
+        yield Container(
+          width: 75,
+          child: SingleChildScrollView(
+              physics: BouncingScrollPhysics(),
+              child: Column(
+                children: getPortList(),
+              )),
+        );
+      }
+
+      if (isInportsTab || isOutportsTab) {
+        yield createPortsButtons(context);
+      } else if (isPropsTab) {
+        yield createPropsButtons(context);
+      }
       yield Column(
         children: <Widget>[...getPortsFormFields(context)],
       );

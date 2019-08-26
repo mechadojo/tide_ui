@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:js' as js;
+import 'dart:html';
 
 import 'package:flutter_web/material.dart';
 import 'package:flutter_web_ui/ui.dart';
@@ -175,6 +177,13 @@ class TextPanelPainter extends CustomPainter {
         canvas.drawRect(rect, fill);
       }
 
+      var vr = doc.viewRect;
+
+      if (rect.bottom < vr.top) return;
+      if (rect.top > vr.bottom) return;
+      if (rect.left > vr.right) return;
+      if (rect.right < vr.left) return;
+
       font.paint(canvas, item.content, rect.bottomLeft, size, fill: paint);
     };
   }
@@ -292,6 +301,7 @@ class TextPanelDocument {
 
   Offset scrollPos = Offset.zero;
   Rect viewRect = Rect.zero;
+  Size _limits;
 
   String get text {
     var buffer = StringBuffer();
@@ -368,6 +378,8 @@ class TextPanelDocument {
   }
 
   Size get limits {
+    if (_limits != null) return _limits;
+
     double width = 0;
     double height = 0;
 
@@ -378,7 +390,8 @@ class TextPanelDocument {
     };
 
     walk(measure);
-    return Size(width, height);
+    _limits = Size(width, height);
+    return _limits;
   }
 
   void walk(TextPanelAction action) {
@@ -659,6 +672,12 @@ class TextPanelDocument {
     redoHistory.clear();
   }
 
+  void home() {
+    cursor.row = 0;
+    cursor.column = 0;
+    updateCursor();
+  }
+
   void undo() {
     if (history.isNotEmpty) {
       var last = history.removeLast();
@@ -680,6 +699,7 @@ class TextPanelDocument {
 
   void apply(TextDocumentDelta delta,
       {bool save = true, bool clearRedo = true}) {
+    _limits = null;
     if (save) {
       history.add(delta);
       if (clearRedo) {
@@ -1176,27 +1196,15 @@ class TextDocumentController {
 
   bool handleBackspace() {
     doc.remove(-1);
-    /*
-    if (cursor.content != null) {
-      if (cursor.column == 0) {
-      } else {
-        var item = cursor.content;
-        if (cursor.offset >= item.content.length) {
-          item.content = item.content.substring(0, item.content.length - 1);
-          cursor.column--;
-        } else {
-          var front = item.content.substring(0, cursor.offset);
-          var back = item.content.substring(cursor.offset);
-
-          item.content = front.substring(0, front.length - 1) + back;
-          cursor.column--;
-        }
-      }
-    }
-
-    doc.updateCursor();
-    */
     return true;
+  }
+
+  void pasteClipboard() {
+    var result = js.context["window"];
+    var promise = result.navigator.clipboard.readText();
+    promise.then((data) {
+      doc.add(data);
+    });
   }
 
   bool handleHotkeys(GraphEvent evt) {
@@ -1205,7 +1213,8 @@ class TextDocumentController {
 
       switch (key) {
         case "v":
-          return handleInsertText("This is a test\nThis is only a test.\n");
+          pasteClipboard();
+          return true;
           break;
         case "z":
           doc.undo();

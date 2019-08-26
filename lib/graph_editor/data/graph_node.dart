@@ -7,6 +7,7 @@ import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'graph.dart';
+import 'graph_property_set.dart';
 import 'node_port.dart';
 
 const Inport_Outport = [GraphNodeType.inport, GraphNodeType.outport];
@@ -71,6 +72,8 @@ class GraphNode extends GraphObject {
 
   TideChartNode last;
 
+  GraphPropertySet props = GraphPropertySet();
+
   bool get hasLibrary => library != null && library.isNotEmpty;
   bool get hasMethod => method != null && method.isNotEmpty;
   bool get hasTitle => title != null && title.isNotEmpty;
@@ -113,6 +116,7 @@ class GraphNode extends GraphObject {
 
     node.delay = packed.delay / 100.0;
 
+    node.props = GraphPropertySet.unpack(packed.props);
     node.inports = [...packed.inports.map((x) => NodePort.unpack(x, lookup))];
     node.outports = [...packed.outports.map((x) => NodePort.unpack(x, lookup))];
     node.resize();
@@ -377,6 +381,7 @@ class GraphNode extends GraphObject {
     result.inports.addAll(inports.map((x) => x.pack()));
     result.outports.addAll(outports.map((x) => x.pack()));
 
+    result.props.addAll(props.pack());
     return result;
   }
 
