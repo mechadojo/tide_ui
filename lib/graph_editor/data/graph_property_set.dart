@@ -185,7 +185,13 @@ class GraphPropertyInt extends GraphPropertyValue {
 
   @override
   void setValue(String val) {
-    value = int.tryParse(val) ?? 0;
+    var ival = int.tryParse(val);
+    if (ival == null) {
+      var dval = double.tryParse(val);
+      if (dval != null) ival = dval.round();
+    }
+
+    value = ival ?? 0;
   }
 }
 
@@ -231,8 +237,14 @@ class GraphPropertySet extends GraphProperty {
     return result;
   }
 
+  bool get isNotEmpty => props.isNotEmpty;
+  bool get isEmpty => props.isEmpty;
+
   Iterable<GraphProperty> get values sync* {
-    for (var prop in props.values) {
+    var keys = props.keys.toList();
+    keys.sort();
+    for (var key in keys) {
+      var prop = props[key];
       if (prop is GraphPropertyValue) {
         yield prop;
       }
@@ -262,6 +274,18 @@ class GraphPropertySet extends GraphProperty {
 
   void remove(String name) {
     props.remove(name);
+  }
+
+  void rename(String name, String next) {
+    var prop = props.remove(name);
+    if (prop != null) {
+      prop.name = next;
+      props[next] = prop;
+    }
+  }
+
+  void replace(GraphProperty prop) {
+    props[prop.name] = prop;
   }
 
   void add(GraphProperty prop) {

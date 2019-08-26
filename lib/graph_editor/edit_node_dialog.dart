@@ -41,8 +41,12 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   final iconController = TextEditingController();
   final delayController = TextEditingController();
   final portNameController = TextEditingController();
+
   final portValueController = TextEditingController();
   final scriptController = StreamController<GraphEvent>();
+
+  final propNameController = TextEditingController();
+  final propValueController = TextEditingController();
 
   final titleFocus = FocusNode();
   final methodFocus = FocusNode();
@@ -51,6 +55,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   final portNameFocus = FocusNode();
   final portValueFocus = FocusNode();
   final scriptFocus = FocusNode();
+
+  final propNameFocus = FocusNode();
+  final propValueFocus = FocusNode();
 
   TextPanelDocument get scriptDocument => widget.script;
 
@@ -106,6 +113,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     portNameFocus?.dispose();
     portValueFocus?.dispose();
     scriptFocus?.dispose();
+    propNameFocus?.dispose();
+    propValueFocus?.dispose();
 
     titleController?.dispose();
     methodController?.dispose();
@@ -113,6 +122,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     delayController?.dispose();
     portNameController?.dispose();
     portValueController?.dispose();
+
+    propNameController?.dispose();
+    propValueController?.dispose();
 
     super.dispose();
   }
@@ -177,12 +189,31 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       ..text = selectedPort?.flagLabel
       ..addListener(updatePortValue);
 
+    propNameController
+      ..text = selectedProp?.name
+      ..addListener(updatePropName);
+
+    propValueController
+      ..text = selectedProp?.getValue()
+      ..addListener(updatePropValue);
+
     portNameFocus
       ..addListener(onChangeFocus(
           portNameFocus, portNameController, portValueFocus, portValueFocus));
     portValueFocus
       ..addListener(onChangeFocus(
           portValueFocus, portValueController, portNameFocus, portNameFocus));
+
+    propNameFocus
+      ..addListener(onChangeFocus(
+          propNameFocus, propNameController, propValueFocus, propValueFocus));
+
+    propValueFocus
+      ..addListener(onChangeFocus(
+          propValueFocus, propValueController, propNameFocus, propNameFocus,
+          onLoseFocus: () {
+        updatePortFields();
+      }));
 
     scriptFocus.addListener(() {
       setState(() {
@@ -229,7 +260,13 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         afterTicks: 2);
   }
 
-  void updatePropsFields() {}
+  void updatePropsFields() {
+    propNameController.value =
+        propNameController.value.copyWith(text: selectedProp?.name);
+
+    propValueController.value = propValueController.value
+        .copyWith(text: selectedProp?.getValue() ?? "");
+  }
 
   void updateScriptFields() {}
 
@@ -301,9 +338,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     setState(() {
       selectedProp = prop;
       updatePropsFields();
-      if (prop != null) {
-        ensureSelectedPortVisible();
-      }
+      ensureSelectedPortVisible();
     });
   }
 
@@ -319,12 +354,21 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
       selectedPort = null;
       selectedTab = "props";
+      if (selectedProp != null) {
+        if (!node.props.values.any((x) => x == selectedProp)) {
+          selectedProp = null;
+        }
+      }
+
       if (selectedProp == null) {
         selectedProp =
             node.props.values.isEmpty ? null : node.props.values.first;
       }
 
       updatePropsFields();
+      if (selectedProp != null) {
+        ensureSelectedPortVisible();
+      }
     });
   }
 
@@ -361,7 +405,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   Widget getPropListItem(GraphProperty prop) {
-    bool selected = prop.name == selectedProp.name;
+    bool selected =
+        selectedProp == null ? false : prop.name == selectedProp.name;
 
     return Card(
       key: selected ? selectedPortKey : null,
@@ -439,22 +484,28 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     print("Add new port");
   }
 
-  String get nextPropertyName {
+  String getNextPropertyName(String type) {
     var index = 1;
-    for (var val in node.props.values.whereType<GraphPropertyString>()) {
-      if (val.name.startsWith("text")) {
-        var idx = int.tryParse(val.name.substring(4));
+    var prefix = getPropTypePrefix(type);
+
+    for (var val in node.props.values) {
+      if (val.name.startsWith(prefix)) {
+        var idx = int.tryParse(val.name.substring(prefix.length));
         if (idx != null && idx >= index) index = idx + 1;
       }
     }
-    return "text$index";
+    return "$prefix$index";
   }
 
   void onAddProperty() {
-    var prop = GraphProperty.asString(nextPropertyName, "value");
+    var prop = GraphProperty.asString(getNextPropertyName("String"), "value");
+    print("adding: ${prop.name}");
+
     node.props.add(prop);
 
     selectProp(prop);
+    editor.dispatch(GraphEditorCommand.requestFocus(propNameFocus),
+        afterTicks: 5);
   }
 
   void onDeletePort() {
@@ -465,7 +516,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     if (selectedProp == null) return;
 
     var values = node.props.values.toList();
-    var idx = values.indexOf(selectedProp);
+    var idx = values.indexWhere((x) => x.name == selectedProp.name);
     if (idx < 0) return;
 
     node.props.remove(selectedProp.name);
@@ -476,7 +527,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   VoidCallback onChangeFocus(FocusNode focus, TextEditingController controller,
-      FocusNode prev, FocusNode next) {
+      FocusNode prev, FocusNode next,
+      {VoidCallback onLoseFocus}) {
     return () {
       if (focus.hasFocus) {
         controller.value = controller.value.copyWith(
@@ -493,6 +545,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
             next.requestFocus();
           }
         };
+      }
+
+      if (!focus.hasFocus && onLoseFocus != null) {
+        onLoseFocus();
       }
     };
   }
@@ -599,6 +655,24 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         next = "${next}_";
       }
       selectedPort.name = next;
+
+      update();
+    });
+  }
+
+  void updatePropName() {
+    if (selectedProp == null) return;
+
+    setState(() {
+      var next = propNameController.text.trim().replaceAll(" ", "_");
+      var values = node.props.values.toList();
+
+      if (values.any((x) => x != selectedProp && x.name == next)) {
+        next = "${next}_";
+      }
+
+      node.props.rename(selectedProp.name, next);
+
       update();
     });
   }
@@ -683,6 +757,53 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     });
   }
 
+  String getPropTypePrefix(String type) {
+    var prefix = "text";
+    if (type == "Integer" || type == "Double") prefix = "num";
+    if (type == "Boolean") prefix = "flag";
+    return prefix;
+  }
+
+  void updatePropType(String value) {
+    if (selectedProp == null) return;
+
+    var lastPrefix = getPropTypePrefix(selectedProp.getValueType());
+
+    var next =
+        GraphProperty.parse(selectedProp.name, selectedProp.getValue(), value);
+
+    if (next == null) return;
+
+    node.props.replace(next);
+
+    var nextPrefix = getPropTypePrefix(next.getValueType());
+    if (next.name.startsWith(lastPrefix)) {
+      var nn = next.name.replaceFirst(lastPrefix, nextPrefix);
+      if (node.props.values.any((x) => x != next && x.name == nn)) {
+        nn = getNextPropertyName(next.getValueType());
+      }
+
+      node.props.rename(next.name, nn);
+    }
+
+    selectProp(next);
+    editor.dispatch(GraphEditorCommand.requestFocus(propValueFocus),
+        afterTicks: 5);
+    editor.dispatch(GraphEditorCommand.selectAll(propValueController),
+        afterTicks: 5);
+  }
+
+  void updatePropValue() {
+    if (selectedProp == null) return;
+
+    setState(() {
+      var value = propValueController.text;
+
+      selectedProp.setValue(value);
+      update();
+    });
+  }
+
   void updatePortValue() {
     if (selectedPort == null) return;
 
@@ -712,6 +833,83 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       updatePortFields();
       update();
     });
+  }
+
+  Widget createPropTypeRow(BuildContext context) {
+    return createLabeledRow("Type", width: 185, children: [
+      Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Container(
+                width: 90,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Radio(
+                        groupValue: selectedProp?.getValueType(),
+                        value: "String",
+                        onChanged: updatePropType,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap),
+                    Text("String", style: _defaultLabelStyle),
+                  ],
+                ),
+              ),
+              Container(
+                width: 95,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Radio(
+                        groupValue: selectedProp?.getValueType(),
+                        value: "Boolean",
+                        onChanged: updatePropType,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap),
+                    Text("Boolean", style: _defaultLabelStyle),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: <Widget>[
+              Container(
+                width: 90,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Radio(
+                        groupValue: selectedProp?.getValueType(),
+                        value: "Integer",
+                        onChanged: updatePropType,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap),
+                    Text("Integer", style: _defaultLabelStyle),
+                  ],
+                ),
+              ),
+              Container(
+                width: 95,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Radio(
+                        groupValue: selectedProp?.getValueType(),
+                        value: "Double",
+                        onChanged: updatePropType,
+                        materialTapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap),
+                    Text("Double", style: _defaultLabelStyle),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    ]);
   }
 
   Widget createPortValueRow(BuildContext context) {
@@ -885,13 +1083,17 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   Iterable<Widget> getPortsFormFields(BuildContext context) sync* {
-    if (isPropsTab) {
-    } else if (isScriptTab) {
-    } else {
-      yield createTextField(context, "Name", portNameController,
-          focus: portNameFocus);
-      yield createPortValueRow(context);
-    }
+    yield createTextField(context, "Name", portNameController,
+        focus: portNameFocus);
+    yield createPortValueRow(context);
+  }
+
+  Iterable<Widget> getPropsFormFields(BuildContext context) sync* {
+    yield createTextField(context, "Name", propNameController,
+        width: 185, focus: propNameFocus);
+    yield createTextField(context, "Value", propValueController,
+        width: 185, padding: 5, focus: propValueFocus);
+    yield createPropTypeRow(context);
   }
 
   Iterable<Widget> createPortsFormItems(BuildContext context,
@@ -915,9 +1117,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       if (ports.isNotEmpty) {
         yield Container(
           width: 75,
+          height: height - 1,
           child: SingleChildScrollView(
               physics: BouncingScrollPhysics(),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: getPortList(),
               )),
         );
@@ -925,12 +1129,15 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
       if (isInportsTab || isOutportsTab) {
         yield createPortsButtons(context);
+        yield Column(
+          children: <Widget>[...getPortsFormFields(context)],
+        );
       } else if (isPropsTab) {
         yield createPropsButtons(context);
+        yield Column(
+          children: <Widget>[...getPropsFormFields(context)],
+        );
       }
-      yield Column(
-        children: <Widget>[...getPortsFormFields(context)],
-      );
     }
   }
 
@@ -969,6 +1176,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: padding),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           SizedBox(
               width: 60,

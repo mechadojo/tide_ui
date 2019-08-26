@@ -30,6 +30,15 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.selectAll(TextEditingController controller) {
+    handler = (GraphEditorController editor) {
+      controller.value = controller.value.copyWith(
+          selection: TextSelection(
+              baseOffset: 0, extentOffset: controller.text.length),
+          composing: TextRange.empty);
+    };
+  }
+
   GraphEditorCommand.saveChanges() {
     handler = (GraphEditorController editor) {
       editor.saveChanges();

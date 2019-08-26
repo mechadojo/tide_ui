@@ -145,7 +145,7 @@ class TextPanelPainter extends CustomPainter {
 
   Paint _focusPen = Paint()
     ..color = Colors.blue
-    ..strokeWidth = 4
+    ..strokeWidth = 3
     ..style = PaintingStyle.stroke;
 
   Paint _cursorPen = Paint()
