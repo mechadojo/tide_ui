@@ -103,6 +103,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
   bool scriptFocused = false;
   Stream<GraphEvent> scriptKeys;
+  double offsetValue = 1;
+  double offsetMirror = 0;
 
   @override
   void dispose() {
@@ -251,6 +253,60 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     }
   }
 
+  String labelOffsetValue() {
+    if (selectedProp == null) return "0";
+    if (selectedProp.getValueType() == "Double") {
+      if (offsetValue == 1.0) {
+        return "1.000";
+      } else if (offsetValue == 0.1) {
+        return "0.100";
+      } else if (offsetValue == 0.01) {
+        return "0.010";
+      } else if (offsetValue == 0.001) {
+        return "0.001";
+      }
+    } else {
+      if (offsetValue == 1) {
+        return "1";
+      } else if (offsetValue == 10) {
+        return "10";
+      } else if (offsetValue == 100) {
+        return "100";
+      } else if (offsetValue == 1000) {
+        return "1000";
+      }
+    }
+    return "0.000";
+  }
+
+  void toggleOffsetValue() {
+    if (selectedProp == null) return;
+
+    setState(() {
+      if (selectedProp.getValueType() == "Double") {
+        if (offsetValue == 1.0) {
+          offsetValue = 0.1;
+        } else if (offsetValue == 0.1) {
+          offsetValue = 0.01;
+        } else if (offsetValue == 0.01) {
+          offsetValue = 0.001;
+        } else if (offsetValue == 0.001) {
+          offsetValue = 1.0;
+        }
+      } else {
+        if (offsetValue == 1.0) {
+          offsetValue = 10;
+        } else if (offsetValue == 10) {
+          offsetValue = 100;
+        } else if (offsetValue == 100) {
+          offsetValue = 1000;
+        } else if (offsetValue == 1000) {
+          offsetValue = 1;
+        }
+      }
+    });
+  }
+
   void onScriptKey(GraphEvent evt) {
     scriptController.add(evt);
   }
@@ -261,11 +317,20 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   void updatePropsFields() {
-    propNameController.value =
-        propNameController.value.copyWith(text: selectedProp?.name);
+    if (propNameController.text != selectedProp?.name) {
+      propNameController.value = propNameController.value.copyWith(
+          composing: TextRange.empty,
+          selection: TextSelection.collapsed(offset: 0),
+          text: selectedProp?.name);
+    }
 
-    propValueController.value = propValueController.value
-        .copyWith(text: selectedProp?.getValue() ?? "");
+    var value = selectedProp?.getValue() ?? "";
+    if (propValueController.text != value) {
+      propValueController.value = propValueController.value.copyWith(
+          composing: TextRange.empty,
+          selection: TextSelection.collapsed(offset: 0),
+          text: value);
+    }
   }
 
   void updateScriptFields() {}
@@ -337,6 +402,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   void selectProp(GraphProperty prop) {
     setState(() {
       selectedProp = prop;
+      offsetMirror = 0;
+      offsetValue = 1;
+
       updatePropsFields();
       ensureSelectedPortVisible();
     });
@@ -497,15 +565,28 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     return "$prefix$index";
   }
 
+  void onCopyProps() {
+    setState(() {
+      editor.propsClipboard = node.props.packList();
+    });
+  }
+
+  void onPasteProps() {
+    setState(() {
+      var props = GraphPropertySet.unpack(editor.propsClipboard);
+      for (var prop in props.values) {
+        node.props.replace(prop);
+      }
+    });
+  }
+
   void onAddProperty() {
     var prop = GraphProperty.asString(getNextPropertyName("String"), "value");
-    print("adding: ${prop.name}");
 
     node.props.add(prop);
 
     selectProp(prop);
-    editor.dispatch(GraphEditorCommand.requestFocus(propNameFocus),
-        afterTicks: 5);
+    propNameFocus.requestFocus();
   }
 
   void onDeletePort() {
@@ -531,10 +612,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       {VoidCallback onLoseFocus}) {
     return () {
       if (focus.hasFocus) {
-        controller.value = controller.value.copyWith(
-            selection: TextSelection(
-                baseOffset: 0, extentOffset: controller.text.length),
-            composing: TextRange.empty);
+        if (focus != portValueFocus ||
+            selectedProp?.getValueType() != "Boolean") {
+          selectAll(controller);
+        }
 
         editor.autoComplete = null;
         autoCompleteIndex = 0;
@@ -547,8 +628,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         };
       }
 
-      if (!focus.hasFocus && onLoseFocus != null) {
-        onLoseFocus();
+      if (!focus.hasFocus) {
+        selectNone(controller);
+        if (onLoseFocus != null) {
+          onLoseFocus();
+        }
       }
     };
   }
@@ -767,6 +851,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   void updatePropType(String value) {
     if (selectedProp == null) return;
 
+    offsetMirror = 0;
+    offsetValue = 1;
+
     var lastPrefix = getPropTypePrefix(selectedProp.getValueType());
 
     var next =
@@ -787,10 +874,55 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     }
 
     selectProp(next);
-    editor.dispatch(GraphEditorCommand.requestFocus(propValueFocus),
-        afterTicks: 5);
-    editor.dispatch(GraphEditorCommand.selectAll(propValueController),
-        afterTicks: 5);
+    if (selectedProp.getValueType() != "Boolean") {
+      propValueFocus.requestFocus();
+      selectAll(propValueController);
+    } else {
+      selectNone(propValueController);
+    }
+  }
+
+  void selectAll(TextEditingController controller) {
+    controller.value = controller.value.copyWith(
+        selection:
+            TextSelection(baseOffset: 0, extentOffset: controller.text.length),
+        composing: TextRange.empty);
+  }
+
+  void selectNone(TextEditingController controller) {
+    controller.value = controller.value.copyWith(
+        selection: TextSelection.collapsed(offset: 0),
+        composing: TextRange.empty);
+  }
+
+  void offsetPropValue(double delta, {int round = 0, bool mirror = false}) {
+    if (selectedProp == null) return;
+    setState(() {
+      var value = double.tryParse(propValueController.text) ?? 0;
+      var last = value;
+      value += delta;
+
+      if (mirror) {
+        if (last == 0) {
+          if (offsetMirror != 0 && offsetMirror.sign != value.sign) {
+            value = offsetMirror * -1;
+          }
+        } else {
+          if (last.sign != value.sign) {
+            offsetMirror = last;
+            value = 0;
+          }
+        }
+      }
+
+      if (round > 0) {
+        value = (value * round).roundToDouble() / round;
+      }
+      selectedProp.setValue(value.toString());
+      propValueFocus.requestFocus();
+      updatePropsFields();
+      selectAll(propValueController);
+    });
   }
 
   void updatePropValue() {
@@ -800,7 +932,6 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       var value = propValueController.text;
 
       selectedProp.setValue(value);
-      update();
     });
   }
 
@@ -835,79 +966,156 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     });
   }
 
-  Widget createPropTypeRow(BuildContext context) {
-    return createLabeledRow("Type", width: 185, children: [
-      Column(
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Container(
-                width: 90,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    Radio(
-                        groupValue: selectedProp?.getValueType(),
-                        value: "String",
-                        onChanged: updatePropType,
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap),
-                    Text("String", style: _defaultLabelStyle),
-                  ],
-                ),
-              ),
-              Container(
-                width: 95,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    Radio(
-                        groupValue: selectedProp?.getValueType(),
-                        value: "Boolean",
-                        onChanged: updatePropType,
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap),
-                    Text("Boolean", style: _defaultLabelStyle),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Row(
-            children: <Widget>[
-              Container(
-                width: 90,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    Radio(
-                        groupValue: selectedProp?.getValueType(),
-                        value: "Integer",
-                        onChanged: updatePropType,
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap),
-                    Text("Integer", style: _defaultLabelStyle),
-                  ],
-                ),
-              ),
-              Container(
-                width: 95,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: <Widget>[
-                    Radio(
-                        groupValue: selectedProp?.getValueType(),
-                        value: "Double",
-                        onChanged: updatePropType,
-                        materialTapTargetSize:
-                            MaterialTapTargetSize.shrinkWrap),
-                    Text("Double", style: _defaultLabelStyle),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+  Iterable<Widget> createPropValueStringItems(BuildContext context,
+      {width = 150}) sync* {
+    yield createPropValueField(context, width: width);
+  }
+
+  Iterable<Widget> createPropValueBoolItems(BuildContext context,
+      {width = 150}) sync* {
+    yield Switch(
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      value: selectedProp.getValue() == "true",
+      onChanged: (value) {
+        setState(() {
+          selectedProp.setValue(value ? "true" : "false");
+          updatePropsFields();
+        });
+      },
+    );
+    yield createPropValueField(context,
+        width: 50,
+        decoration: InputDecoration(
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(vertical: 2, horizontal: 5)));
+  }
+
+  Iterable<Widget> createPropValueIntItems(BuildContext context,
+      {width = 150}) sync* {
+    yield createPropValueField(context, width: 75);
+    yield createIconButton(context, "plus", onPressed: () {
+      offsetPropValue(offsetValue, mirror: true);
+    });
+    yield createIconButton(context, "minus", padding: EdgeInsets.all(0),
+        onPressed: () {
+      offsetPropValue(-offsetValue, mirror: true);
+    });
+    yield createTextButton(context, labelOffsetValue(),
+        padding: EdgeInsets.all(0), width: 35, onPressed: () {
+      toggleOffsetValue();
+    });
+  }
+
+  Iterable<Widget> createPropValueDoubleItems(BuildContext context,
+      {width = 150}) sync* {
+    yield createPropValueField(context, width: 75);
+    yield createIconButton(context, "plus", onPressed: () {
+      offsetPropValue(offsetValue, round: 1000, mirror: true);
+    });
+    yield createIconButton(context, "minus", padding: EdgeInsets.all(0),
+        onPressed: () {
+      offsetPropValue(-offsetValue, round: 1000, mirror: true);
+    });
+    yield createTextButton(context, labelOffsetValue(),
+        padding: EdgeInsets.all(0), width: 35, onPressed: () {
+      toggleOffsetValue();
+    });
+  }
+
+  Widget createPropValueField(BuildContext context,
+      {width = 150, InputDecoration decoration}) {
+    return SizedBox(
+      width: width,
+      height: 25,
+      child: TextFormField(
+        textInputAction: TextInputAction.next,
+        textCapitalization: TextCapitalization.none,
+        style: _defaultInputStyle,
+        controller: propValueController,
+        focusNode: propValueFocus,
+        onFieldSubmitted: (v) {
+          FocusScope.of(context).requestFocus(portNameFocus);
+        },
+        decoration: decoration ?? getBaseTextField(),
+        enableInteractiveSelection: false,
+      ),
+    );
+  }
+
+  Widget createPropValueRow(BuildContext context,
+      {double width = 150, double padding = 0}) {
+    String type = selectedProp?.getValueType() ?? "String";
+
+    return createLabeledRow("Value", padding: padding, width: width, children: [
+      if (type == "String")
+        ...createPropValueStringItems(context, width: width),
+      if (type == "Boolean") ...createPropValueBoolItems(context, width: width),
+      if (type == "Integer") ...createPropValueIntItems(context, width: width),
+      if (type == "Double")
+        ...createPropValueDoubleItems(context, width: width),
+    ]);
+  }
+
+  Iterable<Widget> createPropTypeRow(BuildContext context) sync* {
+    yield createLabeledRow("Type", width: 185, children: [
+      Container(
+        width: 90,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Radio(
+                groupValue: selectedProp?.getValueType(),
+                value: "String",
+                onChanged: updatePropType,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
+            Text("String", style: _defaultLabelStyle),
+          ],
+        ),
+      ),
+      Container(
+        width: 95,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Radio(
+                groupValue: selectedProp?.getValueType(),
+                value: "Boolean",
+                onChanged: updatePropType,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
+            Text("Boolean", style: _defaultLabelStyle),
+          ],
+        ),
+      ),
+    ]);
+
+    yield createLabeledRow("", width: 185, children: [
+      Container(
+        width: 90,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Radio(
+                groupValue: selectedProp?.getValueType(),
+                value: "Integer",
+                onChanged: updatePropType,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
+            Text("Integer", style: _defaultLabelStyle),
+          ],
+        ),
+      ),
+      Container(
+        width: 95,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            Radio(
+                groupValue: selectedProp?.getValueType(),
+                value: "Double",
+                onChanged: updatePropType,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap),
+            Text("Double", style: _defaultLabelStyle),
+          ],
+        ),
       ),
     ]);
   }
@@ -956,6 +1164,31 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
               ? null
               : clearPortValue),
     ]);
+  }
+
+  Widget createTextButton(
+    BuildContext context,
+    String text, {
+    VoidCallback onPressed,
+    double width = 20,
+    double height = 20,
+    double size = 18,
+    EdgeInsets margin = const EdgeInsets.symmetric(vertical: 2, horizontal: 5),
+    EdgeInsets padding = const EdgeInsets.all(2),
+  }) {
+    return Padding(
+      padding: margin,
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          padding: padding,
+          child: SizedBox(
+              width: width,
+              height: height,
+              child: Text(text, style: _defaultLabelStyle)),
+        ),
+      ),
+    );
   }
 
   Widget createIconButton(
@@ -1033,6 +1266,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
             onPressed: onAddProperty),
         createIconButton(context, "trash-alt-solid",
             onPressed: onDeleteProperty),
+        createIconButton(context, "copy-solid",
+            onPressed: node.props.values.isEmpty ? null : onCopyProps),
+        createIconButton(context, "paste",
+            onPressed: editor.propsClipboard.isEmpty ? null : onPasteProps),
       ],
     );
   }
@@ -1091,9 +1328,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   Iterable<Widget> getPropsFormFields(BuildContext context) sync* {
     yield createTextField(context, "Name", propNameController,
         width: 185, focus: propNameFocus);
-    yield createTextField(context, "Value", propValueController,
-        width: 185, padding: 5, focus: propValueFocus);
-    yield createPropTypeRow(context);
+
+    yield createPropValueRow(context, width: 185, padding: 5);
+    yield* createPropTypeRow(context);
   }
 
   Iterable<Widget> createPortsFormItems(BuildContext context,
@@ -1176,15 +1413,17 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: padding),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           SizedBox(
               width: 60,
-              child: Text(
-                "$label:",
-                textAlign: TextAlign.right,
-                style: _defaultLabelStyle,
-              )),
+              child: label.isEmpty
+                  ? null
+                  : Text(
+                      "$label:",
+                      textAlign: TextAlign.right,
+                      style: _defaultLabelStyle,
+                    )),
           SizedBox(width: 5),
           SizedBox(
             width: width,

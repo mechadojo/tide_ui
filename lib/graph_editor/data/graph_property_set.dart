@@ -1,4 +1,5 @@
 import 'package:tide_chart/tide_chart.dart';
+import 'package:fixnum/fixnum.dart';
 
 class GraphProperty {
   String name;
@@ -17,6 +18,13 @@ class GraphProperty {
   }
 
   void setValue(String val) {}
+
+  TideChartProperty pack() {
+    var result = TideChartProperty();
+    result.name = name;
+
+    return result;
+  }
 
   static GraphProperty parse(String name, String value, [String type]) {
     switch (type) {
@@ -126,6 +134,11 @@ class GraphPropertyBool extends GraphPropertyValue {
   bool value;
 
   @override
+  TideChartProperty pack() {
+    return super.pack()..boolValue = value;
+  }
+
+  @override
   String getValueType() {
     return "Boolean";
   }
@@ -143,6 +156,11 @@ class GraphPropertyBool extends GraphPropertyValue {
 
 class GraphPropertyString extends GraphPropertyValue {
   String value;
+
+  @override
+  TideChartProperty pack() {
+    return super.pack()..strValue = value;
+  }
 
   @override
   String getValueType() {
@@ -174,6 +192,11 @@ class GraphPropertyInt extends GraphPropertyValue {
   int value;
 
   @override
+  TideChartProperty pack() {
+    return super.pack()..longValue = Int64(value);
+  }
+
+  @override
   String getValueType() {
     return "Integer";
   }
@@ -199,6 +222,11 @@ class GraphPropertyDouble extends GraphPropertyValue {
   double value;
 
   @override
+  TideChartProperty pack() {
+    return super.pack()..doubleValue = value;
+  }
+
+  @override
   String getValueType() {
     return "Double";
   }
@@ -218,6 +246,11 @@ class GraphPropertyList extends GraphProperty {
   List<GraphProperty> props = [];
 
   @override
+  TideChartProperty pack() {
+    return super.pack()..props.addAll(props.map((x) => x.pack()));
+  }
+
+  @override
   String getValueType() {
     return "List";
   }
@@ -231,8 +264,23 @@ class GraphPropertyList extends GraphProperty {
 class GraphPropertySet extends GraphProperty {
   Map<String, GraphProperty> props = {};
 
-  List<TideChartProperty> pack() {
+  TideChartProperty pack() {
+    return TideChartProperty()
+      ..name = name
+      ..props.addAll(packList());
+  }
+
+  List<TideChartProperty> packList() {
     var result = List<TideChartProperty>();
+    for (var item in props.values) {
+      if (item is GraphPropertyList) {
+        for (var child in item.props) {
+          result.add(child.pack());
+        }
+      } else {
+        result.add(item.pack());
+      }
+    }
 
     return result;
   }

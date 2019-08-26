@@ -39,6 +39,15 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.selectNone(TextEditingController controller) {
+    handler = (GraphEditorController editor) {
+      print("Select None");
+      controller.value = controller.value.copyWith(
+          selection: TextSelection.collapsed(offset: 0),
+          composing: TextRange.empty);
+    };
+  }
+
   GraphEditorCommand.saveChanges() {
     handler = (GraphEditorController editor) {
       editor.saveChanges();

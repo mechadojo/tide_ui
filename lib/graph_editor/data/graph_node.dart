@@ -381,7 +381,7 @@ class GraphNode extends GraphObject {
     result.inports.addAll(inports.map((x) => x.pack()));
     result.outports.addAll(outports.map((x) => x.pack()));
 
-    result.props.addAll(props.pack());
+    result.props.addAll(props.packList());
     return result;
   }
 

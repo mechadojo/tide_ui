@@ -113,6 +113,8 @@ class GraphEditorControllerBase {
   GraphTabFocus tabFocus;
   GraphAutoComplete autoComplete;
   GraphKeyPress modalKeyHandler;
+
+  List<TideChartProperty> propsClipboard = [];
 }
 
 class GraphEditorController extends GraphEditorControllerBase
