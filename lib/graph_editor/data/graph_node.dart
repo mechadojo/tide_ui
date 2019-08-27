@@ -37,16 +37,6 @@ class GraphObject with CanvasInteractive {
   static GraphObject none = GraphObject();
 }
 
-class RefGraphNode {
-  String name;
-
-  RefGraphNode();
-
-  RefGraphNode.node(GraphNode node) {
-    name = node.name;
-  }
-}
-
 class GraphNode extends GraphObject {
   static GraphNode none = GraphNode()..name = "<none>";
 
@@ -68,11 +58,33 @@ class GraphNode extends GraphObject {
 
   List<NodePort> inports = [];
   List<NodePort> outports = [];
+
+  bool get hideLocalInports => !showLocalInports;
+  bool get hideLocalOutports => !showLocalOutports;
+
+  bool get showLocalInports => settings.getBool("show_local_inports");
+  bool get showLocalOutports => settings.getBool("show_local_outports");
+
+  set showLocalInports(bool value) {
+    if (value != showLocalInports) {
+      settings.replace(GraphProperty.asBool("show_local_inports", value));
+      resize();
+    }
+  }
+
+  set showLocalOutports(bool value) {
+    if (value != showLocalOutports) {
+      settings.replace(GraphProperty.asBool("show_local_outports", value));
+      resize();
+    }
+  }
+
   int version = 0;
 
   TideChartNode last;
 
   GraphPropertySet props = GraphPropertySet();
+  GraphPropertySet settings = GraphPropertySet();
 
   bool get hasLibrary => library != null && library.isNotEmpty;
   bool get hasMethod => method != null && method.isNotEmpty;
@@ -117,6 +129,8 @@ class GraphNode extends GraphObject {
     node.delay = packed.delay / 100.0;
 
     node.props = GraphPropertySet.unpack(packed.props);
+    node.settings = GraphPropertySet.unpack(packed.settings);
+
     node.inports = [...packed.inports.map((x) => NodePort.unpack(x, lookup))];
     node.outports = [...packed.outports.map((x) => NodePort.unpack(x, lookup))];
     node.resize();
@@ -382,6 +396,7 @@ class GraphNode extends GraphObject {
     result.outports.addAll(outports.map((x) => x.pack()));
 
     result.props.addAll(props.packList());
+    result.settings.addAll(settings.packList());
     return result;
   }
 
@@ -426,9 +441,29 @@ class GraphNode extends GraphObject {
     return moved;
   }
 
+  List<NodePort> get visibleInports {
+    if (showLocalInports) {
+      return inports;
+    } else {
+      return inports.where((x) => x.isGlobal).toList();
+    }
+  }
+
+  List<NodePort> get visibleOutports {
+    if (showLocalOutports) {
+      return outports;
+    } else {
+      return outports.where((x) => x.isGlobal).toList();
+    }
+  }
+
   bool resize() {
     double width = size.width;
     double height = size.height;
+
+    var inports = visibleInports;
+    var outports = visibleOutports;
+
     var ports = max(inports.length, outports.length);
 
     if (type == GraphNodeType.action || type == GraphNodeType.behavior) {

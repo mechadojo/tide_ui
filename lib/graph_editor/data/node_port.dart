@@ -72,7 +72,10 @@ class NodePort extends GraphObject {
   bool isDefault = false;
   bool isRequired = true;
 
-  String get value => node.props.getPropValue(name);
+  bool get isLocal => name != null && name.startsWith("_");
+  bool get isGlobal => !isLocal;
+
+  String get value => node.props.getString(name);
   set value(String next) {
     if (next == null || next.isEmpty || type != NodePortType.inport) {
       node.props.remove(name);
@@ -119,7 +122,14 @@ class NodePort extends GraphObject {
       }
     }
 
+    var last = name;
     name = next;
+
+    var lastLocal = last.startsWith("_");
+    var nextLocal = next.startsWith("_");
+    if (lastLocal != nextLocal) {
+      node.resize();
+    }
   }
 
   void clearFlag() {

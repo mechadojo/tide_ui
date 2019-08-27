@@ -83,6 +83,9 @@ class GraphLinkPainter {
 
   void paint(
       Canvas canvas, Size size, Offset pos, double scale, GraphLink link) {
+    if (link.inPort.isLocal && link.inPort.node.hideLocalInports) return;
+    if (link.outPort.isLocal && link.outPort.node.hideLocalOutports) return;
+
     if (link.changed) link.update();
 
     drawLink(canvas, link.path,

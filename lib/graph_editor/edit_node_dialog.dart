@@ -64,6 +64,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   int autoCompleteIndex = 0;
   String autoCompletePrefix;
   TextStyle _defaultInputStyle = TextStyle(fontFamily: "Source Sans Pro");
+  TextStyle _defaultTextStyle =
+      TextStyle(fontSize: 15, fontFamily: "Source Sans Pro");
   TextStyle _defaultLabelStyle = TextStyle(
       fontSize: 15, fontFamily: "Source Sans Pro", fontWeight: FontWeight.bold);
 
@@ -1347,6 +1349,33 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     yield createTextField(context, "Name", portNameController,
         focus: portNameFocus);
     yield createPortValueRow(context);
+
+    var showLocal =
+        isInportsTab ? node.showLocalInports : node.showLocalOutports;
+    var label = showLocal ? "Showing Local" : "Hiding Local";
+    label += isInportsTab ? " Inports" : " Outports";
+
+    Text(label, style: _defaultLabelStyle);
+    yield Container(
+      width: 210,
+      child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+        Switch(
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          value: showLocal,
+          onChanged: (value) {
+            setState(() {
+              if (isInportsTab) {
+                node.showLocalInports = value;
+              } else {
+                node.showLocalOutports = value;
+              }
+              update();
+            });
+          },
+        ),
+        Text(label, style: _defaultTextStyle)
+      ]),
+    );
   }
 
   Iterable<Widget> getPropsFormFields(BuildContext context) sync* {

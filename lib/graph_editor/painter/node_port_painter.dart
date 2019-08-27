@@ -66,6 +66,13 @@ class NodePortPainter {
   }
 
   void paint(Canvas canvas, double scale, NodePort port) {
+    if (port.isLocal &&
+        (port.isInport
+            ? port.node.hideLocalInports
+            : port.node.hideLocalOutports)) {
+      return;
+    }
+
     this.port = port;
 
     this.scale = scale;

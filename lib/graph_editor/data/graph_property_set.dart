@@ -288,9 +288,42 @@ class GraphPropertySet extends GraphProperty {
   bool get isNotEmpty => props.isNotEmpty;
   bool get isEmpty => props.isEmpty;
 
-  String getPropValue(String name) {
+  String getString(String name, [String defval]) {
     var prop = props[name];
-    return prop?.getValue();
+    if (prop == null) return defval;
+
+    return prop.getValue();
+  }
+
+  bool getBool(String name, [bool defval = false]) {
+    var prop = props[name];
+    if (prop == null) return defval;
+    if (prop is GraphPropertyBool) return prop.value;
+
+    var val = prop.getValue() ?? "";
+    return val.toLowerCase() == "true";
+  }
+
+  int getInt(String name, [int defval = 0]) {
+    var prop = props[name];
+    if (prop == null) return defval;
+    if (prop is GraphPropertyInt) return prop.value;
+    if (prop is GraphPropertyDouble) return prop.value.round();
+    if (prop is GraphPropertyBool) return prop.value ? 1 : 0;
+
+    var val = prop.getValue() ?? "";
+    return int.tryParse(val) ?? defval;
+  }
+
+  double getDouble(String name, [double defval = 0]) {
+    var prop = props[name];
+    if (prop == null) return defval;
+    if (prop is GraphPropertyInt) return prop.value.toDouble();
+    if (prop is GraphPropertyDouble) return prop.value;
+    if (prop is GraphPropertyBool) return prop.value ? 1 : 0;
+
+    var val = prop.getValue() ?? "";
+    return double.tryParse(val) ?? defval;
   }
 
   Iterable<GraphProperty> get values sync* {
