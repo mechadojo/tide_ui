@@ -208,14 +208,13 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
     propNameFocus
       ..addListener(onChangeFocus(
-          propNameFocus, propNameController, propValueFocus, propValueFocus));
+          propNameFocus, propNameController, propValueFocus, propValueFocus,
+          onLoseFocus: updatePortFields));
 
     propValueFocus
       ..addListener(onChangeFocus(
           propValueFocus, propValueController, propNameFocus, propNameFocus,
-          onLoseFocus: () {
-        updatePortFields();
-      }));
+          onLoseFocus: updatePortFields));
 
     scriptFocus.addListener(() {
       setState(() {
@@ -754,9 +753,12 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       var next = propNameController.text.trim().replaceAll(" ", "_");
       var values = node.props.values.toList();
 
-      if (values.any((x) => x != selectedProp && x.name == next)) {
-        next = "${next}_";
-      }
+      var replace = values.any((x) => x != selectedProp && x.name == next);
+      if (replace) next = "${next}_";
+
+      replace = node.inports
+          .any((x) => x.name == next && !editor.graph.allowAddFlag(x));
+      if (replace) next = "${next}_";
 
       node.props.rename(selectedProp.name, next);
 
