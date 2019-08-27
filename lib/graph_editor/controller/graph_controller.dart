@@ -235,7 +235,6 @@ class GraphController with MouseController, KeyboardController {
     }
 
     graph.beginUpdate();
-
     port.setValue(value);
     graph.endUpdate(true);
   }
@@ -249,7 +248,6 @@ class GraphController with MouseController, KeyboardController {
     }
 
     graph.beginUpdate();
-
     port.setTrigger(trigger);
     graph.endUpdate(true);
   }
@@ -263,7 +261,6 @@ class GraphController with MouseController, KeyboardController {
     }
 
     graph.beginUpdate();
-
     port.setLink(link);
     graph.endUpdate(true);
   }
@@ -277,7 +274,6 @@ class GraphController with MouseController, KeyboardController {
     }
 
     graph.beginUpdate();
-
     port.setEvent(event);
     graph.endUpdate(true);
   }
@@ -286,10 +282,7 @@ class GraphController with MouseController, KeyboardController {
     // not allowed to set a value on a port that also has a link
     graph.beginUpdate();
 
-    port.event = null;
-    port.value = null;
-    port.trigger = null;
-    port.link = null;
+    port.clearFlag();
 
     graph.endUpdate(true);
   }

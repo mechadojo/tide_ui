@@ -288,6 +288,11 @@ class GraphPropertySet extends GraphProperty {
   bool get isNotEmpty => props.isNotEmpty;
   bool get isEmpty => props.isEmpty;
 
+  String getPropValue(String name) {
+    var prop = props[name];
+    return prop?.getValue();
+  }
+
   Iterable<GraphProperty> get values sync* {
     var keys = props.keys.toList();
     keys.sort();

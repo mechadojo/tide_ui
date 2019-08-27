@@ -312,6 +312,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   void ensureSelectedPortVisible() {
+    if (isPropsTab && node.props.values.isEmpty) return;
+    if (isInportsTab && node.inports.isEmpty) return;
+    if (isOutportsTab && node.outports.isEmpty) return;
+    if (isScriptTab) return;
+
     editor.dispatch(GraphEditorCommand.ensureVisible(selectedPortKey),
         afterTicks: 2);
   }
@@ -406,6 +411,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       offsetValue = 1;
 
       updatePropsFields();
+      update();
       ensureSelectedPortVisible();
     });
   }
@@ -734,12 +740,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
     setState(() {
       var next = portNameController.text.trim().replaceAll(" ", "_");
-      var ports = selectedPort.isInport ? node.inports : node.outports;
 
-      if (ports.any((x) => x != selectedPort && x.name == next)) {
-        next = "${next}_";
-      }
-      selectedPort.name = next;
+      selectedPort.rename(next);
 
       update();
     });
@@ -771,6 +773,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
       selectedPort.setValue(value);
       lastPortFlagType = "Value";
+
+      node.props.replace(GraphProperty.parse(selectedPort.name, value));
+
       updatePortFields();
       update();
     });
@@ -790,6 +795,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
       selectedPort.setTrigger(value);
       lastPortFlagType = "Trigger";
+
+      node.props.remove(selectedPort.name);
       updatePortFields();
       update();
     });
@@ -809,6 +816,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
       selectedPort.setEvent(value);
       lastPortFlagType = "Event";
+      node.props.remove(selectedPort.name);
       updatePortFields();
       update();
     });
@@ -824,6 +832,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       selectedPort.trigger = null;
 
       lastPortFlagType = selectedPort.isInport ? "Value" : "Link";
+      node.props.remove(selectedPort.name);
       updatePortFields();
       update();
     });
@@ -837,6 +846,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       if (value == null || value.isEmpty) value = GraphNode.randomName();
 
       selectedPort.setLink(value);
+      node.props.remove(selectedPort.name);
       updatePortFields();
       update();
     });
@@ -941,6 +951,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       var value = propValueController.text;
 
       selectedProp.setValue(value);
+      if (node.inports.any((x) => x.name == selectedProp.name)) {
+        update();
+      }
     });
   }
 

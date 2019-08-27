@@ -1,5 +1,6 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_chart/tide_chart.dart';
+import 'package:tide_ui/graph_editor/data/graph_property_set.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 
 import 'graph.dart';
@@ -66,11 +67,20 @@ class NodePort extends GraphObject {
   GraphNode node = GraphNode.none;
 
   String name = "";
+
   int ordinal = 0;
   bool isDefault = false;
   bool isRequired = true;
 
-  String value;
+  String get value => node.props.getPropValue(name);
+  set value(String next) {
+    if (next == null || next.isEmpty || type != NodePortType.inport) {
+      node.props.remove(name);
+    } else {
+      node.props.replace(GraphProperty.parse(name, next));
+    }
+  }
+
   String trigger;
   String link;
   String event;
@@ -97,6 +107,28 @@ class NodePort extends GraphObject {
     return null;
   }
 
+  void rename(String next) {
+    if (node != null) {
+      var ports = isInport ? node.inports : node.outports;
+      if (ports.any((x) => x != this && x.name == next)) {
+        next = next + "_";
+      }
+
+      if (hasValue) {
+        node.props.rename(name, next);
+      }
+    }
+
+    name = next;
+  }
+
+  void clearFlag() {
+    value = null;
+    trigger = null;
+    link = null;
+    event = null;
+  }
+
   void setValue(String value) {
     this.value = value;
     if (value != null) {
@@ -108,6 +140,7 @@ class NodePort extends GraphObject {
 
   void setTrigger(String trigger) {
     this.trigger = trigger;
+
     if (trigger != null) {
       value = null;
       link = null;
@@ -117,6 +150,7 @@ class NodePort extends GraphObject {
 
   void setLink(String link) {
     this.link = link;
+
     if (link != null) {
       value = null;
       trigger = null;
@@ -126,6 +160,7 @@ class NodePort extends GraphObject {
 
   void setEvent(String event) {
     this.event = event;
+
     if (event != null) {
       value = null;
       trigger = null;
