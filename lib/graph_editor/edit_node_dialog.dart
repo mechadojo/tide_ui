@@ -243,7 +243,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         break;
     }
 
-    if (focused != null) {
+    if (focused != null && !editor.isTouchMode) {
       editor.dispatch(GraphEditorCommand.requestFocus(focused), afterTicks: 2);
     }
 
@@ -586,7 +586,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     node.props.add(prop);
 
     selectProp(prop);
-    propNameFocus.requestFocus();
+
+    requestFocus(propNameFocus);
   }
 
   void onDeletePort() {
@@ -875,24 +876,31 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
     selectProp(next);
     if (selectedProp.getValueType() != "Boolean") {
-      propValueFocus.requestFocus();
+      requestFocus(propValueFocus);
+
       selectAll(propValueController);
     } else {
       selectNone(propValueController);
     }
   }
 
+  // Focus and selection is a little glitchy in Flutter Web right now
+
+  void requestFocus(FocusNode node) {
+    //node.requestFocus();
+  }
+
   void selectAll(TextEditingController controller) {
-    controller.value = controller.value.copyWith(
-        selection:
-            TextSelection(baseOffset: 0, extentOffset: controller.text.length),
-        composing: TextRange.empty);
+    // controller.value = controller.value.copyWith(
+    //     selection:
+    //         TextSelection(baseOffset: 0, extentOffset: controller.text.length),
+    //     composing: TextRange.empty);
   }
 
   void selectNone(TextEditingController controller) {
-    controller.value = controller.value.copyWith(
-        selection: TextSelection.collapsed(offset: 0),
-        composing: TextRange.empty);
+    // controller.value = controller.value.copyWith(
+    //     selection: TextSelection.collapsed(offset: 0),
+    //     composing: TextRange.empty);
   }
 
   void offsetPropValue(double delta, {int round = 0, bool mirror = false}) {
@@ -919,7 +927,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         value = (value * round).roundToDouble() / round;
       }
       selectedProp.setValue(value.toString());
-      propValueFocus.requestFocus();
+
+      requestFocus(propValueFocus);
       updatePropsFields();
       selectAll(propValueController);
     });
@@ -1518,7 +1527,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
           setState(() {
             if (value) {
               node.delay = 1.0;
-              delayFocus.requestFocus();
+              requestFocus(delayFocus);
             } else {
               node.delay = 0;
             }
