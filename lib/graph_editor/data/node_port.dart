@@ -71,6 +71,9 @@ class NodePort extends GraphObject {
   int ordinal = 0;
   bool isDefault = false;
   bool isRequired = true;
+  bool isBlocking = false;
+  bool isQueuing = false;
+  String syncGroup;
 
   bool get isLocal => name != null && name.startsWith("_");
   bool get isGlobal => !isLocal;
@@ -93,6 +96,7 @@ class NodePort extends GraphObject {
   bool get hasTrigger => trigger != null && trigger.isNotEmpty;
   bool get hasLink => link != null && link.isNotEmpty;
   bool get hasEvent => event != null && event.isNotEmpty;
+  bool get hasSyncGroup => syncGroup != null && syncGroup.isNotEmpty;
 
   String get flagLabel {
     if (hasValue) return value;
@@ -108,6 +112,18 @@ class NodePort extends GraphObject {
     if (hasLink) return "Link";
     if (hasEvent) return "Event";
     return null;
+  }
+
+  int get syncGroupIndex {
+    var keys = Set<String>();
+    for (var port in node.inports) {
+      if (port.hasSyncGroup) keys.add(port.syncGroup);
+    }
+
+    var sorted = keys.toList();
+    sorted.sort();
+
+    return sorted.indexOf(syncGroup);
   }
 
   void rename(String next) {
@@ -219,6 +235,9 @@ class NodePort extends GraphObject {
     result.trigger = packed.trigger;
     result.event = packed.event;
     result.link = packed.link;
+    result.isBlocking = packed.isBlocking;
+    result.isQueuing = packed.isQueuing;
+    result.syncGroup = packed.syncGroup;
 
     return result;
   }
@@ -258,7 +277,10 @@ class NodePort extends GraphObject {
     result.ordinal = ordinal;
     result.isDefault = isDefault;
     result.isRequired = isRequired;
+    result.isBlocking = isBlocking;
+    result.isQueuing = isQueuing;
 
+    if (syncGroup != null) result.syncGroup = syncGroup;
     if (value != null) result.value = value;
     if (trigger != null) result.trigger = trigger;
     if (link != null) result.link = link;

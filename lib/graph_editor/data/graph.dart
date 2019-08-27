@@ -178,6 +178,9 @@ class Graph {
   //  Port Styling
   //
   static Paint PortColor = Paint()..color = Colors.white;
+  static Paint PortIconColor = Paint()
+    ..color = Color(0xFF333333).withAlpha(128);
+
   static Paint DefaultPortColor = PortColor;
   static Paint PortHoverColor = Paint()..color = Colors.cyan[50];
   static Paint PortBorder = Paint()

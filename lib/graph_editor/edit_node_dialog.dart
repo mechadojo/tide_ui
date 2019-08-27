@@ -15,7 +15,7 @@ import 'data/node_port.dart';
 import 'painter/vector_icon_painter.dart';
 
 class EditNodeDialog extends StatefulWidget {
-  static double EditNodeDialogHeight = 200;
+  static double EditNodeDialogHeight = 225;
   static double PortFormWidth = 435;
   static double NodeFormWidth = 235;
   static double CloseButtonWidth = 25;
@@ -41,6 +41,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   final iconController = TextEditingController();
   final delayController = TextEditingController();
   final portNameController = TextEditingController();
+  final portGroupController = TextEditingController();
 
   final portValueController = TextEditingController();
   final scriptController = StreamController<GraphEvent>();
@@ -53,6 +54,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   final iconFocus = FocusNode();
   final delayFocus = FocusNode();
   final portNameFocus = FocusNode();
+  final portGroupFocus = FocusNode();
   final portValueFocus = FocusNode();
   final scriptFocus = FocusNode();
 
@@ -116,6 +118,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     delayFocus?.dispose();
     portNameFocus?.dispose();
     portValueFocus?.dispose();
+    portGroupFocus?.dispose();
     scriptFocus?.dispose();
     propNameFocus?.dispose();
     propValueFocus?.dispose();
@@ -125,6 +128,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     iconController?.dispose();
     delayController?.dispose();
     portNameController?.dispose();
+    portGroupController?.dispose();
     portValueController?.dispose();
 
     propNameController?.dispose();
@@ -193,6 +197,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       ..text = selectedPort?.flagLabel
       ..addListener(updatePortValue);
 
+    portGroupController
+      ..text = selectedPort?.syncGroup
+      ..addListener(updatePortGroup);
+
     propNameController
       ..text = selectedProp?.name
       ..addListener(updatePropName);
@@ -204,9 +212,12 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     portNameFocus
       ..addListener(onChangeFocus(
           portNameFocus, portNameController, portValueFocus, portValueFocus));
-    portValueFocus
+
+    portValueFocus..addListener(onChangePortValueFocus());
+
+    portGroupFocus
       ..addListener(onChangeFocus(
-          portValueFocus, portValueController, portNameFocus, portNameFocus));
+          portGroupFocus, portGroupController, portValueFocus, portNameFocus));
 
     propNameFocus
       ..addListener(onChangeFocus(
@@ -358,6 +369,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
     portValueController.value =
         portValueController.value.copyWith(text: selectedPort.flagLabel ?? "");
+
+    if (selectedPort.isInport) {
+      portGroupController.value = portGroupController.value
+          .copyWith(text: selectedPort.syncGroup ?? "");
+    }
   }
 
   void selectInportsTab() {
@@ -638,6 +654,39 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
       if (!focus.hasFocus) {
         selectNone(controller);
+        if (onLoseFocus != null) {
+          onLoseFocus();
+        }
+      }
+    };
+  }
+
+  VoidCallback onChangePortValueFocus({VoidCallback onLoseFocus}) {
+    return () {
+      if (portValueFocus.hasFocus) {
+        if (selectedProp?.getValueType() != "Boolean") {
+          selectAll(portValueController);
+        }
+
+        editor.autoComplete = null;
+        autoCompleteIndex = 0;
+        editor.tabFocus = (reversed) {
+          if (reversed) {
+            portNameFocus.requestFocus();
+          } else {
+            if (selectedPort.isInport) {
+              print("Selected is Inport");
+              portGroupFocus.requestFocus();
+            } else {
+              print("Selected is Outport");
+              portNameFocus.requestFocus();
+            }
+          }
+        };
+      }
+
+      if (!portValueFocus.hasFocus) {
+        selectNone(portValueController);
         if (onLoseFocus != null) {
           onLoseFocus();
         }
@@ -961,6 +1010,21 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     });
   }
 
+  void updatePortGroup() {
+    if (selectedPort == null) return;
+
+    setState(() {
+      var value = portGroupController.text ?? "";
+      selectedPort.syncGroup = value.isEmpty ? null : value;
+      if (selectedPort.syncGroup == null) {
+        selectedPort.isBlocking = false;
+        selectedPort.isQueuing = false;
+      }
+      updatePortFields();
+      update();
+    });
+  }
+
   void updatePortValue() {
     if (selectedPort == null) return;
 
@@ -1146,10 +1210,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     ]);
   }
 
-  Widget createPortValueRow(BuildContext context) {
+  Widget createPortValueRow(BuildContext context, {double width = 150}) {
     var label = selectedPort?.flagType ?? lastPortFlagType;
 
-    return createLabeledRow(label, padding: 5, children: [
+    return createLabeledRow(label, width: width, padding: 5, children: [
       SizedBox(
         width: 70,
         height: 25,
@@ -1345,19 +1409,50 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     );
   }
 
-  Iterable<Widget> getPortsFormFields(BuildContext context) sync* {
-    yield createTextField(context, "Name", portNameController,
-        focus: portNameFocus);
-    yield createPortValueRow(context);
+  Widget createBlockQueue({double width = 150}) {
+    return createLabeledRow("Block", width: width, children: [
+      Switch(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        value: selectedPort?.isBlocking ?? false,
+        onChanged: (value) {
+          setState(() {
+            if (selectedPort != null) {
+              selectedPort.isBlocking = value;
+              update();
+            }
+          });
+        },
+      ),
+      Text("Queue:", style: _defaultLabelStyle),
+      Switch(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        value: selectedPort?.isQueuing ?? false,
+        onChanged: (value) {
+          setState(() {
+            if (selectedPort != null) {
+              selectedPort.isQueuing = value;
+              update();
+            }
+          });
+        },
+      )
+    ]);
+  }
 
+  Widget createShowLocalPorts() {
     var showLocal =
         isInportsTab ? node.showLocalInports : node.showLocalOutports;
-    var label = showLocal ? "Showing Local" : "Hiding Local";
-    label += isInportsTab ? " Inports" : " Outports";
+    var localCount =
+        isInportsTab ? node.localInports.length : node.localOutports.length;
+
+    var label = showLocal ? "Showing" : "Hiding";
+    label += " $localCount Local";
+    label += isInportsTab ? " Inport" : " Outport";
+    if (localCount != 1) label += "s";
 
     Text(label, style: _defaultLabelStyle);
-    yield Container(
-      width: 210,
+    return Container(
+      width: 225,
       child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
         Switch(
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1373,9 +1468,95 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
             });
           },
         ),
-        Text(label, style: _defaultTextStyle)
+        Text(label, style: _defaultTextStyle, overflow: TextOverflow.clip)
       ]),
     );
+  }
+
+  offsetSyncGroup(int delta) {
+    if (selectedPort == null) return;
+
+    setState(() {
+      var group = selectedPort.syncGroup ?? "";
+      if (group.isEmpty) {
+        if (delta > 0) {
+          selectedPort.syncGroup = "sync1";
+
+          updatePortFields();
+          update();
+          return;
+        }
+      }
+
+      if (group.startsWith("sync")) {
+        var idx = int.tryParse(group.substring(4)) ?? 0;
+        if (idx == 1 && delta < 0) {
+          selectedPort.syncGroup = null;
+        } else {
+          selectedPort.syncGroup = "sync${idx + delta}";
+        }
+
+        updatePortFields();
+        update();
+      }
+    });
+  }
+
+  Widget createPortGroupRow(BuildContext context, {width = 150}) {
+    return createLabeledRow("Group", width: width, children: [
+      SizedBox(
+        width: 70,
+        height: 25,
+        child: TextFormField(
+          controller: portGroupController,
+          focusNode: portGroupFocus,
+          style: _defaultInputStyle,
+          enableInteractiveSelection: false,
+          decoration: getBaseTextField(),
+        ),
+      ),
+      createIconButton(context, "plus", onPressed: () {
+        offsetSyncGroup(1);
+      }),
+      createIconButton(context, "minus",
+          padding: EdgeInsets.all(0),
+          onPressed: (selectedPort?.syncGroup ?? "").isEmpty
+              ? null
+              : () {
+                  offsetSyncGroup(-1);
+                }),
+    ]);
+  }
+
+  Iterable<Widget> getPortsFormFields(BuildContext context) sync* {
+    yield createTextField(context, "Name", portNameController,
+        focus: portNameFocus, width: 175);
+
+    yield createPortValueRow(context, width: 175);
+
+    if (selectedPort?.isInport ?? false) {
+      yield createPortGroupRow(context, width: 175);
+
+      if ((selectedPort?.syncGroup ?? "").isNotEmpty) {
+        yield createBlockQueue(width: 175);
+        yield SizedBox(height: 5);
+      } else {
+        yield SizedBox(height: 45);
+      }
+    } else {
+      yield SizedBox(height: 73);
+    }
+
+    if (isInportsTab) {
+      if (node.inports.any((x) => x.isLocal) || node.showLocalInports) {
+        yield createShowLocalPorts();
+      }
+    }
+    if (isOutportsTab) {
+      if (node.outports.any((x) => x.isLocal) || node.showLocalOutports) {
+        yield createShowLocalPorts();
+      }
+    }
   }
 
   Iterable<Widget> getPropsFormFields(BuildContext context) sync* {

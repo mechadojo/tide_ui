@@ -441,6 +441,9 @@ class GraphNode extends GraphObject {
     return moved;
   }
 
+  List<NodePort> get localInports => inports.where((x) => x.isLocal).toList();
+  List<NodePort> get localOutports => outports.where((x) => x.isLocal).toList();
+
   List<NodePort> get visibleInports {
     if (showLocalInports) {
       return inports;

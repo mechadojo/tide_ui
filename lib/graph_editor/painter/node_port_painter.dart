@@ -7,6 +7,14 @@ import '../data/node_port.dart';
 import '../fonts/vector_font.dart';
 
 class NodePortPainter {
+  static List<Paint> groupPaints = [
+    Paint()..color = Colors.green[100],
+    Paint()..color = Colors.red[100],
+    Paint()..color = Colors.purple[100],
+    Paint()..color = Colors.yellow[100],
+    Paint()..color = Colors.orange[100],
+  ];
+
   NodePort port;
 
   double scale;
@@ -14,9 +22,14 @@ class NodePortPainter {
   Paint get borderPaint =>
       port.hovered ? Graph.PortHoverBorder : Graph.PortBorder;
 
-  Paint get fillPaint => port.hovered
-      ? Graph.PortHoverColor
-      : port.isDefault ? Graph.DefaultPortColor : Graph.PortColor;
+  Paint get fillPaint =>
+      port.hovered ? Graph.PortHoverColor : getSyncGroupPaint();
+
+  Paint getSyncGroupPaint() {
+    if (!port.hasSyncGroup) return Graph.PortColor;
+    return groupPaints[port.syncGroupIndex % groupPaints.length];
+  }
+
   VectorFont get font => Graph.font;
 
   Paint getFlagPaint() {
@@ -84,7 +97,11 @@ class NodePortPainter {
       drawFlag(canvas, port);
     }
 
-    if (port.isDefault) {
+    if (port.isBlocking) {
+      var rect = Rect.fromCircle(center: port.pos, radius: sz);
+      canvas.drawRect(rect, fillPaint);
+      canvas.drawRect(rect, borderPaint);
+    } else if (port.isDefault) {
       sz *= 1.125;
       var path = Path();
       path.moveTo(port.pos.dx, port.pos.dy - sz);
@@ -94,13 +111,13 @@ class NodePortPainter {
       path.close();
       canvas.drawPath(path, fillPaint);
       canvas.drawPath(path, borderPaint);
-
-      //var rect = Rect.fromCircle(center: port.pos, radius: sz);
-      // canvas.drawRect(rect, fillPaint);
-      // canvas.drawRect(rect, borderPaint);
     } else {
       canvas.drawCircle(port.pos, sz, fillPaint);
       canvas.drawCircle(port.pos, sz, borderPaint);
+    }
+
+    if (port.isQueuing && !Graph.isZoomedOut(scale)) {
+      VectorIcons.paint(canvas, "plus", port.pos, 5, fill: Graph.PortIconColor);
     }
 
     if (Graph.ShowHitBox) canvas.drawRect(port.hitbox, Graph.redPen);
