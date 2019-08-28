@@ -227,7 +227,7 @@ class GraphNodePainter {
       var rr = RRect.fromRectXY(r, radius, radius);
       canvas.drawRRect(rr, Graph.NodeTriggerLabelColor);
     }
-    var label = node.hasMethod ? node.method : node.name;
+    var label = node.hasMethod ? node.method : "";
 
     Graph.font.paint(canvas, label, Offset(cx, cy), Graph.NodeTriggerLabelSize,
         fill: Graph.NodeDarkColor, alignment: Alignment.center);

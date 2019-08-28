@@ -27,8 +27,9 @@ class EditNodeDialog extends StatefulWidget {
   final NodePort port;
   final String focus;
   final TextPanelDocument script = TextPanelDocument();
-
-  EditNodeDialog(this.editor, this.node, this.close, {this.port, this.focus});
+  final String title;
+  EditNodeDialog(this.editor, this.node, this.close,
+      {this.port, this.focus, this.title});
 
   _EditNodeDialogState createState() => _EditNodeDialogState();
 }
@@ -147,9 +148,16 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     lastSelectedInport = node.inports.isEmpty ? null : node.inports.first;
     lastSelectedOutport = node.outports.isEmpty ? null : node.outports.first;
 
-    selectedPort = widget.port ?? lastSelectedInport;
-    selectedTab = selectedPort.isInport ? "inports" : "outports";
-    lastPortFlagType = selectedPort.isInport ? "Value" : "Link";
+    selectedPort = widget.port ?? lastSelectedInport ?? lastSelectedOutport;
+    if (node.type == GraphNodeType.trigger) selectedPort = null;
+
+    if (selectedPort == null) {
+      selectedTab = "props";
+      lastPortFlagType = "Value";
+    } else {
+      selectedTab = selectedPort.isInport ? "inports" : "outports";
+      lastPortFlagType = selectedPort.isInport ? "Value" : "Link";
+    }
 
     scriptDocument
       ..add(node.script ?? "")
@@ -253,15 +261,21 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       case "name":
         focused = portNameFocus;
         break;
+      case "method":
+        focused = methodFocus;
+        break;
     }
 
-    if (focused != null && !editor.isTouchMode) {
-      editor.dispatch(GraphEditorCommand.requestFocus(focused), afterTicks: 2);
-    }
+    if (node.type == GraphNodeType.action) {
+      if (focused != null && !editor.isTouchMode) {
+        editor.dispatch(GraphEditorCommand.requestFocus(focused),
+            afterTicks: 2);
+      }
 
-    if (widget.port != null) {
-      editor.dispatch(GraphEditorCommand.ensureVisible(selectedPortKey),
-          afterTicks: 2);
+      if (widget.port != null) {
+        editor.dispatch(GraphEditorCommand.ensureVisible(selectedPortKey),
+            afterTicks: 2);
+      }
     }
   }
 
@@ -696,6 +710,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
   void update() {
     editor.graph.beginUpdate();
+    node.resize();
     editor.graph.endUpdate(true);
   }
 
@@ -1680,6 +1695,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       FocusNode focus,
       FocusNode next,
       bool autofocus = false,
+      bool enabled = true,
       double padding = 0}) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: padding),
@@ -1700,6 +1716,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
               textInputAction: TextInputAction.next,
               textCapitalization: TextCapitalization.none,
               style: _defaultInputStyle,
+              enabled: enabled,
               controller: controller,
               autofocus: autofocus,
               focusNode: focus,
@@ -1777,7 +1794,25 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     ]);
   }
 
+  bool get allowEditIcon {
+    return node.type == GraphNodeType.action;
+  }
+
+  bool get allowEditTitle {
+    return node.isAnyType(Action_Behavior);
+  }
+
+  bool get allowEditMethod {
+    return node.type != GraphNodeType.behavior;
+  }
+
+  String get methodFieldLabel {
+    return node.typeName;
+  }
+
   Widget createNodeForm(BuildContext context, {double height}) {
+    var title = widget.title ?? "Edit ${node.typeName} Node";
+
     return Form(
       child: Container(
         height: height - 1,
@@ -1789,14 +1824,19 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
             Container(
                 width: 225,
                 padding: EdgeInsets.only(bottom: 2),
-                child: Text("Edit Node", style: _defaultHeaderStyle)),
-            createTextField(context, "Icon", iconController,
-                focus: iconFocus, next: titleFocus),
-            createTextField(context, "Title", titleController,
-                focus: titleFocus, next: methodFocus, padding: 5),
-            createTextField(context, "Action", methodController,
-                focus: methodFocus, next: iconFocus),
-            createDelayRow(),
+                child: Text(title, style: _defaultHeaderStyle)),
+            if (allowEditIcon)
+              createTextField(context, "Icon", iconController,
+                  focus: iconFocus, next: titleFocus),
+            if (allowEditTitle)
+              createTextField(context, "Title", titleController,
+                  focus: titleFocus, next: methodFocus, padding: 5),
+            if (allowEditMethod)
+              createTextField(context, methodFieldLabel, methodController,
+                  focus: methodFocus, next: iconFocus),
+            if (node.isAnyType(Action_Behavior) ||
+                node.type == GraphNodeType.trigger)
+              createDelayRow(),
             createDebugRow(),
           ],
         ),
@@ -1813,18 +1853,20 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   Widget createPortTabs(double width) {
     return Row(
       children: <Widget>[
-        FlatButton(
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          child: Text("Inports",
-              style: isInportsTab ? _selectedTabStyle : _defaultTabStyle),
-          onPressed: selectInportsTab,
-        ),
-        FlatButton(
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          child: Text("Outports",
-              style: isOutportsTab ? _selectedTabStyle : _defaultTabStyle),
-          onPressed: selectOutportsTab,
-        ),
+        if (node.type == GraphNodeType.action)
+          FlatButton(
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            child: Text("Inports",
+                style: isInportsTab ? _selectedTabStyle : _defaultTabStyle),
+            onPressed: selectInportsTab,
+          ),
+        if (node.type == GraphNodeType.action)
+          FlatButton(
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            child: Text("Outports",
+                style: isOutportsTab ? _selectedTabStyle : _defaultTabStyle),
+            onPressed: selectOutportsTab,
+          ),
         FlatButton(
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           child: Text("Properties",
@@ -1873,7 +1915,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
               child: Row(
                 children: <Widget>[
                   createNodeForm(context, height: height),
-                  createPortsForm(context, width: portsWidth, height: height),
+                  if (node.isAnyType(Action_Behavior) ||
+                      node.type == GraphNodeType.trigger)
+                    createPortsForm(context, width: portsWidth, height: height),
                 ],
               ),
             ),

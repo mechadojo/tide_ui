@@ -79,6 +79,12 @@ class GraphNode extends GraphObject {
     }
   }
 
+  String get typeName {
+    var result = type.toString().split(".").last;
+    result = result[0].toUpperCase() + result.substring(1);
+    return result;
+  }
+
   int version = 0;
 
   TideChartNode last;
@@ -476,7 +482,7 @@ class GraphNode extends GraphObject {
           ? Graph.DefaultNodeSize
           : Graph.DefaultNodeSize * 2.5;
     } else if (type == GraphNodeType.trigger || type == GraphNodeType.event) {
-      var label = hasMethod ? method : name;
+      var label = method ?? "";
       var rect = Graph.font.limits(label, pos, Graph.NodeTriggerLabelSize,
           alignment: Alignment.center);
 

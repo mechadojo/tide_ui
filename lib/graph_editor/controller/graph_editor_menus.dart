@@ -249,7 +249,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getTriggerNodeMenu(GraphNode node) {
     return MenuItemSet([
-      MenuItem(icon: "edit", title: "Edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(node, focus: "title")),
       MenuItem(
           icon: "chevron-circle-right",
           command: GraphEditorCommand.pushMenu(getSelectOutportMenu(node))),
@@ -267,7 +270,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getEventNodeMenu(GraphNode node) {
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(node, focus: "title")),
       MenuItem(
           icon: "sign-out-alt",
           command:
@@ -284,7 +290,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getInportNodeMenu(GraphNode node) {
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(node, focus: "title")),
       MenuItem(
           icon: "chevron-circle-right",
           command: GraphEditorCommand.pushMenu(getSelectOutportMenu(node))),
@@ -302,7 +311,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getOutportNodeMenu(GraphNode node) {
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(node, focus: "title")),
       MenuItem(
           icon: "bolt",
           command:
@@ -319,7 +331,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getBehaviorNodeMenu(GraphNode node) {
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(node, focus: "title")),
       MenuItem(
         icon: "trash-alt",
         title: "Delete",
@@ -344,7 +359,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
         return getEventNodeMenu(node);
       default:
         return MenuItemSet([
-          MenuItem(icon: "edit"),
+          MenuItem(
+              icon: "edit",
+              title: "Edit",
+              command: GraphEditorCommand.editNode(node, focus: "title")),
           MenuItem(
             icon: "trash-alt",
             title: "Delete",
