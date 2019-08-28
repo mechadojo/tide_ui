@@ -78,7 +78,7 @@ class NodePort extends GraphObject {
   bool get isLocal => name != null && name.startsWith("_");
   bool get isGlobal => !isLocal;
 
-  String get value => node.props.getString(name);
+  String get value => isOutport ? null : node.props.getString(name);
   set value(String next) {
     if (next == null || next.isEmpty || type != NodePortType.inport) {
       node.props.remove(name);
@@ -133,7 +133,9 @@ class NodePort extends GraphObject {
         next = next + "_";
       }
 
-      if (hasValue) {
+      if (isOutport) {
+        node.props.remove(next);
+      } else if (hasValue) {
         node.props.rename(name, next);
       }
     }
@@ -206,8 +208,12 @@ class NodePort extends GraphObject {
     return "${node}:$name";
   }
 
-  bool allowSetValue() {
+  bool get allowSetValue {
     return !hasValue && node.isAnyType(Action_Behavior);
+  }
+
+  bool get allowChangeName {
+    return node.type == GraphNodeType.action || !isRequired;
   }
 
   bool canLinkTo(NodePort other) {

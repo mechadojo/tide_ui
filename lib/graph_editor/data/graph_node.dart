@@ -267,11 +267,11 @@ class GraphNode extends GraphObject {
   }
 
   bool get allowAddInport {
-    return type == GraphNodeType.action;
+    return isAnyType(Action_Behavior);
   }
 
   bool get allowAddOutport {
-    return type == GraphNodeType.action || type == GraphNodeType.behavior;
+    return isAnyType(Action_Behavior);
   }
 
   static GraphNodeType parseNodeType(String type) {

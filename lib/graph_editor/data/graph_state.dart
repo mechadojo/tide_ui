@@ -287,6 +287,8 @@ class GraphState extends UpdateNotifier {
 
   bool allowAddFlag(NodePort port) {
     if (port == null) return false;
+    if (port.node.type != GraphNodeType.action) return false;
+
     return !links.any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port));
   }
 

@@ -221,7 +221,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       ..addListener(onChangeFocus(
           portNameFocus, portNameController, portValueFocus, portValueFocus));
 
-    portValueFocus..addListener(onChangePortValueFocus());
+    portValueFocus
+      ..addListener(onChangeFocus(
+          portValueFocus, portValueController, portNameFocus, portGroupFocus));
 
     portGroupFocus
       ..addListener(onChangeFocus(
@@ -348,15 +350,19 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   void updatePropsFields() {
-    if (propNameController.text != selectedProp?.name) {
+    if (node.props.values.isEmpty) selectedProp = null;
+
+    var value = selectedProp?.name ?? "";
+
+    if (selectedProp == null || propNameController.text != selectedProp?.name) {
       propNameController.value = propNameController.value.copyWith(
           composing: TextRange.empty,
           selection: TextSelection.collapsed(offset: 0),
-          text: selectedProp?.name);
+          text: value);
     }
 
-    var value = selectedProp?.getValue() ?? "";
-    if (propValueController.text != value) {
+    value = selectedProp?.getValue() ?? "";
+    if (selectedProp == null || propValueController.text != value) {
       propValueController.value = propValueController.value.copyWith(
           composing: TextRange.empty,
           selection: TextSelection.collapsed(offset: 0),
@@ -675,39 +681,6 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     };
   }
 
-  VoidCallback onChangePortValueFocus({VoidCallback onLoseFocus}) {
-    return () {
-      if (portValueFocus.hasFocus) {
-        if (selectedProp?.getValueType() != "Boolean") {
-          selectAll(portValueController);
-        }
-
-        editor.autoComplete = null;
-        autoCompleteIndex = 0;
-        editor.tabFocus = (reversed) {
-          if (reversed) {
-            portNameFocus.requestFocus();
-          } else {
-            if (selectedPort.isInport) {
-              print("Selected is Inport");
-              portGroupFocus.requestFocus();
-            } else {
-              print("Selected is Outport");
-              portNameFocus.requestFocus();
-            }
-          }
-        };
-      }
-
-      if (!portValueFocus.hasFocus) {
-        selectNone(portValueController);
-        if (onLoseFocus != null) {
-          onLoseFocus();
-        }
-      }
-    };
-  }
-
   void update() {
     editor.graph.beginUpdate();
     node.resize();
@@ -824,6 +797,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
       replace = node.inports
           .any((x) => x.name == next && !editor.graph.allowAddFlag(x));
+      if (replace) next = "${next}_";
+
+      replace = node.outports.any((x) => x.name == next);
+
       if (replace) next = "${next}_";
 
       node.props.rename(selectedProp.name, next);
@@ -1137,6 +1114,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         textCapitalization: TextCapitalization.none,
         style: _defaultInputStyle,
         controller: propValueController,
+        enabled: node.props.values.isNotEmpty,
         focusNode: propValueFocus,
         onFieldSubmitted: (v) {
           FocusScope.of(context).requestFocus(portNameFocus);
@@ -1380,7 +1358,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   Widget createPortsButtons(BuildContext context) {
-    var isDefault = isPortsTab && selectedPort.isDefault;
+    var isDefault = isPortsTab && (selectedPort?.isDefault ?? false);
 
     return Column(
       children: <Widget>[
@@ -1395,19 +1373,16 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         createIconButton(context, "arrow-down",
             onPressed: isLastPort ? null : onMovePortDown),
         createIconButton(context, "plus-square-solid",
-            onPressed: this.isPropsTab
-                ? onAddProperty
-                : ((this.isInportsTab
-                        ? node.allowAddInport
-                        : node.allowAddOutport)
-                    ? onAddPort
-                    : null)),
+            onPressed: ((this.isInportsTab
+                    ? node.allowAddInport
+                    : node.allowAddOutport)
+                ? onAddPort
+                : null)),
         createIconButton(context, "trash-alt-solid",
-            onPressed: this.isPropsTab
-                ? onDeleteProperty
-                : (editor.graph.allowDeletePort(selectedPort)
-                    ? onDeletePort
-                    : null)),
+            onPressed: (selectedPort != null &&
+                    editor.graph.allowDeletePort(selectedPort)
+                ? onDeletePort
+                : null)),
       ],
     );
   }
@@ -1544,12 +1519,18 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   Iterable<Widget> getPortsFormFields(BuildContext context) sync* {
+    var enableName =
+        selectedPort == null ? false : selectedPort.allowChangeName;
+
     yield createTextField(context, "Name", portNameController,
-        focus: portNameFocus, width: 175);
+        enabled: enableName, focus: portNameFocus, width: 175);
 
-    yield createPortValueRow(context, width: 175);
+    if (node.type == GraphNodeType.action) {
+      yield createPortValueRow(context, width: 175);
+    }
 
-    if (selectedPort?.isInport ?? false) {
+    if ((selectedPort?.isInport ?? false) &&
+        node.type == GraphNodeType.action) {
       yield createPortGroupRow(context, width: 175);
 
       if ((selectedPort?.syncGroup ?? "").isNotEmpty) {
@@ -1576,7 +1557,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
   Iterable<Widget> getPropsFormFields(BuildContext context) sync* {
     yield createTextField(context, "Name", propNameController,
-        width: 185, focus: propNameFocus);
+        enabled: node.props.values.isNotEmpty,
+        width: 185,
+        focus: propNameFocus);
 
     yield createPropValueRow(context, width: 185, padding: 5);
     yield* createPropTypeRow(context);
@@ -1853,14 +1836,14 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   Widget createPortTabs(double width) {
     return Row(
       children: <Widget>[
-        if (node.type == GraphNodeType.action)
+        if (node.isAnyType(Action_Behavior))
           FlatButton(
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             child: Text("Inports",
                 style: isInportsTab ? _selectedTabStyle : _defaultTabStyle),
             onPressed: selectInportsTab,
           ),
-        if (node.type == GraphNodeType.action)
+        if (node.isAnyType(Action_Behavior))
           FlatButton(
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             child: Text("Outports",

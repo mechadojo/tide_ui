@@ -459,7 +459,9 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "hashtag",
           title: "Value",
-          command: GraphEditorCommand.pushMenu(getInportValueMenu(port))),
+          command: !graph.allowAddFlag(port)
+              ? null
+              : GraphEditorCommand.pushMenu(getInportValueMenu(port))),
       MenuItem(
           icon: "toolbox",
           title: "Toolbox",
@@ -503,7 +505,9 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "link",
           title: "Link",
-          command: GraphEditorCommand.pushMenu(getOutportValueMenu(port))),
+          command: !graph.allowAddFlag(port)
+              ? null
+              : GraphEditorCommand.pushMenu(getOutportValueMenu(port))),
     ]);
   }
 
