@@ -73,6 +73,19 @@ class Graph {
   static const double LibraryDetailedIconSize = 15;
   static const double LibraryDetailedIconSpacing = 10;
 
+  static const double LibraryTitleSize = 12;
+
+  static const double LibraryFileNameSize = 10;
+  static const double LibraryFileNameSpacing = 15;
+  static const double LibraryFileIconSize = 12;
+  static const double LibraryFileIconSpacing = 10;
+
+  static Paint LibraryTitleColor = Paint()
+    ..color = Color(0xff333333).withAlpha(200);
+
+  static Paint LibraryFileColor = Paint()
+    ..color = Color(0xff333333).withAlpha(200);
+
   static Paint LibraryTabsBackFill = Paint()
     ..color = Color(0xffeeeeee)
     ..style = PaintingStyle.fill;

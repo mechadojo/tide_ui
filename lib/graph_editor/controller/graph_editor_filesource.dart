@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:html';
 import 'dart:indexed_db';
 import 'dart:typed_data';
 
+import 'package:provider/provider.dart';
 import 'package:tide_ui/graph_editor/data/graph_file.dart';
 import 'graph_editor_controller.dart';
 
@@ -152,10 +154,43 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     openLocalFile(lastFile);
   }
 
+  Future<List<String>> getLocalFileList() async {
+    if (window.navigator.userAgent.contains("iPhone") ||
+        !IdbFactory.supported) {
+      List<String> result = [];
+      for (var key in window.localStorage.keys) {
+        if (key.startsWith("charts:")) {
+          result.add(key.substring("charts:".length));
+        }
+      }
+
+      return Future<List<String>>.value(result);
+    }
+
+    var db = await window.indexedDB
+        .open("charts", version: 1, onUpgradeNeeded: initChartsStore);
+
+    Transaction txn = db.transaction("charts", "readonly");
+    var store = txn.objectStore("charts");
+    var result = Completer<List<String>>();
+
+    var request = store.getAllKeys(null);
+    request.onSuccess.listen((onData) {
+      List<dynamic> keys = request.result;
+
+      result.complete(keys.map((x) => x.toString()).toList());
+    });
+
+    return result.future;
+  }
+
   /// Open a file from local storage
   void openLocalFile([String filename]) {
     if (filename == null) {
-      library.controller.openFile("Open File", openLocalFile);
+      getLocalFileList().then((List<String> files) {
+        library.controller.openFile("Open File", openLocalFile, files);
+      });
+
       return;
     }
 
@@ -179,12 +214,13 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
 
       store.getObject(filename).then((data) {
         loadChartBlob(data["content"]);
+        window.localStorage["LastChartFile"] = filename;
         print("Loaded ${data['filename']} from IndexedDB");
       });
     });
   }
 
-  void openFileType(FileSourceType source) {
+  void openFileType(FileSourceType source, [String filename]) {
     source = source ?? lastSource;
     lastSource = source;
 
@@ -193,7 +229,7 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
         openSystemFile();
         break;
       case FileSourceType.local:
-        openLocalFile();
+        openLocalFile(filename);
         break;
       default:
         print("Open File Type $source not implemented.");

@@ -69,6 +69,8 @@ class LibraryState extends UpdateNotifier {
   /// expanded and detailed modes display groups of items and subgroups
   List<LibraryItem> groups = [];
 
+  List<MenuItemSet> files = [];
+
   List<LibraryItem> get behaviors =>
       sheets.where((x) => x.graph?.type == GraphType.behavior).toList();
 

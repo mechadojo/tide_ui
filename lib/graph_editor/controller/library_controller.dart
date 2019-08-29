@@ -86,7 +86,6 @@ class LibraryController with MouseController, KeyboardController {
 
   String filesTitle;
   SelectFileHandler onSelectFile;
-  FileSourceType fileSourceType = FileSourceType.local;
 
   LibraryController(this.editor) {
     _setMenu(library.mode);
@@ -122,14 +121,31 @@ class LibraryController with MouseController, KeyboardController {
     return 0;
   }
 
+  MenuItemSet createFileMenuItem(String file) {
+    return MenuItemSet([
+      MenuItem()
+        ..icon = "folder-open-solid"
+        ..command = GraphEditorCommand.all([
+          GraphEditorCommand.popLibraryTabs(),
+          GraphEditorCommand.showLibrary(LibraryDisplayMode.detailed),
+          GraphEditorCommand.openFile(FileSourceType.local, file)
+        ]),
+      MenuItem()..icon = "trash-alt",
+    ])
+      ..name = file;
+  }
+
   void openFile(String title, SelectFileHandler onSelect,
-      [FileSourceType type]) {
+      [List<String> files]) {
+    files = files ?? [];
+
+    library.files = files.map(createFileMenuItem).toList();
+
     editor.dispatch(GraphEditorCommand.showLibrary(
         LibraryDisplayMode.tabs, LibraryTab.files));
 
     onSelectFile = onSelect;
     filesTitle = title;
-    fileSourceType = type ?? FileSourceType.local;
   }
 
   void _setMenu(LibraryDisplayMode mode) {
@@ -310,6 +326,18 @@ class LibraryController with MouseController, KeyboardController {
     return true;
   }
 
+  Iterable<CanvasInteractive> tabInteractive() sync* {
+    switch (library.currentTab) {
+      case LibraryTab.files:
+        for (var item in library.files) {
+          yield* item.items;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   Iterable<CanvasInteractive> interactive() sync* {
     yield* library.menu;
     switch (library.mode) {
@@ -329,6 +357,7 @@ class LibraryController with MouseController, KeyboardController {
         break;
       case LibraryDisplayMode.tabs:
         yield* library.tabs;
+        yield* tabInteractive();
         break;
       default:
         break;
@@ -516,11 +545,25 @@ class LibraryController with MouseController, KeyboardController {
     }
   }
 
+  Iterable<MenuItem> tabButtons() sync* {
+    switch (library.currentTab) {
+      case LibraryTab.files:
+        for (var item in library.files) {
+          yield* item.items;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   Iterable<MenuItem> buttons() sync* {
     switch (library.mode) {
       case LibraryDisplayMode.tabs:
         yield* library.tabs;
+        yield* tabButtons();
         break;
+
       default:
         break;
     }

@@ -77,6 +77,13 @@ class LibraryPainter {
         break;
       case LibraryDisplayMode.tabs:
         drawTabs(canvas, library, rect);
+        switch (library.currentTab) {
+          case LibraryTab.files:
+            drawFilesTab(canvas, library, rect);
+            break;
+          default:
+            break;
+        }
         break;
       default:
         break;
@@ -89,6 +96,52 @@ class LibraryPainter {
             canvas, item.icon, item.pos, Graph.LibraryDragIconSize,
             fill: Graph.LibraryDragIconColor);
       }
+    }
+  }
+
+  double drawFilesTabItem(
+      Canvas canvas, MenuItemSet item, Offset pos, Rect rect) {
+    var count = item.items.length;
+
+    var left = rect.right -
+        (Graph.LibraryFileIconSize + Graph.LibraryFileIconSpacing) * count;
+
+    Graph.font.paint(canvas, item.name, pos, Graph.LibraryFileNameSize,
+        width: left - pos.dx,
+        fill: Graph.LibraryFileColor,
+        alignment: Alignment.centerLeft);
+
+    var cx = left + Graph.LibraryFileIconSize / 2;
+
+    for (var btn in item.items) {
+      var size = Graph.LibraryFileIconSize;
+      if (btn.hovered) size *= 1.25;
+
+      var fill = btn.hovered
+          ? Graph.LibraryItemIconHoverColor
+          : Graph.LibraryItemIconColor;
+
+      btn.size = Size(size, size);
+      btn.moveTo(cx, pos.dy);
+
+      VectorIcons.paint(canvas, btn.icon, btn.pos, size, fill: fill);
+      cx += Graph.LibraryFileIconSize + Graph.LibraryFileIconSpacing;
+    }
+    return pos.dy + Graph.LibraryFileNameSize + Graph.LibraryFileNameSpacing;
+  }
+
+  void drawFilesTab(Canvas canvas, LibraryState library, Rect rect) {
+    var cy = rect.top + Graph.LibraryGroupTopPadding + 5;
+    var cx = rect.left + 10;
+
+    Graph.font.paint(canvas, library.controller.filesTitle, Offset(cx, cy),
+        Graph.LibraryTitleSize,
+        style: "Bold", fill: Graph.LibraryTitleColor);
+
+    cy += Graph.LibraryTitleSize + Graph.LibraryFileNameSize;
+
+    for (var item in library.files) {
+      cy = drawFilesTabItem(canvas, item, Offset(cx, cy), rect);
     }
   }
 

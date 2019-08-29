@@ -18,6 +18,13 @@ class GraphEditorCommand {
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
 
+  GraphEditorCommand.all(Iterable<GraphEditorCommand> cmds) {
+    handler = (GraphEditorController editor) {
+      for (var cmd in cmds) {
+        editor.dispatch(cmd);
+      }
+    };
+  }
   GraphEditorCommand.ensureVisible(GlobalKey item) {
     handler = (GraphEditorController editor) {
       Scrollable.ensureVisible(item.currentContext);
@@ -66,9 +73,9 @@ class GraphEditorCommand {
     };
   }
 
-  GraphEditorCommand.openFile([FileSourceType source]) {
+  GraphEditorCommand.openFile([FileSourceType source, String filename]) {
     handler = (GraphEditorController editor) {
-      editor.openFileType(source);
+      editor.openFileType(source, filename);
     };
   }
 
