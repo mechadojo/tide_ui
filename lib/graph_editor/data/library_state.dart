@@ -42,6 +42,8 @@ class LibraryItem extends MenuItem {
 class LibraryState extends UpdateNotifier {
   LibraryController controller;
 
+  LibraryTab currentTab = LibraryTab.templates;
+
   LibraryDisplayMode mode = LibraryDisplayMode.hidden;
   LibraryDisplayMode lastCollapsed = LibraryDisplayMode.toolbox;
   LibraryDisplayMode lastExpanded = LibraryDisplayMode.expanded;
@@ -51,6 +53,9 @@ class LibraryState extends UpdateNotifier {
 
   /// toolbar of small icon buttoms at top of panel
   List<MenuItem> menu = [];
+
+  /// a second row of small icon buttoms at top of panel
+  List<MenuItem> tabs = [];
 
   /// track location of headers in expanded and detailed modes
   List<MenuItem> headers = [];
@@ -88,6 +93,17 @@ class LibraryState extends UpdateNotifier {
       ...GraphState.randomNodes(count).map((x) => LibraryItem.node(x))
     ];
     toolbox[Random().nextInt(count)].isDefault = true;
+  }
+
+  bool isModalTab(LibraryTab tab) {
+    switch (tab) {
+      case LibraryTab.files:
+        return true;
+      case LibraryTab.history:
+        return true;
+      default:
+        return false;
+    }
   }
 
   GraphNode getDefaultNode([GraphEvent evt]) {

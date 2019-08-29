@@ -60,8 +60,27 @@ class Graph {
   static const double LibraryGroupPadding = 10;
   static const double LibraryGroupIconSize = 20;
 
+  static const double LibraryTabPadding = 12;
+  static const double LibraryTabIconSize = 15;
+
+  static const double LibraryTabTop = 30;
+  static const double LibraryTabBottom = 5;
+
+  static const double LibraryFirstTabPos = 5;
+  static const double LibraryFirstTabWidth = 65;
+  static const double LibraryFirstTabPadding = -2;
+
   static const double LibraryDetailedIconSize = 15;
   static const double LibraryDetailedIconSpacing = 10;
+
+  static Paint LibraryTabsBackFill = Paint()
+    ..color = Color(0xffeeeeee)
+    ..style = PaintingStyle.fill;
+
+  static Paint LibraryTabsOutline = Paint()
+    ..color = Color(0xff888888)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
 
   static Paint LibraryGroupLabelColor = Paint()
     ..color = Color(0xff333333).withAlpha(200);
@@ -73,6 +92,9 @@ class Graph {
     ..color = Color(0xff888888).withAlpha(100)
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1;
+
+  static Paint LibraryItemIconActiveColor = Paint()
+    ..color = Color(0xff333333).withAlpha(200);
 
   static Paint LibraryItemIconColor = Paint()
     ..color = Color(0xff333333).withAlpha(150);

@@ -462,12 +462,19 @@ class GraphEditorController extends GraphEditorControllerBase
     editor.endUpdate(true);
   }
 
-  void showLibrary([LibraryDisplayMode mode]) {
-    library.beginUpdate();
-    if (mode != null) {
-      library.controller.setMode(mode);
-    }
+  void popLibraryTabs() {
+    if (library.controller.tabStack.isNotEmpty) {
+      var next = library.controller.tabStack.removeLast();
 
+      showLibrary(LibraryDisplayMode.tabs, next, false);
+    }
+  }
+
+  void showLibrary(
+      [LibraryDisplayMode mode, LibraryTab tab, bool push = true]) {
+    if (mode != null) {
+      library.controller.setMode(mode, tab, push);
+    }
     library.controller.show();
     library.endUpdate(true);
 

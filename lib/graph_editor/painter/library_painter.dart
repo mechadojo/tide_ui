@@ -8,6 +8,40 @@ import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 class LibraryPainter {
+  Path createTabPath(Offset pos, Rect rect) {
+    var result = Path();
+
+    var top = rect.bottom - Graph.LibraryTabTop;
+    var bottom = rect.bottom - Graph.LibraryTabBottom;
+    var cy = (top + bottom) / 2;
+
+    var width = Graph.LibraryFirstTabWidth;
+    var slope = width / 4;
+
+    var p1x = pos.dx - (width / 2);
+    var p2x = p1x + slope / 2;
+    var p3x = p2x + slope / 2;
+    var p4x = p1x + width - slope;
+    var p5x = p4x + slope / 2;
+    var p6x = p5x + slope / 2;
+    var curve = slope / 4;
+
+    result.moveTo(rect.left, top);
+    result.lineTo(p1x, top);
+
+    result.quadraticBezierTo(p1x + curve, top, p2x, cy);
+    result.quadraticBezierTo(p3x - curve, bottom, p3x, bottom);
+
+    result.lineTo(p4x, bottom);
+
+    result.quadraticBezierTo(p4x + curve, bottom, p5x, cy);
+    result.quadraticBezierTo(p6x - curve, top, p6x, top);
+
+    result.lineTo(rect.right, top);
+
+    return result;
+  }
+
   void paint(Canvas canvas, Size size, LibraryState library) {
     var width = library.controller.width;
     var rect = Rect.fromLTWH(size.width - width, 0, width, size.height);
@@ -41,7 +75,9 @@ class LibraryPainter {
       case LibraryDisplayMode.detailed:
         drawDetailed(canvas, library, rect);
         break;
-
+      case LibraryDisplayMode.tabs:
+        drawTabs(canvas, library, rect);
+        break;
       default:
         break;
     }
@@ -53,6 +89,61 @@ class LibraryPainter {
             canvas, item.icon, item.pos, Graph.LibraryDragIconSize,
             fill: Graph.LibraryDragIconColor);
       }
+    }
+  }
+
+  double drawSelectedTab(Canvas canvas, MenuItem item, Offset pos, Rect rect) {
+    var fill = Graph.LibraryItemIconActiveColor;
+
+    var back = Rect.fromLTRB(
+        rect.left, rect.bottom - Graph.LibraryTabTop, rect.right, rect.bottom);
+    canvas.drawRect(back, Graph.LibraryTabsBackFill);
+
+    var path = createTabPath(pos, rect);
+    canvas.drawPath(path, Graph.CanvasColor);
+    canvas.drawPath(path, Graph.LibraryTabsOutline);
+
+    var size = Graph.LibraryTabIconSize;
+
+    item.size = Size(Graph.LibraryFirstTabWidth,
+        Graph.LibraryTabBottom - Graph.LibraryTabTop);
+    item.moveTo(pos.dx, pos.dy - 2);
+
+    VectorIcons.paint(canvas, item.icon, item.pos, size, fill: fill);
+
+    return pos.dx +
+        Graph.LibraryFirstTabWidth / 2 +
+        Graph.LibraryTabPadding +
+        Graph.LibraryFirstTabPadding;
+  }
+
+  void drawTabs(Canvas canvas, LibraryState library, Rect rect) {
+    var cx = rect.left + Graph.LibraryFirstTabPos;
+    var cy = rect.bottom - 10 - Graph.LibraryTabIconSize / 2;
+
+    var first = library.tabs.firstWhere((x) => x.selected, orElse: () => null);
+    if (first == null) first = library.tabs.isEmpty ? null : library.tabs.first;
+
+    if (first != null) {
+      cx += Graph.LibraryFirstTabWidth / 2;
+      cx = drawSelectedTab(canvas, first, Offset(cx, cy), rect);
+      cy = rect.bottom - Graph.LibraryTabTop / 2;
+    }
+
+    for (var tab in library.tabs) {
+      if (tab.selected) continue;
+      var fill = tab.hovered
+          ? Graph.LibraryItemIconHoverColor
+          : Graph.LibraryItemIconColor;
+
+      var size = Graph.LibraryTabIconSize;
+      if (tab.hovered) size *= 1.25;
+
+      tab.size = Size(Graph.LibraryTabIconSize, Graph.LibraryTabIconSize);
+      tab.moveTo(cx, cy);
+
+      VectorIcons.paint(canvas, tab.icon, Offset(cx, cy), size, fill: fill);
+      cx += Graph.LibraryTabIconSize + Graph.LibraryTabPadding;
     }
   }
 

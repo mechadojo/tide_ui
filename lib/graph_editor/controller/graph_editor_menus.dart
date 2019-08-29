@@ -1,6 +1,7 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_filesource.dart';
+import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
@@ -17,7 +18,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
         icon: "history",
         title: "History",
-        command: GraphEditorCommand.print("View History"),
+        command: GraphEditorCommand.showLibraryTab(LibraryTab.history),
       ),
       MenuItem(
         icon: "print",

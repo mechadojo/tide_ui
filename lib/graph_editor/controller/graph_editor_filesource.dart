@@ -146,21 +146,28 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     upload.click();
   }
 
-  /// Open a file from local storage
-  void openLocalFile() {
+  void openLastFile() {
     if (!window.localStorage.containsKey("LastChartFile")) return;
-
     var lastFile = window.localStorage["LastChartFile"];
+    openLocalFile(lastFile);
+  }
+
+  /// Open a file from local storage
+  void openLocalFile([String filename]) {
+    if (filename == null) {
+      library.controller.openFile("Open File", openLocalFile);
+      return;
+    }
 
     if (window.navigator.userAgent.contains("iPhone") ||
         !IdbFactory.supported) {
-      var path = "charts:${lastFile}";
+      var path = "charts:${filename}";
       if (!window.localStorage.containsKey(path)) return;
 
       var base64 = window.localStorage[path];
       loadChartBytes(Base64Decoder().convert(base64));
 
-      print("Loaded ${lastFile} from Local Storage");
+      print("Loaded ${filename} from Local Storage");
       return;
     }
 
@@ -170,7 +177,7 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
       Transaction txn = db.transaction("charts", "readonly");
       var store = txn.objectStore("charts");
 
-      store.getObject(lastFile).then((data) {
+      store.getObject(filename).then((data) {
         loadChartBlob(data["content"]);
         print("Loaded ${data['filename']} from IndexedDB");
       });

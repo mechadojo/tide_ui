@@ -7,6 +7,7 @@ import 'package:tide_ui/graph_editor/data/menu_item.dart';
 
 import 'graph_editor_comand.dart';
 import 'graph_editor_controller.dart';
+import 'graph_editor_filesource.dart';
 import 'graph_event.dart';
 import 'keyboard_controller.dart';
 import 'mouse_controller.dart';
@@ -38,15 +39,15 @@ enum LibraryDisplayMode {
   search,
 
   // show a page of library items based on the option mode
-  options,
+  tabs,
 }
 
-enum LibraryOptionsMode {
+enum LibraryTab {
   /// show widgets that can be added to the graph
   widgets,
 
   /// manage the files that are being imported into this chart
-  inports,
+  imports,
 
   /// show items from the clipboard history
   clipboard,
@@ -61,6 +62,8 @@ enum LibraryOptionsMode {
   /// displays the version history for this graph
   history,
 }
+
+typedef SelectFileHandler(String filename);
 
 class LibraryController with MouseController, KeyboardController {
   GraphEditorController editor;
@@ -81,12 +84,18 @@ class LibraryController with MouseController, KeyboardController {
   MenuItem dragging;
   GraphSelection dropping;
 
+  String filesTitle;
+  SelectFileHandler onSelectFile;
+  FileSourceType fileSourceType = FileSourceType.local;
+
   LibraryController(this.editor) {
     _setMenu(library.mode);
   }
 
   /// stores the current display [mode] when hiding the library
   LibraryDisplayMode last = LibraryDisplayMode.collapsed;
+  List<LibraryTab> tabStack = [];
+
   LibraryMouseMode mouseMode = LibraryMouseMode.none;
 
   bool isHovered(Offset pt) {
@@ -105,12 +114,22 @@ class LibraryController with MouseController, KeyboardController {
         return Graph.LibraryExpandedWidth;
       case LibraryDisplayMode.search:
         return Graph.LibraryExpandedWidth;
-      case LibraryDisplayMode.options:
+      case LibraryDisplayMode.tabs:
         return Graph.LibraryExpandedWidth;
       case LibraryDisplayMode.hidden:
         return 0;
     }
     return 0;
+  }
+
+  void openFile(String title, SelectFileHandler onSelect,
+      [FileSourceType type]) {
+    editor.dispatch(GraphEditorCommand.showLibrary(
+        LibraryDisplayMode.tabs, LibraryTab.files));
+
+    onSelectFile = onSelect;
+    filesTitle = title;
+    fileSourceType = type ?? FileSourceType.local;
   }
 
   void _setMenu(LibraryDisplayMode mode) {
@@ -132,9 +151,49 @@ class LibraryController with MouseController, KeyboardController {
     );
     var searchItem = MenuItem(
       icon: "search",
+      command: GraphEditorCommand.showLibrary(LibraryDisplayMode.search),
     );
 
-    var optionsItem = MenuItemSet([])..icon = "options";
+    var optionsItem = MenuItem(
+      icon: "tools",
+      command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs),
+    );
+
+    // optionsMenu
+    library.tabs = [
+      MenuItem(
+          icon: "share-square-solid",
+          command: GraphEditorCommand.showLibrary(
+              LibraryDisplayMode.tabs, LibraryTab.templates))
+        ..selected = library.currentTab == LibraryTab.templates,
+      MenuItem(
+          icon: "drafting-compass",
+          command: GraphEditorCommand.showLibrary(
+              LibraryDisplayMode.tabs, LibraryTab.widgets))
+        ..selected = library.currentTab == LibraryTab.widgets,
+      MenuItem(
+          icon: "file-import",
+          command: GraphEditorCommand.showLibrary(
+              LibraryDisplayMode.tabs, LibraryTab.imports))
+        ..selected = library.currentTab == LibraryTab.imports,
+      MenuItem(
+          icon: "clipboard-solid",
+          command: GraphEditorCommand.showLibrary(
+              LibraryDisplayMode.tabs, LibraryTab.clipboard))
+        ..selected = library.currentTab == LibraryTab.clipboard,
+      if (tabStack.isNotEmpty)
+        MenuItem(
+            icon: "window-close-solid",
+            command: GraphEditorCommand.popLibraryTabs()),
+      if (library.currentTab == LibraryTab.history)
+        MenuItem(icon: "history")
+          ..selected = library.currentTab == LibraryTab.history,
+      if (library.currentTab == LibraryTab.files)
+        MenuItem(
+            icon: "folder-open-solid",
+            command: GraphEditorCommand.print("View Files"))
+          ..selected = library.currentTab == LibraryTab.files,
+    ];
 
     switch (mode) {
       case LibraryDisplayMode.toolbox:
@@ -173,7 +232,7 @@ class LibraryController with MouseController, KeyboardController {
           optionsItem,
         ];
         break;
-      case LibraryDisplayMode.options:
+      case LibraryDisplayMode.tabs:
         library.menu = [
           toolboxItem,
           tabsItem,
@@ -189,14 +248,26 @@ class LibraryController with MouseController, KeyboardController {
     }
   }
 
-  void setMode(LibraryDisplayMode next) {
-    if (next == library.mode) return;
+  void setMode(LibraryDisplayMode next, [LibraryTab tab, bool push = true]) {
+    if (next == library.mode && tab == null) return;
 
     library.beginUpdate();
+
+    if (tab != null) {
+      if (library.currentTab != tab && push) {
+        if (library.isModalTab(tab)) {
+          tabStack.add(library.currentTab);
+        } else {
+          tabStack.clear();
+        }
+      }
+      library.currentTab = tab;
+    }
+
     if (library.mode == LibraryDisplayMode.expanded ||
         library.mode == LibraryDisplayMode.detailed ||
         library.mode == LibraryDisplayMode.search ||
-        library.mode == LibraryDisplayMode.options) {
+        library.mode == LibraryDisplayMode.tabs) {
       library.lastExpanded = library.mode;
     }
 
@@ -256,7 +327,9 @@ class LibraryController with MouseController, KeyboardController {
         }
 
         break;
-
+      case LibraryDisplayMode.tabs:
+        yield* library.tabs;
+        break;
       default:
         break;
     }
@@ -382,14 +455,23 @@ class LibraryController with MouseController, KeyboardController {
       }
     }
 
+    for (var item in buttons()) {
+      if (item.hitbox.contains(evt.pos)) {
+        editor.dispatch(item.command);
+        return true;
+      }
+    }
+
     for (var item in clickable()) {
       if (item.editButton.hitbox.contains(evt.pos)) {
         if (item.graph != null) {
           editor.dispatch(GraphEditorCommand.editGraph(item.graph));
+          return true;
         }
 
         if (item.node != null) {
           editor.dispatch(GraphEditorCommand.editNode(item.node));
+          return true;
         }
       }
     }
@@ -429,6 +511,16 @@ class LibraryController with MouseController, KeyboardController {
         yield* library.sheets;
         break;
 
+      default:
+        break;
+    }
+  }
+
+  Iterable<MenuItem> buttons() sync* {
+    switch (library.mode) {
+      case LibraryDisplayMode.tabs:
+        yield* library.tabs;
+        break;
       default:
         break;
     }

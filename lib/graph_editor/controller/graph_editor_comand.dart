@@ -78,9 +78,21 @@ class GraphEditorCommand {
     };
   }
 
-  GraphEditorCommand.showLibrary([LibraryDisplayMode mode]) {
+  GraphEditorCommand.popLibraryTabs([LibraryDisplayMode mode, LibraryTab tab]) {
     handler = (GraphEditorController editor) {
-      editor.showLibrary(mode);
+      editor.popLibraryTabs();
+    };
+  }
+
+  GraphEditorCommand.showLibrary([LibraryDisplayMode mode, LibraryTab tab]) {
+    handler = (GraphEditorController editor) {
+      editor.showLibrary(mode, tab);
+    };
+  }
+
+  GraphEditorCommand.showLibraryTab(LibraryTab tab) {
+    handler = (GraphEditorController editor) {
+      editor.showLibrary(LibraryDisplayMode.tabs, tab);
     };
   }
 
@@ -417,7 +429,7 @@ class GraphEditorCommand {
 
   GraphEditorCommand.restoreCharts() {
     handler = (GraphEditorController editor) {
-      editor.dispatch(GraphEditorCommand.openFile(FileSourceType.local));
+      editor.openLastFile();
     };
   }
 }
