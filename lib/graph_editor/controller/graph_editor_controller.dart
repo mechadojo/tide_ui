@@ -568,6 +568,13 @@ class GraphEditorController extends GraphEditorControllerBase
     graph.endUpdate(true);
   }
 
+  GraphState getGraph(String name) {
+    var tab = editor.tabs[name];
+    if (tab == null) return null;
+
+    return tab.graph;
+  }
+
   void editNode(GraphNode node, {NodePort port, String focus}) {
     setCursor("default");
     bottomSheetActive = true;

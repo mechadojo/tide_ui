@@ -44,6 +44,9 @@ enum GraphType {
   /// defines a library of methods (node templates)
   library,
 
+  /// a graph that is available on the shared template page
+  template,
+
   /// used when parsed type is unknown
   unknown
 }
@@ -62,6 +65,12 @@ class GraphState extends UpdateNotifier {
   String script;
   GraphPropertySet props = GraphPropertySet();
   GraphPropertySet settings = GraphPropertySet();
+
+  bool get isOpMode => type == GraphType.opmode;
+  bool get isBehavior => type == GraphType.behavior;
+  bool get isLibrary => type == GraphType.library;
+  bool get isTemplate => type == GraphType.template;
+  bool get isInternal => type == GraphType.internal;
 
   String get opModeType => settings.getString("opmode_type", "Teleop");
   set opModeType(String type) =>
@@ -197,6 +206,8 @@ class GraphState extends UpdateNotifier {
         return GraphType.internal;
       case "library":
         return GraphType.library;
+      case "template":
+        return GraphType.template;
     }
     return GraphType.unknown;
   }

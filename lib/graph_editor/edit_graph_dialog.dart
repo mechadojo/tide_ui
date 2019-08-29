@@ -1098,11 +1098,6 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
           });
         },
       ),
-      SizedBox(width: 10),
-      createIconButton(context, "trash-alt", onPressed: () {
-        widget.close(false);
-        editor.dispatch(GraphEditorCommand.deleteGraph(graph));
-      })
     ]);
   }
 
@@ -1163,10 +1158,31 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
           Expanded(
             child: Container(
               alignment: Alignment.centerRight,
-              child: createIconButton(context, "window-close-solid",
-                  onPressed: () {
-                widget.close(false);
-              }),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  if (graph.type == GraphType.behavior ||
+                      graph.type == GraphType.opmode)
+                    createIconButton(context, "share-square-solid",
+                        onPressed: () {
+                      widget.close(true);
+                      print("Add to templates");
+                    }),
+                  if (graph.type == GraphType.behavior)
+                    createIconButton(context, "calendar-plus", onPressed: () {
+                      widget.close(true);
+                      print("Convert to library");
+                    }),
+                  createIconButton(context, "trash-alt", onPressed: () {
+                    widget.close(false);
+                    editor.dispatch(GraphEditorCommand.deleteGraph(graph));
+                  }),
+                  createIconButton(context, "window-close-solid",
+                      onPressed: () {
+                    widget.close(false);
+                  }),
+                ],
+              ),
             ),
           ),
         ],

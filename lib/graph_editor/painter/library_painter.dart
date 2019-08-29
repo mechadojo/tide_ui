@@ -184,7 +184,6 @@ class LibraryPainter {
   void drawExpanded(Canvas canvas, LibraryState library, Rect rect) {}
 
   void drawDetailed(Canvas canvas, LibraryState library, Rect rect) {
-    var cx = rect.center.dx;
     var cy = rect.top + Graph.LibraryGroupTopPadding;
 
     var opmodes = library.opmodes;

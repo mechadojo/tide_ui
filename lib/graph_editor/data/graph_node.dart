@@ -54,6 +54,13 @@ class GraphNode extends GraphObject {
   bool isPaused = false;
   bool isDisabled = false;
 
+  bool get isAction => type == GraphNodeType.action;
+  bool get isBehavior => type == GraphNodeType.behavior;
+  bool get isEvent => type == GraphNodeType.event;
+  bool get isTrigger => type == GraphNodeType.trigger;
+  bool get isInport => type == GraphNodeType.inport;
+  bool get isOutport => type == GraphNodeType.outport;
+
   double delay = 0;
 
   List<NodePort> inports = [];

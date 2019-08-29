@@ -11,6 +11,7 @@ import 'controller/graph_event.dart';
 import 'data/graph.dart';
 import 'data/graph_node.dart';
 import 'data/graph_property_set.dart';
+import 'data/graph_state.dart';
 import 'data/node_port.dart';
 import 'painter/vector_icon_painter.dart';
 
@@ -700,8 +701,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   void updateTitle() {
-    node.title = titleController.text;
-    update();
+    setState(() {
+      node.title = titleController.text;
+      update();
+    });
   }
 
   void autoCompleteIcon(bool reversed) {
@@ -1795,7 +1798,14 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
   Widget createNodeForm(BuildContext context, {double height}) {
     var title = widget.title ?? "Edit ${node.typeName} Node";
+    var label = "";
 
+    if (node.type == GraphNodeType.behavior) {
+      var source = editor.getGraph(node.method);
+      if (source != null && source.title != node.title) {
+        label = source.title;
+      }
+    }
     return Form(
       child: Container(
         height: height - 1,
@@ -1808,6 +1818,15 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
                 width: 225,
                 padding: EdgeInsets.only(bottom: 2),
                 child: Text(title, style: _defaultHeaderStyle)),
+            if (label != null && label.isNotEmpty)
+              Container(
+                width: 225,
+                padding: EdgeInsets.only(bottom: 2),
+                child: Text(
+                  label,
+                  style: _defaultTextStyle,
+                ),
+              ),
             if (allowEditIcon)
               createTextField(context, "Icon", iconController,
                   focus: iconFocus, next: titleFocus),
@@ -1867,10 +1886,20 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
           Expanded(
             child: Container(
               alignment: Alignment.centerRight,
-              child: createIconButton(context, "window-close-solid",
-                  onPressed: () {
-                widget.close(false);
-              }),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: <Widget>[
+                  if ((editor.graph.isOpMode || editor.graph.isBehavior) &&
+                      node.isAction)
+                    createIconButton(context, "star", onPressed: () {
+                      print("add to toolbox");
+                    }),
+                  createIconButton(context, "window-close-solid",
+                      onPressed: () {
+                    widget.close(false);
+                  }),
+                ],
+              ),
             ),
           ),
         ],
