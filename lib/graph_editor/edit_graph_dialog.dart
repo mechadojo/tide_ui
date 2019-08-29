@@ -1075,8 +1075,8 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
     );
   }
 
-  Widget createDebugRow() {
-    return createLabeledRow("Debug", children: [
+  Widget createDebugRow({double width = 150}) {
+    return createLabeledRow("Debug", width: width, children: [
       Switch(
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         value: graph.isDebugging,
@@ -1097,7 +1097,12 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
             update();
           });
         },
-      )
+      ),
+      SizedBox(width: 10),
+      createIconButton(context, "trash-alt", onPressed: () {
+        widget.close(false);
+        editor.dispatch(GraphEditorCommand.deleteGraph(graph));
+      })
     ]);
   }
 
@@ -1125,7 +1130,7 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
               createGraphTypeRow(context, width: 200),
             if (graph.type == GraphType.opmode)
               createOpmodeTypeRow(context, width: 200),
-            createDebugRow(),
+            createDebugRow(width: 200),
           ],
         ),
       ),

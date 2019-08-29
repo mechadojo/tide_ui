@@ -103,7 +103,7 @@ class LibraryController with MouseController, KeyboardController {
       icon: "search",
     );
     var addItem = MenuItem(
-      icon: "plus",
+      icon: "tools",
     );
     switch (mode) {
       case LibraryDisplayMode.toolbox:
@@ -193,8 +193,17 @@ class LibraryController with MouseController, KeyboardController {
         yield* library.toolbox;
         break;
       case LibraryDisplayMode.collapsed:
-        yield* library.sheets;
+        yield* library.behaviors;
         break;
+      case LibraryDisplayMode.detailed:
+        for (var sheet in library.sheets) {
+          yield sheet.editButton;
+          yield sheet.deleteButton;
+          yield sheet;
+        }
+
+        break;
+
       default:
         break;
     }
@@ -254,10 +263,13 @@ class LibraryController with MouseController, KeyboardController {
     library.beginUpdate();
     if (mouseMode == LibraryMouseMode.none) {
       for (var item in interactive()) {
-        if (item.alerted) continue;
+        var alerted =
+            item.alerted && library.mode == LibraryDisplayMode.collapsed;
+
+        if (alerted) continue;
 
         changed |= item.checkHovered(evt.pos);
-        if (!item.alerted) {
+        if (!alerted) {
           hovered |= item.hovered;
         }
       }
@@ -317,6 +329,18 @@ class LibraryController with MouseController, KeyboardController {
       }
     }
 
+    for (var item in clickable()) {
+      if (item.editButton.hitbox.contains(evt.pos)) {
+        if (item.graph != null) {
+          editor.dispatch(GraphEditorCommand.editGraph(item.graph));
+        }
+
+        if (item.node != null) {
+          editor.dispatch(GraphEditorCommand.editNode(item.node));
+        }
+      }
+    }
+
     if (checkStartDrag(evt)) {
       return true;
     }
@@ -334,8 +358,24 @@ class LibraryController with MouseController, KeyboardController {
         break;
 
       case LibraryDisplayMode.collapsed:
+        yield* library.behaviors;
+        break;
+
+      case LibraryDisplayMode.detailed:
         yield* library.sheets;
         break;
+
+      default:
+        break;
+    }
+  }
+
+  Iterable<LibraryItem> clickable() sync* {
+    switch (library.mode) {
+      case LibraryDisplayMode.detailed:
+        yield* library.sheets;
+        break;
+
       default:
         break;
     }
@@ -344,6 +384,8 @@ class LibraryController with MouseController, KeyboardController {
   bool checkStartDrag(GraphEvent evt) {
     for (var item in draggable()) {
       if (item.alerted) continue;
+      if (item.graph != null && item.graph.type == GraphType.opmode) continue;
+
       if (item.isHovered(evt.pos)) {
         mouseMode = LibraryMouseMode.dragging;
         dragging = MenuItem()..copy(item);

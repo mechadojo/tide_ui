@@ -63,6 +63,10 @@ class GraphState extends UpdateNotifier {
   GraphPropertySet props = GraphPropertySet();
   GraphPropertySet settings = GraphPropertySet();
 
+  String get opModeType => settings.getString("opmode_type", "Teleop");
+  set opModeType(String type) =>
+      settings.replace(GraphProperty.asString("opmode_type", type));
+
   int version = 0;
 
   bool isLogging = false;

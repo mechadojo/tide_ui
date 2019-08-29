@@ -50,6 +50,22 @@ class Graph {
   static const double LibraryCollapsedItemMaxSpacing = 75;
 
   static const double LibraryDragIconSize = 40;
+
+  static const double LibraryGroupTopPadding = 40;
+  static const double LibraryGroupLabelSize = 9;
+  static const double LibraryGroupTextSize = 15;
+  static const double LibrarySubGroupLabelSize = 7;
+  static const double LibraryGroupItemPadding = 5;
+
+  static const double LibraryGroupPadding = 10;
+  static const double LibraryGroupIconSize = 20;
+
+  static const double LibraryDetailedIconSize = 15;
+  static const double LibraryDetailedIconSpacing = 10;
+
+  static Paint LibraryGroupLabelColor = Paint()
+    ..color = Color(0xff333333).withAlpha(200);
+
   static Paint LibraryDragIconColor = Paint()
     ..color = Color(0xff333333).withAlpha(150);
 

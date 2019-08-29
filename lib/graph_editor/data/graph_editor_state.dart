@@ -61,6 +61,10 @@ class GraphEditorState extends UpdateNotifier {
         return;
       }
 
+      if (controller.closeBottomSheet != null) {
+        controller.closeBottomSheet(true);
+      }
+
       currentTab.canvas.copy(canvas);
       currentTab.graph.copy(graph);
     }

@@ -148,7 +148,7 @@ class GraphEditorController extends GraphEditorControllerBase
 
     dispatch(GraphEditorCommand.restoreCharts(), afterTicks: 5);
 
-    dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.collapsed),
+    dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.detailed),
         afterTicks: 5);
   }
 
@@ -569,6 +569,7 @@ class GraphEditorController extends GraphEditorControllerBase
   }
 
   void editNode(GraphNode node, {NodePort port, String focus}) {
+    setCursor("default");
     bottomSheetActive = true;
     var rect = graph.getExtents(node.walkNode());
     var pos = canvas.pos;
@@ -635,13 +636,20 @@ class GraphEditorController extends GraphEditorControllerBase
       library.beginUpdate();
       sheet.name = graph.title;
       sheet.icon = graph.icon;
+      sheet.graph.type = graph.type;
+      sheet.graph.settings = graph.settings.clone();
+
       library.endUpdate(true);
     }
   }
 
+  void deleteGraph(GraphState graph) {
+    print("Delete Graph: ${graph.title}");
+  }
+
   void editGraph(GraphState graph) {
     bottomSheetActive = true;
-
+    setCursor("default");
     EditGraphDialog dialog;
     var controller = scaffold.currentState.showBottomSheet((context) {
       dialog = EditGraphDialog(this, graph, closeBottomSheet);

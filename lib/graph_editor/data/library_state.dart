@@ -16,6 +16,9 @@ class LibraryItem extends MenuItem {
   bool isDefault = false;
   List<LibraryItem> items = [];
 
+  MenuItem editButton = MenuItem(icon: "edit");
+  MenuItem deleteButton = MenuItem(icon: "times");
+
   LibraryItem.node(this.node) {
     icon = node.icon;
     name = node.hasTitle ? node.title : node.name;
@@ -60,6 +63,12 @@ class LibraryState extends UpdateNotifier {
 
   /// expanded and detailed modes display groups of items and subgroups
   List<LibraryItem> groups = [];
+
+  List<LibraryItem> get behaviors =>
+      sheets.where((x) => x.graph?.type == GraphType.behavior).toList();
+
+  List<LibraryItem> get opmodes =>
+      sheets.where((x) => x.graph?.type == GraphType.opmode).toList();
 
   Rect hitbox = Rect.zero;
 

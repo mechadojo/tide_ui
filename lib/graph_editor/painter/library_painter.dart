@@ -4,6 +4,7 @@ import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
+import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 class LibraryPainter {
@@ -32,7 +33,7 @@ class LibraryPainter {
         drawCollapsed(canvas, library, rect, library.toolbox);
         break;
       case LibraryDisplayMode.collapsed:
-        drawCollapsed(canvas, library, rect, library.sheets);
+        drawCollapsed(canvas, library, rect, library.behaviors);
         break;
       case LibraryDisplayMode.expanded:
         drawExpanded(canvas, library, rect);
@@ -182,7 +183,114 @@ class LibraryPainter {
 
   void drawExpanded(Canvas canvas, LibraryState library, Rect rect) {}
 
-  void drawDetailed(Canvas canvas, LibraryState library, Rect rect) {}
+  void drawDetailed(Canvas canvas, LibraryState library, Rect rect) {
+    var cx = rect.center.dx;
+    var cy = rect.top + Graph.LibraryGroupTopPadding;
+
+    var opmodes = library.opmodes;
+    var behaviors = library.behaviors;
+
+    if (opmodes.isNotEmpty) {
+      Graph.font.paint(canvas, "OpModes", Offset(rect.left + 10, cy),
+          Graph.LibraryGroupLabelSize,
+          style: "Bold", fill: Graph.LibraryGroupLabelColor);
+
+      var auto = opmodes.where((x) => x.graph.opModeType == "Auto").toList();
+      var teleop =
+          opmodes.where((x) => x.graph.opModeType == "Teleop").toList();
+
+      cy += Graph.LibraryGroupLabelSize + Graph.LibraryGroupItemPadding;
+
+      if (auto.isNotEmpty) {
+        Graph.font.paint(canvas, "Autonomous", Offset(rect.left + 10, cy),
+            Graph.LibrarySubGroupLabelSize,
+            fill: Graph.LibraryGroupLabelColor);
+
+        cy += Graph.LibrarySubGroupLabelSize + 2;
+
+        for (var item in auto) {
+          cy = drawDetailedItem(canvas, cy, library, item, rect);
+        }
+        cy += Graph.LibraryGroupPadding;
+      }
+
+      if (teleop.isNotEmpty) {
+        Graph.font.paint(canvas, "Teleop", Offset(rect.left + 10, cy),
+            Graph.LibrarySubGroupLabelSize,
+            fill: Graph.LibraryGroupLabelColor);
+
+        cy += Graph.LibrarySubGroupLabelSize + 2;
+
+        for (var item in teleop) {
+          cy = drawDetailedItem(canvas, cy, library, item, rect);
+        }
+        cy += Graph.LibraryGroupPadding;
+      }
+    }
+
+    if (behaviors.isNotEmpty) {
+      Graph.font.paint(canvas, "Behaviors", Offset(rect.left + 10, cy),
+          Graph.LibraryGroupLabelSize,
+          style: "Bold", fill: Graph.LibraryGroupLabelColor);
+
+      cy += Graph.LibrarySubGroupLabelSize + 2;
+      for (var item in behaviors) {
+        cy = drawDetailedItem(canvas, cy, library, item, rect);
+      }
+      cy += Graph.LibraryGroupPadding;
+    }
+  }
+
+  void drawDetailedItemButton(Canvas canvas, MenuItem button) {
+    var fill = button.hovered
+        ? Graph.LibraryItemIconHoverColor
+        : Graph.LibraryItemIconColor;
+    var size = Graph.LibraryDetailedIconSize;
+    if (button.hovered) size *= 1.25;
+
+    VectorIcons.paint(canvas, button.icon, button.pos, size, fill: fill);
+  }
+
+  double drawDetailedItem(Canvas canvas, double dy, LibraryState library,
+      LibraryItem item, Rect rect) {
+    var cy = dy + Graph.LibraryGroupIconSize / 2;
+    var cx = rect.left + 10 + Graph.LibraryGroupIconSize / 2;
+
+    var fill = item.hovered
+        ? Graph.LibraryItemIconHoverColor
+        : Graph.LibraryItemIconColor;
+
+    var size = Graph.LibraryGroupIconSize;
+    if (item.hovered) size *= 1.25;
+
+    VectorIcons.paint(canvas, item.icon, Offset(cx, cy), size, fill: fill);
+
+    cx += Graph.LibraryGroupIconSize / 2 + 10;
+    var left = rect.left + 10;
+    var right = rect.right -
+        (Graph.LibraryDetailedIconSize + Graph.LibraryDetailedIconSpacing * 2);
+
+    var hh = Graph.LibraryDetailedIconSize / 2;
+    item.hitbox = Rect.fromLTRB(left, cy - hh, right - 10, cy + hh);
+
+    Graph.font.paint(
+        canvas, item.name, Offset(cx, cy), Graph.LibraryGroupLabelSize,
+        fill: fill,
+        width: item.hitbox.right - cx,
+        alignment: Alignment.centerLeft);
+
+    cx = right +
+        Graph.LibraryDetailedIconSize / 2 +
+        Graph.LibraryDetailedIconSpacing;
+
+    item.editButton.size =
+        Size(Graph.LibraryDetailedIconSize, Graph.LibraryDetailedIconSize);
+    item.editButton.moveTo(cx, cy);
+    drawDetailedItemButton(canvas, item.editButton);
+    cx += Graph.LibraryDetailedIconSize + Graph.LibraryDetailedIconSpacing;
+
+    return dy + Graph.LibraryGroupIconSize + Graph.LibraryGroupItemPadding * 2;
+  }
 
   void drawExpandIcon(Canvas canvas, LibraryState library, Rect rect) {
     var sz = Graph.LibraryExpandSize;

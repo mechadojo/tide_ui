@@ -152,6 +152,12 @@ class GraphEditorCommand {
   //
   // ************************************************************
 
+  GraphEditorCommand.deleteGraph(GraphState graph) {
+    handler = (GraphEditorController editor) {
+      editor.deleteGraph(graph);
+    };
+  }
+
   GraphEditorCommand.editGraph(GraphState graph) {
     handler = (GraphEditorController editor) {
       editor.editGraph(graph);
