@@ -11,7 +11,6 @@ import 'controller/graph_event.dart';
 import 'data/graph.dart';
 import 'data/graph_node.dart';
 import 'data/graph_property_set.dart';
-import 'data/graph_state.dart';
 import 'data/node_port.dart';
 import 'painter/vector_icon_painter.dart';
 

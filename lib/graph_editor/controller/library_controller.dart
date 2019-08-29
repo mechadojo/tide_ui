@@ -32,7 +32,34 @@ enum LibraryDisplayMode {
   expanded,
 
   /// shows library items fully expanded
-  detailed
+  detailed,
+
+  // show items that match a search field
+  search,
+
+  // show a page of library items based on the option mode
+  options,
+}
+
+enum LibraryOptionsMode {
+  /// show widgets that can be added to the graph
+  widgets,
+
+  /// manage the files that are being imported into this chart
+  inports,
+
+  /// show items from the clipboard history
+  clipboard,
+
+  /// displays the examples/templates from imported charts
+  templates,
+
+  /// displays a simple file browser to access files stored locally (IndexedDB)
+  /// or remotely (server, cloud, Lighthouse, OnBot java or attached device)
+  files,
+
+  /// displays the version history for this graph
+  history,
 }
 
 class LibraryController with MouseController, KeyboardController {
@@ -76,6 +103,10 @@ class LibraryController with MouseController, KeyboardController {
         return Graph.LibraryExpandedWidth;
       case LibraryDisplayMode.detailed:
         return Graph.LibraryExpandedWidth;
+      case LibraryDisplayMode.search:
+        return Graph.LibraryExpandedWidth;
+      case LibraryDisplayMode.options:
+        return Graph.LibraryExpandedWidth;
       case LibraryDisplayMode.hidden:
         return 0;
     }
@@ -102,9 +133,9 @@ class LibraryController with MouseController, KeyboardController {
     var searchItem = MenuItem(
       icon: "search",
     );
-    var addItem = MenuItem(
-      icon: "tools",
-    );
+
+    var optionsItem = MenuItemSet([])..icon = "options";
+
     switch (mode) {
       case LibraryDisplayMode.toolbox:
         library.menu = [toolboxItem..selected = true, tabsItem];
@@ -119,7 +150,7 @@ class LibraryController with MouseController, KeyboardController {
           gridItem..selected = true,
           detailsItem,
           searchItem,
-          addItem,
+          optionsItem,
         ];
         break;
       case LibraryDisplayMode.detailed:
@@ -129,7 +160,27 @@ class LibraryController with MouseController, KeyboardController {
           gridItem,
           detailsItem..selected = true,
           searchItem,
-          addItem,
+          optionsItem,
+        ];
+        break;
+      case LibraryDisplayMode.search:
+        library.menu = [
+          toolboxItem,
+          tabsItem,
+          gridItem,
+          detailsItem,
+          searchItem..selected = true,
+          optionsItem,
+        ];
+        break;
+      case LibraryDisplayMode.options:
+        library.menu = [
+          toolboxItem,
+          tabsItem,
+          gridItem,
+          detailsItem,
+          searchItem,
+          optionsItem..selected = true,
         ];
         break;
       default:
@@ -143,7 +194,9 @@ class LibraryController with MouseController, KeyboardController {
 
     library.beginUpdate();
     if (library.mode == LibraryDisplayMode.expanded ||
-        library.mode == LibraryDisplayMode.detailed) {
+        library.mode == LibraryDisplayMode.detailed ||
+        library.mode == LibraryDisplayMode.search ||
+        library.mode == LibraryDisplayMode.options) {
       library.lastExpanded = library.mode;
     }
 
