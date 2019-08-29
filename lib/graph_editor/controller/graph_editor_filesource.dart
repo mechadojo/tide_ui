@@ -58,6 +58,12 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     return Base64Encoder().convert(data);
   }
 
+  Future<String> getGraphImageUrl() async {
+    var data = await graph.getImage();
+    var file = Blob([data], "image/png");
+    return Url.createObjectUrlFromBlob(file);
+  }
+
   String getChartObjectUrl() {
     if (chartFile.name.endsWith(".chart")) {
       var data = getChartBytes();
@@ -72,6 +78,16 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
       var file = Blob([data], "application/base64");
       return Url.createObjectUrlFromBlob(file);
     }
+  }
+
+  void printFile() {
+    getGraphImageUrl().then((String url) {
+      print("Got url");
+      AnchorElement link = AnchorElement();
+      link.href = url;
+      link.download = "sheet_${graph.name}.png";
+      link.click();
+    });
   }
 
   /// Save the current file to the file system

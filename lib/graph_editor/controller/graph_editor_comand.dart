@@ -152,6 +152,12 @@ class GraphEditorCommand {
   //
   // ************************************************************
 
+  GraphEditorCommand.editGraph(GraphState graph) {
+    handler = (GraphEditorController editor) {
+      editor.editGraph(graph);
+    };
+  }
+
   GraphEditorCommand.editNode(GraphNode node, {NodePort port, String focus}) {
     handler = (GraphEditorController editor) {
       editor.editNode(node, port: port, focus: focus);
@@ -277,6 +283,12 @@ class GraphEditorCommand {
   GraphEditorCommand.print(String text) {
     handler = (GraphEditorController editor) {
       print(text);
+    };
+  }
+
+  GraphEditorCommand.printGraph() {
+    handler = (GraphEditorController editor) {
+      editor.printFile();
     };
   }
 

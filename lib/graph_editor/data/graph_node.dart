@@ -197,7 +197,6 @@ class GraphNode extends GraphObject {
 
     for (var node in graph.nodes) {
       if (node.type == GraphNodeType.inport) {
-        print("Inport: ${node.method}");
         inputs.add(node.method);
       }
 

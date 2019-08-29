@@ -20,6 +20,11 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
         command: GraphEditorCommand.print("View History"),
       ),
       MenuItem(
+        icon: "print",
+        title: "Print",
+        command: GraphEditorCommand.printGraph(),
+      ),
+      MenuItem(
         icon: "save",
         title: "Save",
         command: GraphEditorCommand.pushMenu(getSaveFileMenu()),
@@ -525,7 +530,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
 
   MenuItemSet getGraphMenu(GraphState graph) {
     return MenuItemSet([
-      MenuItem(icon: "edit"),
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editGraph(graph)),
       MenuItem(
         icon: "tools",
         title: "File",

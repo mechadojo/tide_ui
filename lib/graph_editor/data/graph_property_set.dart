@@ -285,6 +285,11 @@ class GraphPropertySet extends GraphProperty {
     return result;
   }
 
+  GraphPropertySet clone() {
+    var packed = packList();
+    return GraphPropertySet.unpack(packed);
+  }
+
   bool get isNotEmpty => props.isNotEmpty;
   bool get isEmpty => props.isEmpty;
 

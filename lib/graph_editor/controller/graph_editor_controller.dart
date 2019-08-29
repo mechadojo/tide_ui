@@ -20,6 +20,7 @@ import 'package:tide_ui/graph_editor/data/node_port.dart';
 import 'package:tide_ui/graph_editor/data/radial_menu_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/focus_state.dart';
+import 'package:tide_ui/graph_editor/edit_graph_dialog.dart';
 import 'package:tide_ui/graph_editor/edit_node_dialog.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
@@ -114,7 +115,8 @@ class GraphEditorControllerBase {
   GraphAutoComplete autoComplete;
   GraphKeyPress modalKeyHandler;
 
-  List<TideChartProperty> propsClipboard = [];
+  List<TideChartProperty> nodePropsClipboard = [];
+  List<TideChartProperty> graphPropsClipboard = [];
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -600,6 +602,62 @@ class GraphEditorController extends GraphEditorControllerBase
 
       graph.beginUpdate();
       node.script = dialog.script.text;
+      graph.endUpdate(true);
+
+      bottomSheetActive = false;
+
+      closeBottomSheet = null;
+      autoComplete = null;
+      tabFocus = null;
+      modalKeyHandler = null;
+
+      if (controller != null) {
+        controller.close();
+      }
+    };
+  }
+
+  void updateGraph(GraphState graph) {
+    CanvasTab tab = editor.tabs[graph.name];
+    if (tab != null) {
+      tabs.beginUpdate();
+
+      tab.graph.title = graph.title;
+      tab.graph.icon = graph.icon;
+
+      tabs.endUpdate(true);
+    }
+
+    var sheet = library.sheets
+        .firstWhere((x) => x.graph.name == graph.name, orElse: () => null);
+
+    if (sheet != null) {
+      library.beginUpdate();
+      sheet.name = graph.title;
+      sheet.icon = graph.icon;
+      library.endUpdate(true);
+    }
+  }
+
+  void editGraph(GraphState graph) {
+    bottomSheetActive = true;
+
+    EditGraphDialog dialog;
+    var controller = scaffold.currentState.showBottomSheet((context) {
+      dialog = EditGraphDialog(this, graph, closeBottomSheet);
+      return dialog;
+    });
+
+    controller.closed.then((evt) {
+      controller = null;
+      if (closeBottomSheet != null) {
+        closeBottomSheet(true);
+      }
+    });
+
+    closeBottomSheet = (bool save) {
+      graph.beginUpdate();
+      graph.script = dialog.script.text;
       graph.endUpdate(true);
 
       bottomSheetActive = false;

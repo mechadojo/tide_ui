@@ -12,6 +12,7 @@ import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 import 'package:uuid/uuid.dart';
 
 import 'canvas_interactive.dart';
+import 'graph_property_set.dart';
 import 'update_notifier.dart';
 import 'graph_link.dart';
 import 'graph_node.dart';
@@ -30,18 +31,44 @@ class GraphSelection {
   }
 }
 
+enum GraphType {
+  /// a graph that can be used as a behavior node in other graphs
+  behavior,
+
+  /// a top level graph that cannot be included in other graphs
+  opmode,
+
+  /// used for subgraphs (regions) and generated graphs (widgets)
+  internal,
+
+  /// defines a library of methods (node templates)
+  library,
+
+  /// used when parsed type is unknown
+  unknown
+}
+
 class GraphState extends UpdateNotifier {
   GraphController controller;
 
+  GraphType type = GraphType.behavior;
   GlobalKey graphKey = GlobalKey();
 
   String id = Uuid().v1().toString();
   String name = GraphNode.randomName();
   String title = "";
   String icon = VectorIcons.getRandomName();
-  String type = "";
+
+  String script;
+  GraphPropertySet props = GraphPropertySet();
+  GraphPropertySet settings = GraphPropertySet();
 
   int version = 0;
+
+  bool isLogging = false;
+  bool isDebugging = false;
+  bool isPaused = false;
+  bool isDisabled = false;
 
   List<GraphNode> nodes = [];
   List<GraphLink> links = [];
@@ -69,10 +96,32 @@ class GraphState extends UpdateNotifier {
     }
   }
 
-  Future<Uint8List> getImage() async {
-    RenderRepaintBoundary boundary = graphKey.currentContext.findRenderObject();
+  String get typeName {
+    if (type == GraphType.opmode) return "OpMode";
+    var result = type.toString().split(".").last;
+    result = result[0].toUpperCase() + result.substring(1);
+    return result;
+  }
 
-    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+  Future<Uint8List> getImage({double width = 500, double height = 500}) async {
+    var picture = ui.PictureRecorder();
+    print("Rendering $width,$height");
+    //var limits = extents;
+
+    //var state = CanvasState();
+    var canvas = Canvas(picture, Rect.fromLTWH(0, 0, width, height));
+
+    //state.zoomToFit(limits, limits.size);
+    //var painter = CanvasPainter(state, this);
+    //painter.paint(canvas, limits.size);
+
+    canvas.drawRect(
+        Rect.fromLTWH(10, 10, 100, 100), Paint()..color = Colors.red);
+
+    var pic = picture.endRecording();
+
+    // this doesn't work because Flutter web doesn't implement toImage
+    ui.Image image = await pic.toImage(width.round(), height.round());
     ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     var pngBytes = byteData.buffer.asUint8List();
     return pngBytes;
@@ -84,12 +133,22 @@ class GraphState extends UpdateNotifier {
     result.name = name;
     result.icon = icon;
 
+    result.isDebugging = isDebugging;
+    result.isLogging = isLogging;
+    result.isPaused = isPaused;
+    result.isDisabled = isDisabled;
+
     if (title != null) result.title = title;
-    if (type != null) result.type = type;
+    if (type != null) result.type = type.toString().split(".").last;
+    if (script != null) result.script = script;
 
     result.nodes.addAll(nodes.map((x) => x.pack()));
     result.links.addAll(links.map((x) => x.pack()));
     result.history.addAll(history.undoCmds);
+
+    result.props.addAll(props.packList());
+    result.settings.addAll(settings.packList());
+
     return result;
   }
 
@@ -123,17 +182,40 @@ class GraphState extends UpdateNotifier {
     return unpackNode(packed);
   }
 
+  static GraphType parseType(String type) {
+    switch (type) {
+      case "":
+      case "behavior":
+        return GraphType.behavior;
+      case "opmode":
+        return GraphType.opmode;
+      case "internal":
+        return GraphType.internal;
+      case "library":
+        return GraphType.library;
+    }
+    return GraphType.unknown;
+  }
+
   void unpackGraph(TideChartGraph graph) {
     id = graph.id;
     name = graph.name;
     title = graph.title;
     icon = graph.icon;
-    type = graph.type;
+    type = parseType(graph.type);
+    script = graph.script;
+
+    isDisabled = graph.isDisabled;
+    isLogging = graph.isLogging;
+    isDebugging = graph.isDebugging;
+    isPaused = graph.isPaused;
 
     nodes = [...graph.nodes.map((x) => unpackNode(x))];
     links = [...graph.links.map((x) => unpackLink(x))];
 
     history = GraphHistory()..undoCmds = [...graph.history];
+    props = GraphPropertySet.unpack(graph.props);
+    settings = GraphPropertySet.unpack(graph.settings);
   }
 
   GraphNode unpackNode(TideChartNode node) {
@@ -303,9 +385,19 @@ class GraphState extends UpdateNotifier {
     name = other.name;
     type = other.type;
 
+    script = other.script;
+
+    isDisabled = other.isDisabled;
+    isLogging = other.isLogging;
+    isDebugging = other.isDebugging;
+    isPaused = other.isPaused;
+
     version = other.version;
     nodes = [...other.nodes];
     links = [...other.links];
+
+    props = other.props.clone();
+    settings = other.settings.clone();
 
     referenced.clear();
     for (var name in other.referenced.keys) {
