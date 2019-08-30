@@ -73,6 +73,12 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.deleteLocalFile(String filename) {
+    handler = (GraphEditorController editor) {
+      editor.deleteLocalFile(filename);
+    };
+  }
+
   GraphEditorCommand.openFile([FileSourceType source, String filename]) {
     handler = (GraphEditorController editor) {
       editor.openFileType(source, filename);

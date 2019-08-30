@@ -130,7 +130,9 @@ class LibraryController with MouseController, KeyboardController {
           GraphEditorCommand.showLibrary(LibraryDisplayMode.detailed),
           GraphEditorCommand.openFile(FileSourceType.local, file)
         ]),
-      MenuItem()..icon = "trash-alt",
+      MenuItem()
+        ..icon = "trash-alt"
+        ..command = GraphEditorCommand.deleteLocalFile(file),
     ])
       ..name = file;
   }

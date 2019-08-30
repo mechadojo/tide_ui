@@ -90,7 +90,7 @@ class GraphEditorControllerBase {
 
   bool get isTouchMode => editor.touchMode;
   bool get isMultiMode => editor.multiMode;
-  bool get isModalActive => menu.visible || bottomSheetActive;
+  bool get isModalActive => menu.visible || bottomSheetActive || dialogActive;
 
   TideChartFile chartFile = TideChartFile()
     ..id = Uuid().v1().toString()
@@ -108,6 +108,7 @@ class GraphEditorControllerBase {
   FileSourceType lastSource = FileSourceType.local;
 
   final scaffold = GlobalKey<ScaffoldState>();
+  bool dialogActive = false;
   bool bottomSheetActive = false;
   double bottomSheetHeight = 0;
   GraphDialogResult closeBottomSheet;

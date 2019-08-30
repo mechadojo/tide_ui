@@ -22,6 +22,15 @@ class Graph {
 
   static const double DefaultTabReloadMargin = 35; // clicking version #
 
+  static TextStyle DefaultDialogTitleStyle = TextStyle(
+      fontSize: 20, fontFamily: "Source Sans Pro", fontWeight: FontWeight.bold);
+
+  static TextStyle DefaultDialogContentStyle =
+      TextStyle(fontSize: 15, fontFamily: "Source Sans Pro");
+
+  static TextStyle DefaultDialogButtonStyle =
+      TextStyle(fontSize: 15, fontFamily: "Source Sans Pro");
+
   //
   // Canvas Styling
   //

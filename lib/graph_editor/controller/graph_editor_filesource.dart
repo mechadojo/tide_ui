@@ -4,7 +4,8 @@ import 'dart:html';
 import 'dart:indexed_db';
 import 'dart:typed_data';
 
-import 'package:provider/provider.dart';
+import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_file.dart';
 import 'graph_editor_controller.dart';
 
@@ -182,6 +183,47 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     });
 
     return result.future;
+  }
+
+  void deleteLocalFile(String filename, {bool confirmed = false}) {
+    if (!confirmed) {
+      editor.controller.dialogActive = true;
+      editor.controller.setCursor("default");
+      showDialog<bool>(
+          context: editor.controller.scaffold.currentContext,
+          builder: (BuildContext context) {
+            return AlertDialog(
+                title:
+                    Text("Delete file?", style: Graph.DefaultDialogTitleStyle),
+                content: Text("This will permanently delete $filename.",
+                    style: Graph.DefaultDialogContentStyle),
+                actions: <Widget>[
+                  FlatButton(
+                    child:
+                        Text("CANCEL", style: Graph.DefaultDialogButtonStyle),
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                  ),
+                  FlatButton(
+                    child:
+                        Text("CONTINUE", style: Graph.DefaultDialogButtonStyle),
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                  ),
+                ]);
+          }).then((bool result) {
+        editor.controller.dialogActive = false;
+        if (result ?? false) {
+          deleteLocalFile(filename, confirmed: true);
+        }
+      });
+
+      return;
+    }
+
+    print("Delete file: $filename");
   }
 
   /// Open a file from local storage
