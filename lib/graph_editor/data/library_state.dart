@@ -17,12 +17,22 @@ class LibraryItem extends MenuItem {
   bool isDefault = false;
   List<LibraryItem> items = [];
 
-  MenuItem openButton = MenuItem(icon: "folder-open-solid");
+  MenuItem openButton =
+      MenuItem(icon: "folder-open", iconAlt: "folder-open-solid");
   MenuItem editButton = MenuItem(icon: "edit");
+
+  MenuItem collapseButton = MenuItem(icon: "caret-up");
+  MenuItem expandButton = MenuItem(icon: "caret-down");
+  MenuItem get expandoButton => isCollapsed ? expandButton : collapseButton;
+
+  bool collapsed = false;
+  bool get isCollapsed => collapsed;
+  bool get isExpanded => !collapsed;
 
   LibraryItem.group(String name, List<GraphNode> nodes) {
     this.name = name;
-    items = [...nodes.map((x) => LibraryItem.method(node))];
+    this.icon = "cogs";
+    items = [...nodes.map((x) => LibraryItem.method(x))];
   }
 
   LibraryItem.node(this.node) {
@@ -32,7 +42,8 @@ class LibraryItem extends MenuItem {
 
   LibraryItem.method(this.node) {
     icon = node.icon;
-    name = node.hasMethod ? node.method : node.name;
+    name =
+        node.hasTitle ? node.title : node.hasMethod ? node.method : node.name;
   }
 
   LibraryItem.graph(GraphState graph) {
@@ -41,10 +52,10 @@ class LibraryItem extends MenuItem {
     name = graph.title;
   }
 
-  LibraryItem.library(GraphLibraryState graph) {
-    this.graph = graph;
-    icon = graph.icon;
-    name = graph.title;
+  LibraryItem.library(GraphLibraryState next) {
+    graph = next;
+    icon = next.icon;
+    name = next.title;
 
     Map<String, List<GraphNode>> groups = {};
 
@@ -54,7 +65,9 @@ class LibraryItem extends MenuItem {
         groups[libname] = List<GraphNode>();
       }
 
-      groups[libname].add(node);
+      // Add a copy of the node so that drag/drop doesn't impact
+      // the actual node pos on the library graph
+      groups[libname].add(GraphNode.clone(node));
     }
 
     for (var key in groups.keys) {
@@ -74,7 +87,7 @@ class LibraryItem extends MenuItem {
 class LibraryState extends UpdateNotifier {
   LibraryController controller;
 
-  LibraryTab currentTab = LibraryTab.templates;
+  LibraryTab currentTab = LibraryTab.widgets;
 
   LibraryDisplayMode mode = LibraryDisplayMode.hidden;
   LibraryDisplayMode lastCollapsed = LibraryDisplayMode.toolbox;
@@ -88,9 +101,6 @@ class LibraryState extends UpdateNotifier {
 
   /// a second row of small icon buttoms at top of panel
   List<MenuItem> tabs = [];
-
-  /// track location of headers in expanded and detailed modes
-  List<MenuItem> headers = [];
 
   /// items displayed in toolbox mode have a hotkey and default tags
   List<LibraryItem> toolbox = [];
@@ -110,6 +120,9 @@ class LibraryState extends UpdateNotifier {
   List<LibraryItem> get opmodes =>
       sheets.where((x) => x.graph?.type == GraphType.opmode).toList();
 
+  LibraryItem behaviorGroup = LibraryItem.group("Behaviors", []);
+  LibraryItem opmodeGroup = LibraryItem.group("OpModes", []);
+
   Rect hitbox = Rect.zero;
 
   bool get isCollapsed =>
@@ -128,6 +141,11 @@ class LibraryState extends UpdateNotifier {
       ...GraphState.randomNodes(count).map((x) => LibraryItem.node(x))
     ];
     toolbox[Random().nextInt(count)].isDefault = true;
+  }
+
+  void clear() {
+    sheets.clear();
+    groups.clear();
   }
 
   bool isModalTab(LibraryTab tab) {

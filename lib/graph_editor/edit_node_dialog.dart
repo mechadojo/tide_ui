@@ -174,7 +174,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       ..addListener(updateDelay);
 
     methodController
-      ..text = node.method
+      ..text = node.isAction ? node.action : node.method
       ..addListener(updateMethod);
 
     iconController
@@ -191,7 +191,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
     methodFocus
       ..addListener(
-          onChangeFocus(methodFocus, methodController, titleFocus, delayFocus));
+          onChangeFocus(methodFocus, methodController, titleFocus, delayFocus,
+              onLoseFocus: () {
+        methodController.text = node.isAction ? node.action : node.method;
+      }));
 
     delayFocus
       ..addListener(
@@ -760,16 +763,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   void updateMethod() {
-    node.method = methodController.text;
-
-    var method = methodController.text;
-    if (method.contains(".")) {
-      var idx = method.lastIndexOf(".");
-      node.library = method.substring(0, idx);
-      node.method = method.substring(idx + 1);
+    if (node.isAction) {
+      node.action = methodController.text;
     } else {
-      node.library = null;
-      node.method = method;
+      node.method = methodController.text;
     }
 
     update();
@@ -1376,13 +1373,14 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
             onPressed: isLastPort ? null : onMovePortDown),
         createIconButton(context, "plus-square-solid",
             onPressed: ((this.isInportsTab
-                    ? node.allowAddInport
-                    : node.allowAddOutport)
+                    ? node.allowAddInport || editor.graph.isLibrary
+                    : node.allowAddOutport || editor.graph.isLibrary)
                 ? onAddPort
                 : null)),
         createIconButton(context, "trash-alt-solid",
             onPressed: (selectedPort != null &&
-                    editor.graph.allowDeletePort(selectedPort)
+                        editor.graph.allowDeletePort(selectedPort) ||
+                    editor.graph.isLibrary
                 ? onDeletePort
                 : null)),
       ],
@@ -1796,7 +1794,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   Widget createNodeForm(BuildContext context, {double height}) {
-    var title = widget.title ?? "Edit ${node.typeName} Node";
+    var title = widget.title ??
+        (editor.graph.isLibrary
+            ? "Edit Method Template"
+            : "Edit ${node.typeName} Node");
     var label = "";
 
     if (node.type == GraphNodeType.behavior) {
@@ -1835,10 +1836,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
             if (allowEditMethod)
               createTextField(context, methodFieldLabel, methodController,
                   focus: methodFocus, next: iconFocus),
-            if (node.isAnyType(Action_Behavior) ||
-                node.type == GraphNodeType.trigger)
+            if (!editor.graph.isLibrary &&
+                (node.isAnyType(Action_Behavior) ||
+                    node.type == GraphNodeType.trigger))
               createDelayRow(),
-            createDebugRow(),
+            if (!editor.graph.isLibrary) createDebugRow(),
           ],
         ),
       ),

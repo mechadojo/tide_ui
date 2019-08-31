@@ -17,6 +17,7 @@ class GraphLibraryFields {
 }
 
 class GraphLibraryState extends GraphState {
+  bool imported = false;
   GraphLibraryFields library = GraphLibraryFields();
 
   void unpackLibrary(TideChartLibrary library) {
@@ -31,18 +32,28 @@ class GraphLibraryState extends GraphState {
     this.library.settings = GraphPropertySet.unpack(library.settings);
 
     this.unpackGraph(library.methods);
+
+    // Clear properties not valid for method templates
+    for (var node in nodes) {
+      node.delay = 0;
+      node.isDebugging = false;
+      node.isLogging = false;
+    }
+
+    links.clear();
+
     this.type = GraphType.library;
   }
 
   TideChartLibrary packLibrary() {
     TideChartLibrary result = TideChartLibrary();
 
-    result.id = library.id;
-    result.name = library.name;
-    result.title = library.title;
-    result.origin = library.origin;
-    result.branch = library.branch;
-    result.path = library.path;
+    if (library.id != null) result.id = library.id;
+    if (library.name != null) result.name = library.name;
+    if (library.title != null) result.title = library.title;
+    if (library.origin != null) result.origin = library.origin;
+    if (library.branch != null) result.branch = library.branch;
+    if (library.path != null) result.path = library.path;
 
     result.files.addAll(library.files.map((f) => f.clone()));
     result.settings.addAll(library.settings.packList());

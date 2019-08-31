@@ -135,10 +135,18 @@ class CanvasTabsState extends UpdateNotifier {
     }
   }
 
-  void selectOrAddTab(CanvasTab tab) {
+  void selectOrAddTab(CanvasTab tab, {bool replace = false}) {
     if (tab == null) return;
     if (!tabs.any((x) => x.name == tab.name)) {
       tabs = [...tabs, tab];
+    }
+
+    if (replace) {
+      List<CanvasTab> next = [];
+      for (var item in tabs) {
+        next.add(item.name == tab.name ? tab : item);
+      }
+      tabs = next;
     }
 
     selected = tab.name;

@@ -219,7 +219,7 @@ class GraphEditorController extends GraphEditorControllerBase
 
     editor.tabs.clear();
     tabs.clear();
-    library.sheets.clear();
+    library.clear();
 
     for (var item in file.sheets) {
       var tab = loadGraph(item);
@@ -684,9 +684,9 @@ class GraphEditorController extends GraphEditorControllerBase
     }
   }
 
-  void convertToLibrary(GraphState graph, {bool confirmed = false}) {
+  void convertToLibrary(GraphState target, {bool confirmed = false}) {
     if (!confirmed) {
-      int refCount = usingGraph(graph.name).length;
+      int refCount = usingGraph(target.name).length;
 
       String msg = "This will create a library from ${graph.title}.";
       if (refCount > 0) {
@@ -698,7 +698,7 @@ class GraphEditorController extends GraphEditorControllerBase
         msg += " to this behavior that will be deleted.";
       }
 
-      int nodeCount = graph.nodes.where((x) => !x.isAction).length;
+      int nodeCount = target.nodes.where((x) => !x.isAction).length;
 
       if (nodeCount > 0) {
         if (nodeCount == 1) {
@@ -711,29 +711,79 @@ class GraphEditorController extends GraphEditorControllerBase
 
       showConfirmDialog("Convert to library?", msg).then((bool result) {
         if (result) {
-          convertToLibrary(graph, confirmed: true);
+          convertToLibrary(target, confirmed: true);
         }
       });
 
       return;
     }
 
-    print("Convert to Library: ${graph.title}");
+    if (!selectTab(target.name)) return;
+
+    print("Convert to Library: ${target.title}");
 
     beginUpdateAll();
 
+    // remove any behavior nodes that reference this behavior
     for (var item in editor.sheets) {
-      var nodes = item.usingGraph(graph.name).toList();
+      var nodes = item.usingGraph(target.name).toList();
       if (nodes.isNotEmpty) {
-        print("Deleting ${nodes.length} nodes from ${item.title}");
-        selectTab(item.name);
+        if (selectTab(item.name, reload: true)) {
+          graph.controller.removeNodes(nodes, locked: true);
+        }
       }
     }
+
+    // libraries only contain action nodes which define method templates
+    selectTab(target.name);
+
+    var nodes = graph.nodes.where((x) => !x.isAction).toList();
+    graph.controller.removeNodes(nodes);
+
+    graph.links.clear();
+
+    for (var node in graph.nodes) {
+      // clear flags that don't make sense on method templates
+      node.isDebugging = false;
+      node.isLogging = false;
+      node.delay = 0;
+
+      // actions might not have a method name assigned yet
+      if (!node.hasMethod) {
+        node.method = node.hasTitle
+            ? node.title.toLowerCase().replaceAll(" ", "_")
+            : "${node.name}_action";
+      }
+
+      // normally only system methods use the empty top level library
+      if (!node.hasLibrary) {
+        node.library = "user";
+      }
+    }
+
+    graph.history.clear();
+
+    library.controller.removeSheet(graph);
+
+    var graphlib = GraphLibraryState()
+      ..unpackGraph(graph.pack())
+      ..type = GraphType.library;
+
+    graphlib.library.name = chartFile.name
+            .toLowerCase()
+            .replaceAll(".chart", "")
+            .replaceAll(" ", "_") +
+        "." +
+        graph.title.toLowerCase().replaceAll(" ", "_").replaceAll("-", "");
+
+    editor.tabs[graphlib.name] = CanvasTab(this, graphlib)..zoomToFit();
+    library.controller.addLibrary(graphlib);
+    selectTab(graphlib.name, reload: true, replace: true);
 
     endUpdateAll();
   }
 
-  bool selectTab(String name, {bool reload = false}) {
+  bool selectTab(String name, {bool reload = false, bool replace = false}) {
     var tab = editor.tabs[name];
     if (tab == null) return false;
     if (tab.name == tabs.selected && !reload) return true;
@@ -741,7 +791,7 @@ class GraphEditorController extends GraphEditorControllerBase
     beginUpdateAll();
 
     tab.clearInteractive();
-    tabs.selectOrAddTab(tab);
+    tabs.selectOrAddTab(tab, replace: replace);
     if (closeBottomSheet != null) closeBottomSheet(true);
 
     graph = tab.graph;

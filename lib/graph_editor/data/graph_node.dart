@@ -79,6 +79,11 @@ class GraphNode extends GraphObject {
     }
   }
 
+  factory GraphNode.clone(GraphNode other) {
+    GraphNode result = GraphNode();
+    return GraphNode.unpack(other.pack(), (name) => result);
+  }
+
   set showLocalOutports(bool value) {
     if (value != showLocalOutports) {
       settings.replace(GraphProperty.asBool("show_local_outports", value));
@@ -103,6 +108,18 @@ class GraphNode extends GraphObject {
   bool get hasMethod => method != null && method.isNotEmpty;
   bool get hasTitle => title != null && title.isNotEmpty;
   bool get hasScript => script != null && script.isNotEmpty;
+
+  String get action => hasLibrary ? "$library.$method" : "$method";
+  set action(String value) {
+    var parts = value.split('.');
+    if (parts.length == 1) {
+      library = "";
+      method = parts.first;
+    } else {
+      library = parts.take(parts.length - 1).join(".");
+      method = parts.last;
+    }
+  }
 
   static Random nodeRandom = Random();
   static randomName() {

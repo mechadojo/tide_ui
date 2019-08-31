@@ -186,7 +186,7 @@ class LibraryController with MouseController, KeyboardController {
               LibraryDisplayMode.tabs, LibraryTab.templates))
         ..selected = library.currentTab == LibraryTab.templates,
       MenuItem(
-          icon: "drafting-compass",
+          icon: "puzzle-piece",
           command: GraphEditorCommand.showLibrary(
               LibraryDisplayMode.tabs, LibraryTab.widgets))
         ..selected = library.currentTab == LibraryTab.widgets,
@@ -357,6 +357,27 @@ class LibraryController with MouseController, KeyboardController {
           yield sheet;
         }
 
+        if (library.behaviors.isNotEmpty) {
+          yield library.behaviorGroup.expandoButton;
+        }
+        if (library.opmodes.isNotEmpty) {
+          yield library.opmodeGroup.expandoButton;
+        }
+
+        for (var group in library.groups) {
+          if (allowEditGroup(group)) {
+            yield group.openButton;
+          }
+
+          yield group.expandoButton;
+
+          if (group.isExpanded) {
+            for (var sub in group.items) {
+              yield* sub.items;
+            }
+          }
+        }
+
         break;
       case LibraryDisplayMode.tabs:
         yield* library.tabs;
@@ -376,6 +397,14 @@ class LibraryController with MouseController, KeyboardController {
   void addSheet(GraphState graph) {
     library.beginUpdate();
     library.sheets.add(LibraryItem.graph(graph));
+    library.endUpdate(true);
+  }
+
+  void removeSheet(GraphState graph) {
+    library.beginUpdate();
+    library.sheets = [
+      ...library.sheets.where((x) => x.graph.name != graph.name)
+    ];
     library.endUpdate(true);
   }
 
@@ -448,7 +477,7 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseDoubleTap(GraphEvent evt) {
-    for (var item in draggable()) {
+    for (var item in clickable()) {
       if (item.hitbox.contains(evt.pos)) {
         if (item.graph != null) {
           editor.dispatch(GraphEditorCommand.selectTab(item.graph.name));
@@ -496,6 +525,34 @@ class LibraryController with MouseController, KeyboardController {
     for (var item in buttons()) {
       if (item.hitbox.contains(evt.pos)) {
         editor.dispatch(item.command);
+
+        return true;
+      }
+    }
+
+    for (var group in library.groups) {
+      if (group.expandoButton.hitbox.contains(evt.pos)) {
+        library.beginUpdate();
+        group.collapsed = !group.collapsed;
+        library.endUpdate(true);
+        return true;
+      }
+    }
+
+    if (library.opmodes.isNotEmpty) {
+      if (library.opmodeGroup.expandoButton.hitbox.contains(evt.pos)) {
+        library.beginUpdate();
+        library.opmodeGroup.collapsed = !library.opmodeGroup.collapsed;
+        library.endUpdate(true);
+        return true;
+      }
+    }
+
+    if (library.behaviors.isNotEmpty) {
+      if (library.behaviorGroup.expandoButton.hitbox.contains(evt.pos)) {
+        library.beginUpdate();
+        library.behaviorGroup.collapsed = !library.behaviorGroup.collapsed;
+        library.endUpdate(true);
         return true;
       }
     }
@@ -513,6 +570,13 @@ class LibraryController with MouseController, KeyboardController {
           return true;
         }
       }
+
+      if (item.openButton.hitbox.contains(evt.pos)) {
+        if (item.graph != null) {
+          editor.dispatch(GraphEditorCommand.selectTab(item.graph.name));
+          return true;
+        }
+      }
     }
 
     if (checkStartDrag(evt)) {
@@ -526,28 +590,59 @@ class LibraryController with MouseController, KeyboardController {
   }
 
   Iterable<LibraryItem> draggable() sync* {
-    switch (library.mode) {
-      case LibraryDisplayMode.toolbox:
-        yield* library.toolbox;
-        break;
+    if (!editor.graph.isLibrary) {
+      switch (library.mode) {
+        case LibraryDisplayMode.toolbox:
+          yield* library.toolbox;
+          break;
 
-      case LibraryDisplayMode.collapsed:
-        yield* library.behaviors;
-        break;
+        case LibraryDisplayMode.collapsed:
+          yield* library.behaviors;
+          break;
 
-      case LibraryDisplayMode.detailed:
-        yield* library.sheets;
-        break;
+        case LibraryDisplayMode.detailed:
+          yield* library.sheets;
 
-      default:
-        break;
+          for (var group in library.groups) {
+            if (group.isExpanded) {
+              for (var sub in group.items) {
+                yield* sub.items;
+              }
+            }
+          }
+
+          break;
+
+        default:
+          break;
+      }
     }
+  }
+
+  bool allowEditGroup(LibraryItem item) {
+    if (item.graph is GraphLibraryState) {
+      return !(item.graph as GraphLibraryState).imported;
+    }
+    return false;
   }
 
   Iterable<LibraryItem> clickable() sync* {
     switch (library.mode) {
       case LibraryDisplayMode.detailed:
         yield* library.sheets;
+
+        for (var group in library.groups) {
+          if (allowEditGroup(group)) {
+            yield group;
+          }
+
+          if (group.isExpanded) {
+            for (var sub in group.items) {
+              yield* sub.items;
+            }
+          }
+        }
+
         break;
 
       default:

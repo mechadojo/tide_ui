@@ -66,6 +66,7 @@ class Graph {
   static const double LibrarySubGroupLabelSize = 7;
   static const double LibraryGroupItemPadding = 5;
 
+  static const double LibraryGroupCollapsedPadding = 10;
   static const double LibraryGroupPadding = 10;
   static const double LibraryGroupIconSize = 20;
 

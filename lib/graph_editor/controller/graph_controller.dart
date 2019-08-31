@@ -59,6 +59,8 @@ class GraphController with MouseController, KeyboardController {
   bool updating = false;
 
   void applyCommand(TideChartCommand cmd, {bool reverse = false}) {
+    if (cmd.isLocked && reverse) return;
+
     graph.beginUpdate();
 
     switch (cmd.whichCommand()) {
@@ -167,9 +169,16 @@ class GraphController with MouseController, KeyboardController {
 
   void undoHistory() {
     if (!graph.history.canUndo) return;
+    if (graph.history.undoCmds.isEmpty) return;
+
+    var cmd = graph.history.undo();
+    if (cmd.isLocked) {
+      undoHistory();
+      return;
+    }
 
     graph.beginUpdate();
-    var cmd = graph.history.undo();
+
     applyCommand(cmd, reverse: true);
 
     clearSelection();
@@ -182,7 +191,7 @@ class GraphController with MouseController, KeyboardController {
     var cmd = graph.history.redo();
 
     applyCommand(cmd);
-    graph.history.push(cmd, false);
+    graph.history.push(cmd, clear: false);
 
     clearSelection();
     graph.endUpdate(true);
@@ -299,7 +308,34 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
   }
 
-  void removeNode(GraphNode node, {bool save = true, bool relink = false}) {
+  void removeNodes(List<GraphNode> nodes,
+      {bool save = true, bool locked = false, bool relink = false}) {
+    List<TideChartCommand> cmds = [];
+
+    graph.beginUpdate();
+
+    for (var node in nodes) {
+      var idx = graph.findNode(node);
+      if (idx < 0) continue;
+      node = graph.nodes.removeAt(idx);
+      cmds.add(GraphCommand.removeNode(node));
+
+      var links = graph.getNodeLinks(node).toList();
+      for (var link in links) {
+        removeLink(link.outPort, link.inPort, save: false);
+        cmds.add(GraphCommand.removeLink(link));
+      }
+    }
+
+    graph.endUpdate(true);
+
+    if (save) {
+      graph.history.push(GraphCommand.all(cmds), locked: locked);
+    }
+  }
+
+  void removeNode(GraphNode node,
+      {bool save = true, bool locked = false, bool relink = false}) {
     var idx = graph.findNode(node);
     if (idx < 0) return;
 
@@ -318,7 +354,7 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
 
     if (save) {
-      graph.history.push(GraphCommand.all(cmds));
+      graph.history.push(GraphCommand.all(cmds), locked: locked);
     }
   }
 

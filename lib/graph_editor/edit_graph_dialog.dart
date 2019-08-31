@@ -1125,7 +1125,9 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
               createGraphTypeRow(context, width: 200),
             if (graph.type == GraphType.opmode)
               createOpmodeTypeRow(context, width: 200),
-            createDebugRow(width: 200),
+            if (graph.type == GraphType.behavior ||
+                graph.type == GraphType.opmode)
+              createDebugRow(width: 200),
           ],
         ),
       ),
