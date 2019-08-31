@@ -7,6 +7,7 @@ import 'package:flutter_web_ui/ui.dart' as ui;
 import 'package:tide_chart/tide_chart.dart';
 
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 import 'package:uuid/uuid.dart';
@@ -51,11 +52,17 @@ enum GraphType {
   unknown
 }
 
-class GraphState extends UpdateNotifier {
+class GraphStateNotifier extends UpdateNotifier {
+  GraphEditorController editor;
+  GraphState get graph => editor.graph;
+  GraphController get controller => editor.graph.controller;
+  GraphStateNotifier(this.editor);
+}
+
+class GraphState {
   GraphController controller;
 
   GraphType type = GraphType.behavior;
-  GlobalKey graphKey = GlobalKey();
 
   String id = Uuid().v1().toString();
   String name = GraphNode.randomName();
@@ -107,6 +114,14 @@ class GraphState extends UpdateNotifier {
 
       addLink(fromPort, toPort);
     }
+  }
+
+  void beginUpdate() {
+    controller.editor.graphNotifier.beginUpdate();
+  }
+
+  void endUpdate(bool changed) {
+    controller.editor.graphNotifier.endUpdate(changed);
   }
 
   String get typeName {
@@ -185,6 +200,12 @@ class GraphState extends UpdateNotifier {
     result = GraphNode()..name = name;
     referenced[name] = result;
     return result;
+  }
+
+  Iterable<GraphNode> usingGraph(String name) sync* {
+    for (var node in nodes) {
+      if (node.usingGraph(name)) yield node;
+    }
   }
 
   GraphNode clone(GraphNode node) {
@@ -387,43 +408,6 @@ class GraphState extends UpdateNotifier {
     if (port.node.type != GraphNodeType.action) return false;
 
     return !links.any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port));
-  }
-
-  bool copy(GraphState other) {
-    bool changed = true;
-
-    beginUpdate();
-
-    id = other.id;
-    title = other.title;
-    icon = other.icon;
-    name = other.name;
-    type = other.type;
-
-    script = other.script;
-
-    isDisabled = other.isDisabled;
-    isLogging = other.isLogging;
-    isDebugging = other.isDebugging;
-    isPaused = other.isPaused;
-
-    version = other.version;
-    nodes = [...other.nodes];
-    links = [...other.links];
-
-    props = other.props.clone();
-    settings = other.settings.clone();
-
-    referenced.clear();
-    for (var name in other.referenced.keys) {
-      referenced[name] = other.referenced[name];
-    }
-
-    history.copy(other.history);
-
-    endUpdate(changed);
-
-    return changed;
   }
 
   void clear() {}

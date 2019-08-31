@@ -1,6 +1,7 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
+import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
@@ -352,7 +353,7 @@ class LibraryController with MouseController, KeyboardController {
       case LibraryDisplayMode.detailed:
         for (var sheet in library.sheets) {
           yield sheet.editButton;
-          yield sheet.deleteButton;
+          yield sheet.openButton;
           yield sheet;
         }
 
@@ -364,6 +365,12 @@ class LibraryController with MouseController, KeyboardController {
       default:
         break;
     }
+  }
+
+  void addLibrary(GraphLibraryState graph) {
+    library.beginUpdate();
+    library.groups.add(LibraryItem.library(graph));
+    library.endUpdate(true);
   }
 
   void addSheet(GraphState graph) {
@@ -444,7 +451,7 @@ class LibraryController with MouseController, KeyboardController {
     for (var item in draggable()) {
       if (item.hitbox.contains(evt.pos)) {
         if (item.graph != null) {
-          editor.dispatch(GraphEditorCommand.showTab(item.graph.name));
+          editor.dispatch(GraphEditorCommand.selectTab(item.graph.name));
         }
       }
     }
@@ -496,7 +503,8 @@ class LibraryController with MouseController, KeyboardController {
     for (var item in clickable()) {
       if (item.editButton.hitbox.contains(evt.pos)) {
         if (item.graph != null) {
-          editor.dispatch(GraphEditorCommand.editGraph(item.graph));
+          editor.dispatch(GraphEditorCommand.selectTab(item.graph.name)
+            ..then(GraphEditorCommand.editGraph(item.graph)));
           return true;
         }
 

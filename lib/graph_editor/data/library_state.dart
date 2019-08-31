@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_event.dart';
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
+import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'graph_node.dart';
 import 'menu_item.dart';
@@ -16,18 +17,49 @@ class LibraryItem extends MenuItem {
   bool isDefault = false;
   List<LibraryItem> items = [];
 
+  MenuItem openButton = MenuItem(icon: "folder-open-solid");
   MenuItem editButton = MenuItem(icon: "edit");
-  MenuItem deleteButton = MenuItem(icon: "times");
+
+  LibraryItem.group(String name, List<GraphNode> nodes) {
+    this.name = name;
+    items = [...nodes.map((x) => LibraryItem.method(node))];
+  }
 
   LibraryItem.node(this.node) {
     icon = node.icon;
     name = node.hasTitle ? node.title : node.name;
   }
 
+  LibraryItem.method(this.node) {
+    icon = node.icon;
+    name = node.hasMethod ? node.method : node.name;
+  }
+
   LibraryItem.graph(GraphState graph) {
     this.graph = graph;
     icon = graph.icon;
     name = graph.title;
+  }
+
+  LibraryItem.library(GraphLibraryState graph) {
+    this.graph = graph;
+    icon = graph.icon;
+    name = graph.title;
+
+    Map<String, List<GraphNode>> groups = {};
+
+    for (var node in graph.nodes) {
+      var libname = node.library ?? "";
+      if (!groups.containsKey(libname)) {
+        groups[libname] = List<GraphNode>();
+      }
+
+      groups[libname].add(node);
+    }
+
+    for (var key in groups.keys) {
+      items.add(LibraryItem.group(key, groups[key]));
+    }
   }
 
   GraphNode get dropNode {
@@ -69,6 +101,7 @@ class LibraryState extends UpdateNotifier {
   /// expanded and detailed modes display groups of items and subgroups
   List<LibraryItem> groups = [];
 
+  /// list of files used in Tab-Files mode
   List<MenuItemSet> files = [];
 
   List<LibraryItem> get behaviors =>

@@ -1,4 +1,5 @@
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 import 'package:tide_ui/graph_editor/painter/graph_link_painter.dart';
@@ -12,20 +13,22 @@ import 'canvas_grid_painter.dart';
 import 'graph_node_painter.dart';
 
 class CanvasPainter extends CustomPainter {
-  final CanvasState state;
-  final GraphState graph;
+  final GraphEditorController editor;
+
+  CanvasState get state => editor.canvas;
+  GraphState get graph => editor.graph;
 
   final CanvasGridPainter gridPainter = CanvasGridPainter();
   final GraphNodePainter nodePainter = GraphNodePainter();
   final GraphLinkPainter linkPainter = GraphLinkPainter();
 
-  CanvasPainter(this.state, this.graph);
+  CanvasPainter(this.editor);
 
   @override
   void paint(Canvas canvas, Size size) {
     var screen = Rect.fromLTRB(
         0, 0, size.width - graph.controller.paddingRight, size.height);
-    state.size = screen.size;
+    state.controller.size = screen.size;
     var pan = screen.inflate(-Graph.AutoPanMargin);
 
     state.controller.setClip(

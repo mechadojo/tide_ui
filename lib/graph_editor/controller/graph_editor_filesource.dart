@@ -185,37 +185,46 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     return result.future;
   }
 
+  Future<bool> showConfirmDialog(String title, String message) {
+    var completer = Completer<bool>();
+
+    editor.controller.dialogActive = true;
+    editor.controller.setCursor("default");
+    showDialog<bool>(
+        context: editor.controller.scaffold.currentContext,
+        builder: (BuildContext context) {
+          return AlertDialog(
+              title: Text(title, style: Graph.DefaultDialogTitleStyle),
+              content: Text(message, style: Graph.DefaultDialogContentStyle),
+              actions: <Widget>[
+                FlatButton(
+                  child: Text("CANCEL", style: Graph.DefaultDialogButtonStyle),
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                ),
+                FlatButton(
+                  child:
+                      Text("CONTINUE", style: Graph.DefaultDialogButtonStyle),
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  },
+                ),
+              ]);
+        }).then((bool result) {
+      editor.controller.dialogActive = false;
+      completer.complete(result ?? false);
+    });
+
+    return completer.future;
+  }
+
   void deleteLocalFile(String filename, {bool confirmed = false}) {
     if (!confirmed) {
-      editor.controller.dialogActive = true;
-      editor.controller.setCursor("default");
-      showDialog<bool>(
-          context: editor.controller.scaffold.currentContext,
-          builder: (BuildContext context) {
-            return AlertDialog(
-                title:
-                    Text("Delete file?", style: Graph.DefaultDialogTitleStyle),
-                content: Text("This will permanently delete $filename.",
-                    style: Graph.DefaultDialogContentStyle),
-                actions: <Widget>[
-                  FlatButton(
-                    child:
-                        Text("CANCEL", style: Graph.DefaultDialogButtonStyle),
-                    onPressed: () {
-                      Navigator.of(context).pop(false);
-                    },
-                  ),
-                  FlatButton(
-                    child:
-                        Text("CONTINUE", style: Graph.DefaultDialogButtonStyle),
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                  ),
-                ]);
-          }).then((bool result) {
-        editor.controller.dialogActive = false;
-        if (result ?? false) {
+      showConfirmDialog(
+              "Delete file?", "This will permanently delete $filename.")
+          .then((bool result) {
+        if (result) {
           deleteLocalFile(filename, confirmed: true);
         }
       });

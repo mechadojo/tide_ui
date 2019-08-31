@@ -69,7 +69,7 @@ class _GraphEventContainerState extends State<GraphEventContainer>
 
   @override
   Widget build(BuildContext context) {
-    final canvas = Provider.of<CanvasState>(context, listen: false);
+    final canvas = Provider.of<CanvasStateNotifier>(context, listen: false);
     final editor = Provider.of<GraphEditorState>(context, listen: false);
 
     final media = MediaQuery.of(context);
@@ -77,7 +77,7 @@ class _GraphEventContainerState extends State<GraphEventContainer>
 
     if (!IsCurrentHandler) {
       attachBrowserEvents(
-          editor.mouseHandler, editor.keyboardHandler, canvas, editor);
+          editor.mouseHandler, editor.keyboardHandler, canvas.canvas, editor);
     }
 
     return Container(

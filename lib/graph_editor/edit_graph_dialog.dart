@@ -1171,7 +1171,8 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
                   if (graph.type == GraphType.behavior)
                     createIconButton(context, "calendar-plus", onPressed: () {
                       widget.close(true);
-                      print("Convert to library");
+                      editor
+                          .dispatch(GraphEditorCommand.convertToLibrary(graph));
                     }),
                   createIconButton(context, "trash-alt", onPressed: () {
                     widget.close(false);

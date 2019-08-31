@@ -12,6 +12,7 @@ import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_file.dart';
+import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
@@ -76,9 +77,22 @@ class GraphEditorControllerBase {
         command: GraphEditorCommand.newTab()),
   ]);
 
+  CanvasTab get selected {
+    var name = tabs.selected;
+    if (name == null) return null;
+    return editor.tabs[name];
+  }
+
+  GraphState graph;
+  CanvasState canvas;
+  CanvasController canvasController;
+  GraphController graphController;
+
+  GraphStateNotifier graphNotifier;
+  CanvasStateNotifier canvasNotifier;
+
   final RadialMenuState menu = RadialMenuState();
-  final GraphState graph = GraphState();
-  final CanvasState canvas = CanvasState();
+
   final LibraryState library = LibraryState();
   final LongPressFocusState longPress = LongPressFocusState();
 
@@ -129,26 +143,32 @@ class GraphEditorController extends GraphEditorControllerBase
         GraphEditorBrowser {
   GraphEditorController() {
     editor.controller = this;
+
+    graphController = GraphController(this);
+    canvasController = CanvasController(this);
+
     tabs.controller = CanvasTabsController(this);
-    graph.controller = GraphController(this);
-    canvas.controller = CanvasController(this);
     menu.controller = RadialMenuController(this);
     library.controller = LibraryController(this);
     editor.keyboardHandler = KeyboardHandler(this);
     editor.mouseHandler = MouseHandler(this);
 
+    graphNotifier = GraphStateNotifier(this);
+    canvasNotifier = CanvasStateNotifier(this);
+
     longPress.editor = this;
 
     tabs.version = AppVersion;
-    tabs.addListener(onChangeTabs);
+    // tabs.addListener(onChangeTabs);
 
     //
     // Dispatch some startup commands in the future after
     // everything has painted at least once
     //
 
-    dispatch(GraphEditorCommand.restoreCharts(), afterTicks: 5);
+    newTab();
 
+    dispatch(GraphEditorCommand.restoreCharts(), afterTicks: 5);
     dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.detailed),
         afterTicks: 5);
   }
@@ -165,6 +185,32 @@ class GraphEditorController extends GraphEditorControllerBase
     loadChart();
   }
 
+  CanvasTab loadGraph(TideChartGraph graph) {
+    var tab = CanvasTab(this, GraphState()..unpackGraph(graph));
+    tab.zoomToFit();
+
+    // graph names need to be unique and we cannot easily rename
+    // them because they are used as references
+    editor.tabs[tab.graph.name] = tab;
+
+    return tab;
+  }
+
+  CanvasTab loadLibrary(TideChartLibrary library) {
+    var tab = CanvasTab(this, GraphLibraryState()..unpackLibrary(library));
+    tab.zoomToFit();
+
+    // graph names need to be unique, however, library graph names
+    // are not used directly so we can just rename them during loading
+    while (editor.tabs.containsKey(tab.graph.name)) {
+      tab.graph.name = GraphNode.randomName();
+    }
+
+    editor.tabs[tab.graph.name] = tab;
+
+    return tab;
+  }
+
   void loadChart() {
     beginUpdateAll();
 
@@ -174,31 +220,24 @@ class GraphEditorController extends GraphEditorControllerBase
     editor.tabs.clear();
     tabs.clear();
     library.sheets.clear();
-    if (file.sheets.isEmpty) {
-      newTab();
+
+    for (var item in file.sheets) {
+      var tab = loadGraph(item);
+      library.controller.addSheet(tab.graph);
     }
 
-    for (var sheet in file.sheets) {
-      var tab = CanvasTab();
+    for (var item in file.library) {
+      var tab = loadLibrary(item);
+      library.controller.addLibrary(tab.graph);
+    }
 
-      tab.graph.unpackGraph(sheet);
+    if (file.sheets.isEmpty) {
+      newTab();
+    } else {
+      var first = file.sheets.firstWhere((x) => x.type == "opmode",
+          orElse: () => file.sheets.first);
 
-      if (tab.graph.nodes.isNotEmpty) {
-        tab.graph.layout();
-        var rect = tab.graph.extents.inflate(50);
-        tab.canvas.zoomToFit(rect, canvas.size);
-      }
-
-      editor.tabs[tab.graph.name] = tab;
-
-      if (tabs.isEmpty) {
-        editor.currentTab = tab;
-        tabs.addTab(tab, true, false);
-        graph.copy(tab.graph);
-        canvas.copy(tab.canvas);
-      }
-
-      library.controller.addSheet(tab.graph);
+      selectTab(first.name);
     }
 
     endUpdateAll();
@@ -207,17 +246,21 @@ class GraphEditorController extends GraphEditorControllerBase
   void beginUpdateAll() {
     editor.beginUpdate();
     tabs.beginUpdate();
-    canvas.beginUpdate();
+
     library.beginUpdate();
-    graph.beginUpdate();
+
+    canvasNotifier.beginUpdate();
+    graphNotifier.beginUpdate();
   }
 
   void endUpdateAll() {
-    graph.endUpdate(true);
     library.endUpdate(true);
-    canvas.endUpdate(true);
+
     tabs.endUpdate(true);
     editor.endUpdate(true);
+
+    canvasNotifier.endUpdate(true);
+    graphNotifier.endUpdate(true);
   }
 
   void handleLongPress() {
@@ -244,6 +287,7 @@ class GraphEditorController extends GraphEditorControllerBase
         waiting.add(cmd);
       } else {
         cmd.handler(this);
+        waiting.addAll(cmd.after);
       }
     }
 
@@ -309,18 +353,20 @@ class GraphEditorController extends GraphEditorControllerBase
     longPress.endUpdate(changed);
   }
 
+/*
   void onChangeTabs() {
     library.beginUpdate();
     editor.onChangeTab(tabs.current, canvas, graph);
     library.endUpdate(library.controller.update());
   }
+*/
 
   List<SingleChildCloneableWidget> get providers {
     return [
       ChangeNotifierProvider(builder: (_) => editor),
-      ChangeNotifierProvider(builder: (_) => canvas),
+      ChangeNotifierProvider(builder: (_) => canvasNotifier),
       ChangeNotifierProvider(builder: (_) => tabs),
-      ChangeNotifierProvider(builder: (_) => graph),
+      ChangeNotifierProvider(builder: (_) => graphNotifier),
       ChangeNotifierProvider(builder: (_) => menu),
       ChangeNotifierProvider(builder: (_) => library),
       ChangeNotifierProvider(builder: (_) => longPress),
@@ -401,17 +447,21 @@ class GraphEditorController extends GraphEditorControllerBase
   }
 
   void zoomToFit([bool selected = false]) {
+    canvas.beginUpdate();
     if (graph.nodes.isNotEmpty) {
       var rect = selected ? graph.selectionExtents : graph.extents;
       rect = rect.inflate(50);
-      canvas.zoomToFit(rect, canvas.size);
+      canvas.zoomToFit(rect, canvas.controller.size);
     } else {
       zoomHome();
     }
+    canvas.endUpdate(true);
   }
 
   void zoomHome() {
+    canvas.beginUpdate();
     canvas.reset();
+    canvas.endUpdate(true);
   }
 
   void toggleDragMode() {
@@ -499,55 +549,25 @@ class GraphEditorController extends GraphEditorControllerBase
   void newTab([bool random = false]) {
     editor.beginUpdate();
 
-    var tab = CanvasTab();
-    var graph = (random ? GraphState.random() : GraphState())
-      ..name = GraphNode.randomName()
-      ..icon = VectorIcons.getRandomName()
-      ..title = "Untitled - ${nextSheet++}";
+    var tab = CanvasTab(
+        this,
+        (random ? GraphState.random() : GraphState())
+          ..name = GraphNode.randomName()
+          ..icon = VectorIcons.getRandomName()
+          ..title = "Untitled - ${nextSheet++}");
 
-    tab.graph.copy(graph);
-    if (graph.nodes.isNotEmpty) {
-      graph.layout();
-      var rect = graph.extents.inflate(50);
-      tab.canvas.zoomToFit(rect, canvas.size);
+    tab.zoomToFit();
+
+    while (editor.tabs.containsKey(tab.name)) {
+      tab.graph.name = GraphNode.randomName();
     }
-
     editor.tabs[tab.name] = tab;
-
-    tabs.beginUpdate();
-    tabs.addTab(tab, true);
     library.controller.addSheet(tab.graph);
-    tabs.endUpdate(true);
-
-    editor.endUpdate(true);
+    selectTab(tab.name);
   }
 
   bool isTabSelected(String name) {
     return tabs.selected == name;
-  }
-
-  void showTab(String name, {bool reload = false}) {
-    if (tabs.selected == name && !reload) return;
-    if (!editor.tabs.containsKey(name)) return;
-
-    tabs.beginUpdate();
-    if (tabs.hasTab(name)) {
-      tabs.select(name);
-    } else {
-      var tab = editor.tabs[name];
-
-      tab.graph.layout();
-      var rect = tab.graph.extents.inflate(50);
-      tab.canvas.zoomToFit(rect, canvas.size);
-
-      tabs.addTab(tab, true);
-    }
-
-    for (var item in tabs.interactive()) {
-      item.clearInteractive();
-    }
-
-    tabs.endUpdate(true);
   }
 
   void addNode(GraphNode node,
@@ -658,13 +678,120 @@ class GraphEditorController extends GraphEditorControllerBase
     }
   }
 
-  void deleteGraph(GraphState graph) {
+  Iterable<GraphNode> usingGraph(String name) sync* {
+    for (var item in editor.sheets) {
+      yield* item.usingGraph(name);
+    }
+  }
+
+  void convertToLibrary(GraphState graph, {bool confirmed = false}) {
+    if (!confirmed) {
+      int refCount = usingGraph(graph.name).length;
+
+      String msg = "This will create a library from ${graph.title}.";
+      if (refCount > 0) {
+        if (refCount == 1) {
+          msg += "\n\nThere is one reference";
+        } else {
+          msg += "\n\nThere are ${refCount} references";
+        }
+        msg += " to this behavior that will be deleted.";
+      }
+
+      int nodeCount = graph.nodes.where((x) => !x.isAction).length;
+
+      if (nodeCount > 0) {
+        if (nodeCount == 1) {
+          msg += "\n\nThere is one node";
+        } else {
+          msg += "\n\nThere are ${nodeCount} nodes";
+        }
+        msg += " that are not actions and will be deleted";
+      }
+
+      showConfirmDialog("Convert to library?", msg).then((bool result) {
+        if (result) {
+          convertToLibrary(graph, confirmed: true);
+        }
+      });
+
+      return;
+    }
+
+    print("Convert to Library: ${graph.title}");
+
+    beginUpdateAll();
+
+    for (var item in editor.sheets) {
+      var nodes = item.usingGraph(graph.name).toList();
+      if (nodes.isNotEmpty) {
+        print("Deleting ${nodes.length} nodes from ${item.title}");
+        selectTab(item.name);
+      }
+    }
+
+    endUpdateAll();
+  }
+
+  bool selectTab(String name, {bool reload = false}) {
+    var tab = editor.tabs[name];
+    if (tab == null) return false;
+    if (tab.name == tabs.selected && !reload) return true;
+
+    beginUpdateAll();
+
+    tab.clearInteractive();
+    tabs.selectOrAddTab(tab);
+    if (closeBottomSheet != null) closeBottomSheet(true);
+
+    graph = tab.graph;
+    canvas = tab.canvas;
+
+    hideMenu();
+    endUpdateAll();
+
+    return true;
+  }
+
+  void deleteGraph(GraphState graph, {bool confirmed = false}) {
+    if (!confirmed) {
+      int refCount = graph.isBehavior ? usingGraph(graph.name).length : 0;
+
+      String msg = "This will permanently delete ${graph.title}.";
+      if (refCount > 0) {
+        if (refCount == 1) {
+          msg += "\n\nThere is one reference";
+        } else {
+          msg += "\n\nThere are ${refCount} references";
+        }
+        msg += " to this ${graph.typeName.toLowerCase()} that will be deleted.";
+      }
+
+      showConfirmDialog("Delete ${graph.typeName.toLowerCase()}?", msg)
+          .then((bool result) {
+        if (result) {
+          deleteGraph(graph, confirmed: true);
+        }
+      });
+
+      return;
+    }
+
     print("Delete Graph: ${graph.title}");
   }
 
   void editGraph(GraphState graph) {
     bottomSheetActive = true;
     setCursor("default");
+    var rect = graph.extents;
+    var pos = canvas.pos;
+    var scale = canvas.scale;
+
+    canvas.zoomToFit(
+        rect.inflate(25),
+        Size(canvas.size.width,
+            canvas.size.height - EditGraphDialog.EditNodeDialogHeight));
+
     EditGraphDialog dialog;
     var controller = scaffold.currentState.showBottomSheet((context) {
       dialog = EditGraphDialog(this, graph, closeBottomSheet);
@@ -679,6 +806,11 @@ class GraphEditorController extends GraphEditorControllerBase
     });
 
     closeBottomSheet = (bool save) {
+      canvas.beginUpdate();
+      canvas.pos = pos;
+      canvas.scale = scale;
+      canvas.endUpdate(true);
+
       graph.beginUpdate();
       graph.script = dialog.script.text;
       graph.endUpdate(true);

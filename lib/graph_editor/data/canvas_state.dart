@@ -1,46 +1,30 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/canvas_controller.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 
 import 'package:tide_ui/graph_editor/data/graph.dart';
 
 import 'update_notifier.dart';
 
-class CanvasState extends UpdateNotifier {
+class CanvasStateNotifier extends UpdateNotifier {
+  GraphEditorController editor;
+  CanvasState get canvas => editor.canvas;
+  CanvasController get controller => editor.canvas.controller;
+  CanvasStateNotifier(this.editor);
+}
+
+class CanvasState {
   CanvasController controller;
 
   double get minScale => Graph.MinZoomScale;
   double get maxScale => Graph.MaxZoomScale;
   double get stepSize => 100 / scale;
 
-  Size size = Size.zero;
+  Size get size => controller.size;
+
   Offset pos = Offset.zero;
   Offset get screenPos => toScreenCoord(pos);
   double scale = 1.0;
-
-  bool copy(CanvasState other) {
-    bool changed = false;
-
-    beginUpdate();
-
-    if (this.scale != other.scale) {
-      this.scale = other.scale;
-      changed = true;
-    }
-
-    if (this.pos != other.pos) {
-      this.pos = other.pos;
-      changed = true;
-    }
-
-    endUpdate(changed);
-    return changed;
-  }
-
-  void scrollTo(Offset pos) {
-    this.pos = pos;
-    //log("Position: ${pos.dx}, ${pos.dy}");
-    notifyListeners();
-  }
 
   Offset toGraphCoord(Offset screen) {
     var dx = screen.dx / scale - pos.dx;
@@ -55,6 +39,19 @@ class CanvasState extends UpdateNotifier {
     return Offset(dx, dy);
   }
 
+  void beginUpdate() {
+    controller.editor.canvasNotifier.beginUpdate();
+  }
+
+  void endUpdate(bool changed) {
+    controller.editor.canvasNotifier.endUpdate(changed);
+  }
+
+  void scrollTo(Offset pos) {
+    this.pos = pos;
+    //log("Position: ${pos.dx}, ${pos.dy}");
+  }
+
   void scrollBy(double dx, double dy) {
     scrollTo(pos.translate(dx, dy));
   }
@@ -63,7 +60,6 @@ class CanvasState extends UpdateNotifier {
     pos = Offset.zero;
     scale = 1.0;
     print("Reset Canvas State");
-    notifyListeners();
   }
 
   void zoomToFit(Rect rect, Size size) {
@@ -81,8 +77,6 @@ class CanvasState extends UpdateNotifier {
 
     pos = -rect.topLeft;
     pos = pos.translate(dx, dy);
-
-    notifyListeners();
   }
 
   void zoomAt(double next, Offset center) {
@@ -93,9 +87,6 @@ class CanvasState extends UpdateNotifier {
     var dy = (center.dy + pos.dy) * scale / next - pos.dy - center.dy;
     pos = pos.translate(dx, dy);
     scale = next;
-
-    //log("Scale To: $scale  $center");
-    notifyListeners();
   }
 
   void zoomIn({Offset focus = Offset.zero}) {

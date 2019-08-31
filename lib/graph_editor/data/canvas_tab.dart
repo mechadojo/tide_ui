@@ -1,5 +1,6 @@
+import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/data/canvas_state.dart';
-import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
 import 'canvas_interactive.dart';
 import 'graph_state.dart';
@@ -7,17 +8,16 @@ import 'menu_item.dart';
 
 class CanvasTab with CanvasInteractive {
   final CanvasState canvas = CanvasState();
-  final GraphState graph = GraphState();
+  final GraphState graph;
 
   String get icon => graph.icon;
   String get title => graph.title;
   String get name => graph.name;
   MenuItem closeBtn = MenuItem(name: "close-tab");
-  CanvasTab({String icon, String title, String name}) {
-    graph.icon =
-        icon == null || icon.isEmpty ? VectorIcons.getRandomName() : icon;
-    graph.title = title;
-    graph.name = name;
+
+  CanvasTab(GraphEditorController editor, this.graph) {
+    canvas.controller = editor.canvasController;
+    graph.controller = editor.graphController;
   }
 
   @override
@@ -26,8 +26,14 @@ class CanvasTab with CanvasInteractive {
     yield this;
   }
 
-  void copy(CanvasTab other) {
-    canvas.copy(other.canvas);
-    graph.copy(other.graph);
+  void zoomToFit() {
+    if (graph.nodes.isNotEmpty) {
+      graph.layout();
+      var rect = graph.extents.inflate(50);
+      canvas.zoomToFit(rect, canvas.size);
+    } else {
+      canvas.scale = 1.0;
+      canvas.pos = Offset.zero;
+    }
   }
 }

@@ -17,6 +17,11 @@ class GraphEditorCommand {
   CommandCondition condition;
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
+  List<GraphEditorCommand> after = [];
+
+  void then(GraphEditorCommand cmd) {
+    after.add(cmd);
+  }
 
   GraphEditorCommand.all(Iterable<GraphEditorCommand> cmds) {
     handler = (GraphEditorController editor) {
@@ -82,12 +87,6 @@ class GraphEditorCommand {
   GraphEditorCommand.openFile([FileSourceType source, String filename]) {
     handler = (GraphEditorController editor) {
       editor.openFileType(source, filename);
-    };
-  }
-
-  GraphEditorCommand.showTab(String name) {
-    handler = (GraphEditorController editor) {
-      editor.showTab(name);
     };
   }
 
@@ -176,6 +175,12 @@ class GraphEditorCommand {
   //  Graph Commands
   //
   // ************************************************************
+
+  GraphEditorCommand.convertToLibrary(GraphState graph) {
+    handler = (GraphEditorController editor) {
+      editor.convertToLibrary(graph);
+    };
+  }
 
   GraphEditorCommand.deleteGraph(GraphState graph) {
     handler = (GraphEditorController editor) {
@@ -398,6 +403,12 @@ class GraphEditorCommand {
   //
   // ************************************************************
 
+  GraphEditorCommand.selectTab(String name) {
+    handler = (GraphEditorController editor) {
+      editor.selectTab(name);
+    };
+  }
+
   GraphEditorCommand.newTab([bool random = false]) {
     handler = (GraphEditorController editor) {
       editor.newTab(random);
@@ -407,30 +418,36 @@ class GraphEditorCommand {
   GraphEditorCommand.scrollTab(double direction) {
     handler = (GraphEditorController editor) {
       editor.tabs.controller.scroll(direction);
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 
   GraphEditorCommand.closeTab(String tabname) {
     handler = (GraphEditorController editor) {
+      print("Closing Tab: $tabname");
       editor.tabs.remove(tabname);
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 
   GraphEditorCommand.restoreTab() {
     handler = (GraphEditorController editor) {
       editor.tabs.restore(true);
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 
   GraphEditorCommand.prevTab() {
     handler = (GraphEditorController editor) {
       editor.tabs.selectPrev();
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 
   GraphEditorCommand.nextTab() {
     handler = (GraphEditorController editor) {
       editor.tabs.selectNext();
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 

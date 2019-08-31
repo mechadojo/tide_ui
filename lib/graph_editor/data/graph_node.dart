@@ -258,6 +258,10 @@ class GraphNode extends GraphObject {
     return "$name";
   }
 
+  bool usingGraph(String name) {
+    return type == GraphNodeType.behavior && method == name;
+  }
+
   Iterable<GraphObject> walkNode() sync* {
     for (var port in inports) {
       if (port.showFlag) yield port.flag;

@@ -15,7 +15,7 @@ class CanvasController with MouseController, KeyboardController {
 
   CanvasController(this.editor);
 
-  Size get size => canvas.size;
+  Size size = Size.zero;
 
   /// The region of the graph that is visible
   Rect clipRect = Rect.zero;
@@ -111,14 +111,19 @@ class CanvasController with MouseController, KeyboardController {
 
       editor.dispatch(GraphEditorCommand.setCursor(
           scale < canvas.scale ? "zoom-out" : "zoom-in"));
+
+      canvas.beginUpdate();
       canvas.zoomAt(scale, centerStart);
+      canvas.endUpdate(true);
     }
 
     if (panning) {
       var dx = posStart.dx + (pt.dx - panStart.dx) / canvas.scale;
       var dy = posStart.dy + (pt.dy - panStart.dy) / canvas.scale;
 
+      canvas.beginUpdate();
       canvas.scrollTo(Offset(dx, dy));
+      canvas.endUpdate(true);
     }
     return true;
   }
@@ -126,7 +131,9 @@ class CanvasController with MouseController, KeyboardController {
   @override
   bool onKeyDown(GraphEvent evt) {
     if (evt.key == "h") {
+      canvas.beginUpdate();
       canvas.reset();
+      canvas.endUpdate(true);
       return true;
     }
     return false;
@@ -138,17 +145,24 @@ class CanvasController with MouseController, KeyboardController {
 
     // Control Scroll = Zoom at Cursor
     if (evt.ctrlKey) {
+      canvas.beginUpdate();
       if (evt.deltaY > 0) {
         canvas.zoomOut(focus: pt);
       } else {
         canvas.zoomIn(focus: pt);
       }
+      canvas.endUpdate(true);
     } else if (evt.shiftKey) {
       // Pan Left/Right
+
+      canvas.beginUpdate();
       canvas.scrollBy(evt.deltaY > 0 ? -canvas.stepSize : canvas.stepSize, 0);
+      canvas.endUpdate(true);
     } else {
       // Pan Up/Down
+      canvas.beginUpdate();
       canvas.scrollBy(0, evt.deltaY > 0 ? -canvas.stepSize : canvas.stepSize);
+      canvas.endUpdate(true);
     }
 
     return true;

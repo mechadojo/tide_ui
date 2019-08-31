@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:tide_ui/graph_editor/painter/canvas_painter.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'data/canvas_state.dart';
+import 'data/graph_editor_state.dart';
 
 class GraphCanvas extends StatelessWidget {
   GraphCanvas();
@@ -20,17 +21,16 @@ class GraphCanvas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canvas = Provider.of<CanvasState>(context, listen: true);
-    final graph = Provider.of<GraphState>(context, listen: true);
+    final editor = Provider.of<GraphEditorState>(context, listen: false);
+    final canvas = Provider.of<CanvasStateNotifier>(context, listen: true);
+    final graph = Provider.of<GraphStateNotifier>(context, listen: true);
+
+    if (canvas.canvas == null || graph.graph == null) return Container();
 
     //print("Rebuild Canvas");
     return RepaintBoundary(
-      key: graph.graphKey,
       child: CustomPaint(
-        painter: CanvasPainter(
-          canvas,
-          graph,
-        ),
+        painter: CanvasPainter(editor.controller),
         child: Container(
           alignment: Alignment.topLeft,
           child: Container(),
