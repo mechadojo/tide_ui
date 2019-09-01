@@ -27,17 +27,11 @@ class GraphFile {
   }
 
   GraphFile.editor(GraphEditorState editor) {
-    sheets = [
-      ...editor.tabs.values
-          .where((x) => x.graph.isBehavior || x.graph.isOpMode)
-          .map((x) => x.graph.pack())
-    ];
+    sheets = [...editor.sheets.map((x) => x.pack())];
 
-    library = [
-      ...editor.tabs.values
-          .where((x) => x.graph is GraphLibraryState)
-          .map((x) => (x.graph as GraphLibraryState).packLibrary())
-    ];
+    var libs = editor.library.where((x) => !x.imported).toList();
+
+    library = [...libs.map((x) => x.packLibrary())];
 
     imports = [...editor.imports.map(packSource)];
   }

@@ -258,13 +258,17 @@ class GraphEditorController extends GraphEditorControllerBase
 
     editor.imports.clear();
 
-    for (var source in file.imports) {
-      if (!editor.imports.contains(source.name)) {
-        editor.imports.add(source.name);
-      }
-    }
+    var skipImport = file.sheets.isEmpty && file.library.isNotEmpty;
 
-    await loadImports();
+    if (!skipImport) {
+      for (var source in file.imports) {
+        if (!editor.imports.contains(source.name)) {
+          editor.imports.add(source.name);
+        }
+      }
+
+      await loadImports();
+    }
 
     endUpdateAll();
   }
@@ -274,9 +278,22 @@ class GraphEditorController extends GraphEditorControllerBase
       var libs = editor.library.where((x) => x.source == source).toList();
 
       if (libs.isEmpty || reload) {
+        if (source == "default.chart") {
+          var file = await getServerFile(source);
+          if (file != null) {
+            print("Loading $source from server.");
+            for (var item in file.chart.library) {
+              print("Found ${item.methods.title}");
+              var tab = loadLibrary(item, imported: true, source: source);
+              library.controller.addLibrary(tab.graph, expand: false);
+            }
+
+            continue;
+          }
+        }
         var file = await getLocalFile(source);
         if (file != null) {
-          print("Loading libraries from $source");
+          print("Loading $source from local.");
           for (var item in file.chart.library) {
             var tab = loadLibrary(item, imported: true, source: source);
             library.controller.addLibrary(tab.graph, expand: false);
@@ -943,31 +960,61 @@ class GraphEditorController extends GraphEditorControllerBase
     return true;
   }
 
-  void deleteGraph(GraphState graph, {bool confirmed = false}) {
+  void deleteGraph(GraphState target, {bool confirmed = false}) {
     if (!confirmed) {
-      int refCount = graph.isBehavior ? usingGraph(graph.name).length : 0;
+      int refCount = target.isBehavior ? usingGraph(target.name).length : 0;
 
-      String msg = "This will permanently delete ${graph.title}.";
+      String msg = "This will permanently delete ${target.title}.";
       if (refCount > 0) {
         if (refCount == 1) {
           msg += "\n\nThere is one reference";
         } else {
           msg += "\n\nThere are ${refCount} references";
         }
-        msg += " to this ${graph.typeName.toLowerCase()} that will be deleted.";
+        msg +=
+            " to this ${target.typeName.toLowerCase()} that will be deleted.";
       }
 
-      showConfirmDialog("Delete ${graph.typeName.toLowerCase()}?", msg)
+      showConfirmDialog("Delete ${target.typeName.toLowerCase()}?", msg)
           .then((bool result) {
         if (result) {
-          deleteGraph(graph, confirmed: true);
+          deleteGraph(target, confirmed: true);
         }
       });
 
       return;
     }
+    beginUpdateAll();
 
-    print("Delete Graph: ${graph.title}");
+    // remove any behavior nodes that reference this behavior
+    for (var item in editor.sheets) {
+      var nodes = item.usingGraph(target.name).toList();
+      if (nodes.isNotEmpty) {
+        if (selectTab(item.name, reload: true)) {
+          graph.controller.removeNodes(nodes, locked: true);
+        }
+      }
+    }
+
+    tabs.remove(target.name);
+    editor.tabs.remove(target.name);
+    if (target is GraphLibraryState) {
+      library.controller.removeLibrary(target.name);
+    }
+
+    if (editor.tabs.isEmpty) {
+      newTab();
+    }
+
+    var next = tabs.selected;
+
+    if (next == target.name) {
+      next = editor.tabs.values.first.graph.name;
+    }
+
+    selectTab(next, reload: true);
+
+    endUpdateAll();
   }
 
   void editGraph(GraphState graph) {

@@ -1,10 +1,11 @@
+import 'package:flutter_web/material.dart';
+import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:html';
 import 'dart:indexed_db';
 import 'dart:typed_data';
 
-import 'package:flutter_web/material.dart';
 import 'package:tide_chart/tide_chart.dart';
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
@@ -239,6 +240,23 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     }
 
     print("Delete file: $filename");
+  }
+
+  Future<TideChartFile> getServerFile(String filename) {
+    var completer = Completer<TideChartFile>();
+    http.get("/charts/$filename").then((response) {
+      if (response.statusCode != 200) {
+        completer.complete(null);
+        return;
+      }
+
+      var bytes = response.bodyBytes;
+      TideChartFile result = TideChartFile()..mergeFromBuffer(bytes);
+      completer.complete(result);
+    }).catchError((err) {
+      completer.complete(null);
+    });
+    return completer.future;
   }
 
   Future<TideChartFile> getLocalFile(String filename) {

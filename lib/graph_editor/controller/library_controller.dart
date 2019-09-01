@@ -496,6 +496,14 @@ class LibraryController with MouseController, KeyboardController {
     library.endUpdate(true);
   }
 
+  void removeLibrary(String name) {
+    library.beginUpdate();
+
+    library.groups = [...library.groups.where((x) => x.graph.name != name)];
+
+    library.endUpdate(true);
+  }
+
   void addLibrary(GraphLibraryState graph, {bool expand = true}) {
     library.beginUpdate();
     var added = LibraryItem.library(graph);
