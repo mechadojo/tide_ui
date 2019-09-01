@@ -1,6 +1,5 @@
 import 'package:tide_chart/tide_chart.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
-import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:uuid/uuid.dart';
 
 class GraphFile {

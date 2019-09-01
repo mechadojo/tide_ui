@@ -920,7 +920,7 @@ class GraphEditorController extends GraphEditorControllerBase
 
     graph.history.clear();
 
-    library.controller.removeSheet(graph);
+    library.controller.removeSheet(graph.name);
 
     var graphlib = GraphLibraryState()
       ..unpackGraph(graph.pack())
@@ -1000,6 +1000,8 @@ class GraphEditorController extends GraphEditorControllerBase
     editor.tabs.remove(target.name);
     if (target is GraphLibraryState) {
       library.controller.removeLibrary(target.name);
+    } else if (target.isBehavior || target.isOpMode) {
+      library.controller.removeSheet(target.name);
     }
 
     if (editor.tabs.isEmpty) {

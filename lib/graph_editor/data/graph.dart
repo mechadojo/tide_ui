@@ -41,6 +41,11 @@ class Graph {
   // Library Styling
   //
 
+  static Paint LibraryScrollBarFront = Paint()
+    ..color = Color(0xff000000).withAlpha(100);
+  static Paint LibraryScrollBarBack = Paint()
+    ..color = Color(0xff333300).withAlpha(50);
+
   static const double LibraryCollapsedWidth = 75;
   static const double LibraryExpandedWidth = 200;
   static const double LibraryShadowWidth = 10;
@@ -166,6 +171,7 @@ class Graph {
   static const double ZoomSliderBottomMargin = 15;
 
   static const double ZoomSliderSize = 10;
+
   static Paint ZoomSliderLeftLine = Paint()
     ..color = Color(0xff333300).withAlpha(100)
     ..color = Color(0xff000000).withAlpha(100)

@@ -59,6 +59,25 @@ class GraphEvent {
 
   GraphEvent();
 
+  GraphEvent.copy(GraphEvent other) {
+    preventDefault = other.preventDefault;
+    pos = other.pos;
+    ctrlKey = other.ctrlKey;
+    shiftKey = other.shiftKey;
+    altKey = other.altKey;
+    metaKey = other.metaKey;
+    buttons = other.buttons;
+    deltaX = other.deltaX;
+    deltaY = other.deltaY;
+    deltaZ = other.deltaZ;
+    key = other.key;
+    keyCode = other.keyCode;
+    timer = other.timer;
+    for (var key in other.touches.keys) {
+      touches[key] = other.touches[key];
+    }
+  }
+
   GraphEvent.mouse(MouseEvent evt, [RenderBox rb]) {
     pos = globalToLocal(rb, Offset(evt.client.x, evt.client.y));
     ctrlKey = evt.ctrlKey;

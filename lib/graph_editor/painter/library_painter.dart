@@ -63,27 +63,44 @@ class LibraryPainter {
     canvas.drawLine(rect.topLeft, rect.bottomLeft, Graph.LibraryEdgeColor);
     drawExpandIcon(canvas, library, rect);
     drawTopIcons(canvas, library, rect);
+
+    var top =
+        rect.top + Graph.LibraryTopIconPadding * 2 + Graph.LibraryTopIconSize;
+    var bottom = rect.bottom;
+
+    if (library.mode == LibraryDisplayMode.tabs) {
+      drawTabs(canvas, library, rect);
+      bottom = rect.bottom - Graph.LibraryTabTop;
+    }
+
+    canvas.save();
+    library.controller.scrollWindow =
+        Rect.fromLTRB(rect.left, top, rect.right - 6, bottom);
+
+    canvas.clipRect(library.controller.scrollWindow);
+    canvas.translate(0, -library.controller.scrollStart);
+
+    double height = 0;
     switch (library.mode) {
       case LibraryDisplayMode.toolbox:
-        drawCollapsed(canvas, library, rect, library.toolbox);
+        height = drawCollapsed(canvas, library, rect, library.toolbox);
         break;
       case LibraryDisplayMode.collapsed:
-        drawCollapsed(canvas, library, rect, library.behaviors);
+        height = drawCollapsed(canvas, library, rect, library.behaviors);
         break;
       case LibraryDisplayMode.expanded:
-        drawExpanded(canvas, library, rect);
+        height = drawExpanded(canvas, library, rect);
         break;
       case LibraryDisplayMode.detailed:
-        drawDetailed(canvas, library, rect);
+        height = drawDetailed(canvas, library, rect);
         break;
       case LibraryDisplayMode.tabs:
-        drawTabs(canvas, library, rect);
         switch (library.currentTab) {
           case LibraryTab.imports:
-            drawImportsTab(canvas, library, rect);
+            height = drawImportsTab(canvas, library, rect);
             break;
           case LibraryTab.files:
-            drawFilesTab(canvas, library, rect);
+            height = drawFilesTab(canvas, library, rect);
             break;
           default:
             break;
@@ -93,6 +110,39 @@ class LibraryPainter {
         break;
     }
 
+    library.controller.setScrollHeight(height);
+    canvas.restore();
+
+    drawScrollBar(canvas, library, rect);
+
+    drawDragCursor(canvas, library, rect);
+  }
+
+  void drawScrollBar(Canvas canvas, LibraryState library, Rect rect) {
+    var range = library.controller.scrollRange;
+    if (range == 0) return;
+
+    var height = library.controller.scrollHeight;
+    var top = library.controller.scrollWindow.top;
+    var bottom = library.controller.scrollWindow.bottom;
+
+    var total = bottom - top;
+    var scrollRange = (range / height) * total;
+    var scrollPos =
+        (library.controller.scrollPos * (total - scrollRange)) + top;
+    var left = rect.right - 5;
+    var right = rect.right;
+
+    var r1 = Rect.fromLTRB(left, top, right, scrollPos);
+    var r2 = Rect.fromLTRB(left, r1.bottom, right, scrollPos + scrollRange);
+    var r3 = Rect.fromLTRB(left, r2.bottom, right, bottom);
+
+    canvas.drawRect(r1, Graph.LibraryScrollBarBack);
+    canvas.drawRect(r2, Graph.LibraryScrollBarFront);
+    canvas.drawRect(r3, Graph.LibraryScrollBarBack);
+  }
+
+  void drawDragCursor(Canvas canvas, LibraryState library, Rect rect) {
     if (library.controller.isDragging) {
       var item = library.controller.dragging;
       if (item.pos.dx > rect.left) {
@@ -153,8 +203,9 @@ class LibraryPainter {
     return pos.dy + Graph.LibraryFileNameSize + Graph.LibraryFileNameSpacing;
   }
 
-  void drawImportsTab(Canvas canvas, LibraryState library, Rect rect) {
+  double drawImportsTab(Canvas canvas, LibraryState library, Rect rect) {
     var cy = rect.top + Graph.LibraryGroupTopPadding + 5;
+    var top = cy;
     var cx = rect.left + 10;
 
     Graph.font.paint(canvas, "Imports", Offset(cx, cy), Graph.LibraryTitleSize,
@@ -175,6 +226,8 @@ class LibraryPainter {
     for (var item in library.imports) {
       cy = drawImportsTabItem(canvas, item, Offset(cx, cy), rect);
     }
+    cy += 20;
+    return cy - top;
   }
 
   double drawFilesTabItem(
@@ -208,8 +261,9 @@ class LibraryPainter {
     return pos.dy + Graph.LibraryFileNameSize + Graph.LibraryFileNameSpacing;
   }
 
-  void drawFilesTab(Canvas canvas, LibraryState library, Rect rect) {
+  double drawFilesTab(Canvas canvas, LibraryState library, Rect rect) {
     var cy = rect.top + Graph.LibraryGroupTopPadding + 5;
+    var top = cy;
     var cx = rect.left + 10;
 
     Graph.font.paint(canvas, library.controller.filesTitle, Offset(cx, cy),
@@ -221,6 +275,8 @@ class LibraryPainter {
     for (var item in library.files) {
       cy = drawFilesTabItem(canvas, item, Offset(cx, cy), rect);
     }
+    cy += 20;
+    return cy - top;
   }
 
   double drawSelectedTab(Canvas canvas, MenuItem item, Offset pos, Rect rect) {
@@ -278,11 +334,13 @@ class LibraryPainter {
     }
   }
 
-  void drawCollapsed(
+  double drawCollapsed(
       Canvas canvas, LibraryState library, Rect rect, List<LibraryItem> items) {
     var cx = rect.center.dx;
     var cy =
         rect.top + Graph.LibraryTopIconPadding * 2 + Graph.LibraryTopIconSize;
+
+    var top = cy;
 
     var spacing = Graph.LibraryCollapsedItemSpacing;
 
@@ -308,9 +366,8 @@ class LibraryPainter {
       bool defaultShowLabel = library.controller.editor.isTouchMode ||
           library.mode == LibraryDisplayMode.collapsed;
 
-      bool showLabel = item.hovered || defaultShowLabel;
+      bool showLabel = defaultShowLabel;
       bool showHotkey = !library.controller.editor.isTouchMode &&
-          !item.hovered &&
           library.mode == LibraryDisplayMode.toolbox;
 
       var factor = item.hovered ? .875 : .5;
@@ -369,6 +426,8 @@ class LibraryPainter {
 
       cy += spacing;
     }
+    cy -= spacing / 2;
+    return cy - top;
   }
 
   void drawTopIcons(Canvas canvas, LibraryState library, Rect rect) {
@@ -403,8 +462,8 @@ class LibraryPainter {
     }
   }
 
-  void drawExpanded(Canvas canvas, LibraryState library, Rect rect) {
-    drawDetailed(canvas, library, rect);
+  double drawExpanded(Canvas canvas, LibraryState library, Rect rect) {
+    return drawDetailed(canvas, library, rect);
   }
 
   void drawExpandoBtn(Canvas canvas, LibraryItem item, Offset pos, Rect rect) {
@@ -474,9 +533,9 @@ class LibraryPainter {
     return dy;
   }
 
-  void drawDetailed(Canvas canvas, LibraryState library, Rect rect) {
+  double drawDetailed(Canvas canvas, LibraryState library, Rect rect) {
     var cy = rect.top + Graph.LibraryGroupTopPadding;
-
+    var top = cy;
     var opmodes = library.opmodes;
     var behaviors = library.behaviors;
 
@@ -614,6 +673,8 @@ class LibraryPainter {
 
       // cy += Graph.LibraryGroupPadding;
     }
+
+    return cy - top;
   }
 
   void drawDetailedItemButton(Canvas canvas, MenuItem button) {
@@ -651,12 +712,18 @@ class LibraryPainter {
         (Graph.LibraryDetailedIconSize + Graph.LibraryDetailedIconSpacing * 2);
 
     var hh = Graph.LibraryDetailedIconSize / 2;
-    item.hitbox = Rect.fromLTRB(left, cy - hh, rect.right - 10, cy + hh);
+
+    var limit = Graph.font.limits(
+        item.name, Offset(cx, cy), Graph.LibraryGroupLabelSize,
+        alignment: Alignment.centerLeft);
+    var lr = limit.right > rect.right - 40 ? rect.right - 40 : limit.right;
+
+    item.hitbox = Rect.fromLTRB(left, cy - hh, lr, cy + hh);
 
     Graph.font.paint(
         canvas, item.name, Offset(cx, cy), Graph.LibraryGroupLabelSize,
         fill: fill,
-        width: item.hitbox.right - cx,
+        width: rect.right - 40 - cx,
         alignment: Alignment.centerLeft);
 
     cx = right +

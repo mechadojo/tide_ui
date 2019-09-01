@@ -89,6 +89,24 @@ class LibraryController with MouseController, KeyboardController {
   Offset startPos = Offset.zero;
   Offset lastPos = Offset.zero;
 
+  Rect scrollWindow = Rect.zero;
+
+  double scrollStart = 0;
+  double scrollHeight = 0;
+  double scrollDownPos = 0;
+  double scrollDownStart = 0;
+
+  double get scrollPos {
+    var range = scrollRange;
+    if (range == 0) return 0;
+    var pos = scrollStart / range;
+    return pos > 1 ? 1 : pos;
+  }
+
+  double get scrollRange => scrollHeight < scrollWindow.height
+      ? 0
+      : scrollHeight - scrollWindow.height;
+
   MenuItem dragging;
   GraphSelection dropping;
 
@@ -107,6 +125,37 @@ class LibraryController with MouseController, KeyboardController {
 
   bool isHovered(Offset pt) {
     return library.hitbox.contains(pt) || pt.dx > editor.canvas.size.width;
+  }
+
+  void setScrollHeight(double height) {
+    scrollHeight = height;
+    // dispatch the call because updated heights come from painting
+    // possibly we could have a layout phase that is independed of painting
+    editor.dispatch(GraphEditorCommand((editor) {
+      updateScrollPos();
+    }));
+  }
+
+  void setScrollPos(double pos) {
+    if (pos < 0) pos = 0;
+    if (pos > 1) pos = 1;
+
+    if (pos == scrollPos) return;
+    scrollStart = pos * scrollRange;
+
+    editor.dispatch(GraphEditorCommand((editor) {
+      updateScrollPos();
+    }));
+  }
+
+  void updateScrollPos() {
+    library.beginUpdate();
+
+    if (scrollStart > scrollRange) {
+      scrollStart = scrollRange;
+    }
+
+    library.endUpdate(true);
   }
 
   double get width {
@@ -337,12 +386,19 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseWheel(GraphEvent evt) {
-    print("Library Wheel: ${evt.pos} ${evt.deltaY}");
+    if (evt.deltaY < 0) {
+      setScrollPos(scrollPos - .2);
+    } else {
+      setScrollPos(scrollPos + .2);
+    }
+
     return true;
   }
 
   @override
   bool onContextMenu(GraphEvent evt) {
+    evt = toScrollCoord(evt);
+
     print("Library Context Menu: ${evt.pos}");
 
     mouseMode = LibraryMouseMode.none;
@@ -549,11 +605,9 @@ class LibraryController with MouseController, KeyboardController {
     library.endUpdate(true);
   }
 
-  void removeSheet(GraphState graph) {
+  void removeSheet(String name) {
     library.beginUpdate();
-    library.sheets = [
-      ...library.sheets.where((x) => x.graph.name != graph.name)
-    ];
+    library.sheets = [...library.sheets.where((x) => x.graph.name != name)];
     library.endUpdate(true);
   }
 
@@ -571,12 +625,23 @@ class LibraryController with MouseController, KeyboardController {
     return changed;
   }
 
+  GraphEvent toScrollCoord(GraphEvent evt) {
+    if (scrollWindow.contains(evt.pos)) {
+      return GraphEvent.copy(evt)..pos = evt.pos.translate(0, scrollStart);
+    } else {
+      return evt;
+    }
+  }
+
   @override
   bool onMouseMove(GraphEvent evt) {
+    var screen = evt;
+    evt = toScrollCoord(evt);
+
     if (isMouseDown && mouseMode == LibraryMouseMode.none) {
       var dx = evt.pos.dx - startPos.dx;
       var dy = evt.pos.dy - startPos.dy;
-      if (dx.abs() > 5 || dx.abs() > 5) {
+      if (dx.abs() > 5 || dy.abs() > 5) {
         mouseMode = (dx.abs() > dy.abs())
             ? LibraryMouseMode.swiping
             : LibraryMouseMode.scrolling;
@@ -588,13 +653,22 @@ class LibraryController with MouseController, KeyboardController {
     bool changed = false;
     bool hovered = false;
 
+    if (isScrolling) {
+      changed = true;
+
+      var delta = screen.pos.dy - scrollDownPos;
+      scrollStart = scrollDownStart - delta;
+      if (scrollStart < 0) scrollStart = 0;
+      if (scrollStart > scrollRange) scrollStart = scrollRange;
+    }
+
     if (isDragging) {
       changed = true;
-      dragging.pos = evt.pos;
+      dragging.pos = screen.pos;
 
       if (dropping != null) {
-        if (evt.pos.dx < editor.canvas.size.width) {
-          dropping.pos = editor.canvas.toGraphCoord(evt.pos);
+        if (screen.pos.dx < editor.canvas.size.width) {
+          dropping.pos = editor.canvas.toGraphCoord(screen.pos);
           editor.previewDrop(dropping);
         } else {
           editor.cancelDrop();
@@ -603,6 +677,7 @@ class LibraryController with MouseController, KeyboardController {
     }
 
     library.beginUpdate();
+
     if (mouseMode == LibraryMouseMode.none) {
       for (var item in interactive()) {
         var alerted =
@@ -613,6 +688,13 @@ class LibraryController with MouseController, KeyboardController {
         changed |= item.checkHovered(evt.pos);
         if (!alerted) {
           hovered |= item.hovered;
+        }
+      }
+    } else {
+      for (var item in interactive()) {
+        if (item.hovered) {
+          item.hovered = false;
+          changed = true;
         }
       }
     }
@@ -626,6 +708,8 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseDoubleTap(GraphEvent evt) {
+    evt = toScrollCoord(evt);
+
     for (var item in clickable()) {
       if (item.hitbox.contains(evt.pos)) {
         if (item.graph != null) {
@@ -689,6 +773,11 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseDown(GraphEvent evt) {
+    scrollDownPos = evt.pos.dy;
+    scrollDownStart = scrollStart;
+
+    evt = toScrollCoord(evt);
+
     if (library.hitbox.contains(evt.pos)) {
       if (isHidden) {
         editor.dispatch(GraphEditorCommand.showLibrary(null));
@@ -875,6 +964,8 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseUp(GraphEvent evt) {
+    evt = toScrollCoord(evt);
+
     bool changed = mouseMode != LibraryMouseMode.none;
 
     library.beginUpdate();
