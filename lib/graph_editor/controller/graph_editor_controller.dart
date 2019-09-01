@@ -168,8 +168,9 @@ class GraphEditorController extends GraphEditorControllerBase
 
     newTab();
 
-    dispatch(GraphEditorCommand.restoreCharts(), afterTicks: 5);
-    dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.detailed),
+    dispatch(
+        GraphEditorCommand.restoreCharts()
+          ..then(GraphEditorCommand.showLibrary(LibraryDisplayMode.expanded)),
         afterTicks: 5);
   }
 
@@ -521,6 +522,44 @@ class GraphEditorController extends GraphEditorControllerBase
     }
   }
 
+  void nextLibrary() {
+    if (library.isExpanded) {
+      nextExpandedLibrary();
+    } else {
+      nextCollapsedLibrary();
+    }
+  }
+
+  void nextCollapsedLibrary() {
+    var mode = library.mode == LibraryDisplayMode.toolbox
+        ? LibraryDisplayMode.collapsed
+        : LibraryDisplayMode.toolbox;
+    showLibrary(mode);
+  }
+
+  void nextExpandedLibrary() {
+    var mode = library.mode;
+
+    switch (library.mode) {
+      case LibraryDisplayMode.expanded:
+        mode = LibraryDisplayMode.detailed;
+        break;
+      case LibraryDisplayMode.detailed:
+        mode = LibraryDisplayMode.search;
+        break;
+      case LibraryDisplayMode.search:
+        mode = LibraryDisplayMode.tabs;
+        break;
+      case LibraryDisplayMode.tabs:
+        mode = LibraryDisplayMode.expanded;
+        break;
+      default:
+        mode = LibraryDisplayMode.detailed;
+        break;
+    }
+    showLibrary(mode, library.currentTab);
+  }
+
   void showLibrary(
       [LibraryDisplayMode mode, LibraryTab tab, bool push = true]) {
     if (mode != null) {
@@ -640,6 +679,10 @@ class GraphEditorController extends GraphEditorControllerBase
       node.script = dialog.script.text;
       graph.endUpdate(true);
 
+      if (graph.isLibrary) {
+        updateNode(graph, node);
+      }
+
       bottomSheetActive = false;
 
       closeBottomSheet = null;
@@ -653,34 +696,39 @@ class GraphEditorController extends GraphEditorControllerBase
     };
   }
 
-  void updateGraph(GraphState graph) {
-    CanvasTab tab = editor.tabs[graph.name];
-    if (tab != null) {
-      tabs.beginUpdate();
-
-      tab.graph.title = graph.title;
-      tab.graph.icon = graph.icon;
-
-      tabs.endUpdate(true);
+  void updateNode(GraphState graph, GraphNode node) {
+    if (graph is GraphLibraryState) {
+      library.controller.updateNode(graph, node);
     }
+  }
 
-    var sheet = library.sheets
-        .firstWhere((x) => x.graph.name == graph.name, orElse: () => null);
+  void updateGraph(GraphState graph, {bool references = false}) {
+    CanvasTab tab = editor.tabs[graph.name];
+    if (tab == null) return;
 
-    if (sheet != null) {
-      library.beginUpdate();
-      sheet.name = graph.title;
-      sheet.icon = graph.icon;
-      sheet.graph.type = graph.type;
-      sheet.graph.settings = graph.settings.clone();
+    tabs.notify();
+    library.controller.updateGraph(graph);
 
-      library.endUpdate(true);
+    if (references) {
+      if (graph.isBehavior) {
+        for (var sheet in editor.sheets) {
+          for (var node in sheet.usingGraph(graph.name)) {
+            print("Update ${node.name} to match ${graph.title}");
+          }
+        }
+      }
     }
   }
 
   Iterable<GraphNode> usingGraph(String name) sync* {
     for (var item in editor.sheets) {
       yield* item.usingGraph(name);
+    }
+  }
+
+  Iterable<GraphNode> usingMethod(String library, String name) sync* {
+    for (var item in editor.sheets) {
+      yield* item.usingMethod(library, name);
     }
   }
 
@@ -864,6 +912,8 @@ class GraphEditorController extends GraphEditorControllerBase
       graph.beginUpdate();
       graph.script = dialog.script.text;
       graph.endUpdate(true);
+
+      updateGraph(graph, references: true);
 
       bottomSheetActive = false;
 

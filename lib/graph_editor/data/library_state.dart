@@ -67,10 +67,12 @@ class LibraryItem extends MenuItem {
 
       // Add a copy of the node so that drag/drop doesn't impact
       // the actual node pos on the library graph
-      groups[libname].add(GraphNode.clone(node));
+      groups[libname].add(GraphNode.clone(node)..name = GraphNode.randomName());
     }
 
-    for (var key in groups.keys) {
+    var keys = groups.keys.toList();
+    keys.sort();
+    for (var key in keys) {
       items.add(LibraryItem.group(key, groups[key]));
     }
   }
@@ -133,7 +135,9 @@ class LibraryState extends UpdateNotifier {
 
   bool get isExpanded =>
       mode == LibraryDisplayMode.expanded ||
-      mode == LibraryDisplayMode.detailed;
+      mode == LibraryDisplayMode.detailed ||
+      mode == LibraryDisplayMode.search ||
+      mode == LibraryDisplayMode.tabs;
 
   LibraryState() {
     int count = 10;

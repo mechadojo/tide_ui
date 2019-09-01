@@ -95,6 +95,20 @@ class LibraryPainter {
         VectorIcons.paint(
             canvas, item.icon, item.pos, Graph.LibraryDragIconSize,
             fill: Graph.LibraryDragIconColor);
+
+        if (library.controller.editor.isTouchMode) {
+          Graph.font.paint(canvas, item.name,
+              item.pos.translate(0, -(Graph.LibraryDragIconSize / 2 + 5)), 10,
+              style: "Bold",
+              fill: Graph.LibraryDragIconColor,
+              alignment: Alignment.bottomCenter);
+        } else {
+          Graph.font.paint(canvas, item.name,
+              item.pos.translate(0, Graph.LibraryDragIconSize / 2 + 5), 10,
+              style: "Bold",
+              fill: Graph.LibraryDragIconColor,
+              alignment: Alignment.topCenter);
+        }
       }
     }
   }
@@ -122,7 +136,7 @@ class LibraryPainter {
           : Graph.LibraryItemIconColor;
 
       btn.size = Size(size, size);
-      btn.moveTo(cx, pos.dy);
+      btn.moveTo(cx, pos.dy, update: true);
 
       VectorIcons.paint(canvas, btn.icon, btn.pos, size, fill: fill);
       cx += Graph.LibraryFileIconSize + Graph.LibraryFileIconSpacing;
@@ -160,7 +174,7 @@ class LibraryPainter {
 
     item.size = Size(Graph.LibraryFirstTabWidth,
         Graph.LibraryTabBottom - Graph.LibraryTabTop);
-    item.moveTo(pos.dx, pos.dy - 2);
+    item.moveTo(pos.dx, pos.dy - 2, update: true);
 
     VectorIcons.paint(canvas, item.icon, item.pos, size, fill: fill);
 
@@ -193,7 +207,7 @@ class LibraryPainter {
       if (tab.hovered) size *= 1.25;
 
       tab.size = Size(Graph.LibraryTabIconSize, Graph.LibraryTabIconSize);
-      tab.moveTo(cx, cy);
+      tab.moveTo(cx, cy, update: true);
 
       VectorIcons.paint(canvas, tab.icon, Offset(cx, cy), size, fill: fill);
       cx += Graph.LibraryTabIconSize + Graph.LibraryTabPadding;
@@ -259,7 +273,7 @@ class LibraryPainter {
       }
 
       item.resizeTo(size, size);
-      item.moveTo(cx, cy);
+      item.moveTo(cx, cy, update: true);
       var iconSize = size * .75;
       VectorIcons.paint(canvas, icon, item.pos, iconSize, fill: fill);
 
@@ -325,19 +339,75 @@ class LibraryPainter {
     }
   }
 
-  void drawExpanded(Canvas canvas, LibraryState library, Rect rect) {}
+  void drawExpanded(Canvas canvas, LibraryState library, Rect rect) {
+    drawDetailed(canvas, library, rect);
+  }
 
-  void drawExpandoBtn(Canvas canvas, LibraryItem item, Offset pos) {
+  void drawExpandoBtn(Canvas canvas, LibraryItem item, Offset pos, Rect rect) {
     var btn = item.isCollapsed ? item.expandButton : item.collapseButton;
 
     btn.size = Size(16, 16);
-    btn.moveTo(pos.dx + 5, pos.dy - 5);
+    btn.moveTo(pos.dx + 5, pos.dy - 5, update: true);
+    var hb = btn.hitbox;
+    btn.hitbox =
+        Rect.fromLTRB(hb.left, hb.top - 2, rect.right - 30, hb.bottom + 2);
 
     var fill = btn.hovered
         ? Graph.LibraryItemIconHoverColor
         : Graph.LibraryItemIconColor;
 
     VectorIcons.paint(canvas, btn.icon, btn.pos, 16, fill: fill);
+  }
+
+  double layoutDetailed(Canvas canvas, double dy, LibraryState library,
+      List<LibraryItem> items, Rect rect) {
+    for (var item in items) {
+      dy = drawDetailedItem(canvas, dy, library, item, rect);
+    }
+    return dy;
+  }
+
+  double layoutGrid(Canvas canvas, double dy, LibraryState library,
+      List<LibraryItem> items, Rect rect) {
+    int idx = 0;
+    var spacing =
+        (rect.width - Graph.LibraryGridPadding * 2) / Graph.LibraryGridColumns;
+
+    double left = rect.left + Graph.LibraryGridPadding + spacing / 2;
+    double dx = left;
+    dy += 10;
+
+    for (var item in items) {
+      item.editButton.size = Size.zero;
+
+      var fill = item.hovered
+          ? Graph.LibraryItemIconHoverColor
+          : Graph.LibraryItemIconColor;
+
+      item.size = Size(Graph.LibraryGridIconSize, Graph.LibraryGridIconSize);
+      item.moveTo(dx, dy, update: true);
+
+      var sz = item.size.width;
+      if (item.hovered) {
+        sz *= 1.25;
+      }
+
+      VectorIcons.paint(canvas, item.icon, item.pos, sz, fill: fill);
+
+      idx++;
+      if ((idx % Graph.LibraryGridColumns) == 0) {
+        dx = left;
+        dy += Graph.LibraryGridIconSize + Graph.LibraryGridPadding;
+      } else {
+        dx += spacing;
+      }
+    }
+
+    if ((idx % Graph.LibraryGridColumns) != 0) {
+      dy += Graph.LibraryGridIconSize / 2 + Graph.LibraryGridPadding;
+    }
+
+    return dy;
   }
 
   void drawDetailed(Canvas canvas, LibraryState library, Rect rect) {
@@ -350,11 +420,14 @@ class LibraryPainter {
     var left = cx + 15;
 
     if (opmodes.isNotEmpty) {
-      drawExpandoBtn(canvas, library.opmodeGroup, Offset(cx, cy));
+      drawExpandoBtn(canvas, library.opmodeGroup, Offset(cx, cy), rect);
+      var fill = library.opmodeGroup.expandoButton.hovered
+          ? Graph.blackPaint
+          : Graph.LibraryGroupLabelColor;
 
       Graph.font.paint(
           canvas, "OpModes", Offset(left, cy), Graph.LibraryGroupLabelSize,
-          style: "Bold", fill: Graph.LibraryGroupLabelColor);
+          style: "Bold", fill: fill);
 
       var auto = opmodes.where((x) => x.graph.opModeType == "Auto").toList();
       var teleop =
@@ -363,15 +436,16 @@ class LibraryPainter {
       cy += Graph.LibraryGroupLabelSize + Graph.LibraryGroupItemPadding;
       if (library.opmodeGroup.isExpanded) {
         if (auto.isNotEmpty) {
-          Graph.font.paint(canvas, "Autonomous", Offset(left, cy),
+          Graph.font.paint(canvas, "Autonomous", Offset(cx, cy),
               Graph.LibrarySubGroupLabelSize,
               fill: Graph.LibraryGroupLabelColor);
 
           cy += Graph.LibrarySubGroupLabelSize + 2;
 
-          for (var item in auto) {
-            cy = drawDetailedItem(canvas, cy, library, item, rect);
-          }
+          cy = library.mode == LibraryDisplayMode.detailed
+              ? layoutDetailed(canvas, cy, library, auto, rect)
+              : layoutGrid(canvas, cy, library, auto, rect);
+
           cy += Graph.LibraryGroupPadding;
         }
 
@@ -382,9 +456,10 @@ class LibraryPainter {
 
           cy += Graph.LibrarySubGroupLabelSize + 2;
 
-          for (var item in teleop) {
-            cy = drawDetailedItem(canvas, cy, library, item, rect);
-          }
+          cy = library.mode == LibraryDisplayMode.detailed
+              ? layoutDetailed(canvas, cy, library, teleop, rect)
+              : layoutGrid(canvas, cy, library, teleop, rect);
+
           cy += Graph.LibraryGroupPadding;
         }
       } else {
@@ -393,18 +468,23 @@ class LibraryPainter {
     }
 
     if (behaviors.isNotEmpty) {
-      drawExpandoBtn(canvas, library.behaviorGroup, Offset(cx, cy));
+      drawExpandoBtn(canvas, library.behaviorGroup, Offset(cx, cy), rect);
+
+      var fill = library.behaviorGroup.expandoButton.hovered
+          ? Graph.blackPaint
+          : Graph.LibraryGroupLabelColor;
 
       Graph.font.paint(
           canvas, "Behaviors", Offset(left, cy), Graph.LibraryGroupLabelSize,
-          style: "Bold", fill: Graph.LibraryGroupLabelColor);
+          style: "Bold", fill: fill);
 
       cy += Graph.LibraryGroupLabelSize + Graph.LibraryGroupItemPadding;
 
       if (library.behaviorGroup.isExpanded) {
-        for (var item in behaviors) {
-          cy = drawDetailedItem(canvas, cy, library, item, rect);
-        }
+        cy = library.mode == LibraryDisplayMode.detailed
+            ? layoutDetailed(canvas, cy, library, behaviors, rect)
+            : layoutGrid(canvas, cy, library, behaviors, rect);
+
         cy += Graph.LibraryGroupPadding;
       } else {
         cy += Graph.LibraryGroupCollapsedPadding;
@@ -412,31 +492,42 @@ class LibraryPainter {
     }
 
     for (var group in library.groups) {
-      drawExpandoBtn(canvas, group, Offset(cx, cy));
+      drawExpandoBtn(canvas, group, Offset(cx, cy), rect);
+      var fill = group.expandoButton.hovered
+          ? Graph.blackPaint
+          : Graph.LibraryGroupLabelColor;
 
       Graph.font.paint(
           canvas, group.name, Offset(left, cy), Graph.LibraryGroupLabelSize,
-          style: "Bold", fill: Graph.LibraryGroupLabelColor);
+          style: "Bold", fill: fill);
 
       group.openButton.size =
           Size(Graph.LibraryDetailedIconSize, Graph.LibraryDetailedIconSize);
       group.openButton.moveTo(
-          rect.right - 10 - Graph.LibraryDetailedIconSize / 2 - 1, cy - 5);
+          rect.right - 10 - Graph.LibraryDetailedIconSize / 2 - 1, cy - 5,
+          update: true);
       drawDetailedItemButton(canvas, group.openButton);
 
       cy += Graph.LibraryGroupLabelSize + Graph.LibraryGroupItemPadding;
       if (group.isExpanded) {
+        bool first = true;
         for (var item in group.items) {
+          if (!first) {
+            cy += Graph.LibrarySubGroupLabelSize;
+          }
+
+          first = false;
+
           if (item.name.isNotEmpty && group.items.length > 1) {
-            Graph.font.paint(canvas, item.name, Offset(left, cy),
+            Graph.font.paint(canvas, item.name, Offset(cx, cy),
                 Graph.LibrarySubGroupLabelSize,
                 fill: Graph.LibraryGroupLabelColor);
             cy += Graph.LibrarySubGroupLabelSize + 2;
           }
 
-          for (var sub in item.items) {
-            cy = drawDetailedItem(canvas, cy, library, sub, rect);
-          }
+          cy = library.mode == LibraryDisplayMode.detailed
+              ? layoutDetailed(canvas, cy, library, item.items, rect)
+              : layoutGrid(canvas, cy, library, item.items, rect);
         }
 
         cy += Graph.LibraryGroupPadding;
@@ -444,7 +535,7 @@ class LibraryPainter {
         cy += Graph.LibraryGroupCollapsedPadding;
       }
 
-      cy += Graph.LibraryGroupPadding;
+      // cy += Graph.LibraryGroupPadding;
     }
   }
 
@@ -498,7 +589,7 @@ class LibraryPainter {
     if (item.graph != null) {
       item.editButton.size =
           Size(Graph.LibraryDetailedIconSize, Graph.LibraryDetailedIconSize);
-      item.editButton.moveTo(cx, cy);
+      item.editButton.moveTo(cx, cy, update: true);
       drawDetailedItemButton(canvas, item.editButton);
       cx += Graph.LibraryDetailedIconSize + Graph.LibraryDetailedIconSpacing;
     }

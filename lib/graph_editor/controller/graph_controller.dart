@@ -334,6 +334,12 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
+  void addInport(GraphNode node) {}
+
+  void addOutport(GraphNode node) {}
+
+  void removePort(NodePort port) {}
+
   void removeNode(GraphNode node,
       {bool save = true, bool locked = false, bool relink = false}) {
     var idx = graph.findNode(node);
@@ -352,6 +358,10 @@ class GraphController with MouseController, KeyboardController {
     }
 
     graph.endUpdate(true);
+
+    if (graph.isLibrary) {
+      editor.updateGraph(graph);
+    }
 
     if (save) {
       graph.history.push(GraphCommand.all(cmds), locked: locked);
@@ -380,6 +390,10 @@ class GraphController with MouseController, KeyboardController {
 
     if (save) {
       graph.history.push(GraphCommand.all(cmds));
+    }
+
+    if (graph.isLibrary) {
+      editor.updateGraph(graph);
     }
   }
 
@@ -573,7 +587,7 @@ class GraphController with MouseController, KeyboardController {
       }
 
       startDragging(pt);
-    } else if (focus is NodePort) {
+    } else if (focus is NodePort && !graph.isLibrary) {
       linkStart = focus as NodePort;
       moveMode = MouseMoveMode.linking;
       nextGroup = GraphNode.nodeRandom.nextInt(Graph.MaxGroupNumber);
@@ -823,18 +837,14 @@ class GraphController with MouseController, KeyboardController {
           editor.dispatch(GraphEditorCommand.expandLibrary());
         }
       } else {
-        if (!editor.library.isExpanded) {
-          var mode = editor.library.mode == LibraryDisplayMode.toolbox
-              ? LibraryDisplayMode.collapsed
-              : LibraryDisplayMode.toolbox;
-          editor.dispatch(GraphEditorCommand.showLibrary(mode));
+        if (evt.ctrlKey) {
+          editor.dispatch(
+              GraphEditorCommand.showLibrary(LibraryDisplayMode.toolbox));
         } else {
-          var mode = editor.library.mode == LibraryDisplayMode.expanded
-              ? LibraryDisplayMode.detailed
-              : LibraryDisplayMode.expanded;
-          editor.dispatch(GraphEditorCommand.showLibrary(mode));
+          editor.dispatch(GraphEditorCommand.nextLibrary());
         }
       }
+      return true;
     }
 
     if (evt.keyCode >= 48 && evt.keyCode <= 57) {

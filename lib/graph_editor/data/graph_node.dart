@@ -279,6 +279,12 @@ class GraphNode extends GraphObject {
     return type == GraphNodeType.behavior && method == name;
   }
 
+  bool usingMethod(String library, String method) {
+    return type == GraphNodeType.action &&
+        this.library == library &&
+        this.method == method;
+  }
+
   Iterable<GraphObject> walkNode() sync* {
     for (var port in inports) {
       if (port.showFlag) yield port.flag;
@@ -454,7 +460,7 @@ class GraphNode extends GraphObject {
   }
 
   @override
-  bool moveTo(double dx, double dy) {
+  bool moveTo(double dx, double dy, {bool update = false}) {
     var origin = this.pos;
     var moved = super.moveTo(dx, dy);
     if (moved) {

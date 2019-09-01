@@ -70,6 +70,11 @@ class Graph {
   static const double LibraryGroupPadding = 10;
   static const double LibraryGroupIconSize = 20;
 
+  static const double LibraryGridPadding = 10;
+  static const double LibraryGridLabelSize = 12;
+  static const double LibraryGridIconSize = 20;
+  static const int LibraryGridColumns = 5;
+
   static const double LibraryTabPadding = 12;
   static const double LibraryTabIconSize = 15;
 

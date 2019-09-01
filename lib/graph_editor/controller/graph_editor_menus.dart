@@ -233,6 +233,34 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       ..title = port.name;
   }
 
+  MenuItemSet getMethodNodeMenu(GraphNode node) {
+    var refs =
+        editor.controller.usingMethod(node.library, node.method).toList();
+
+    return MenuItemSet([
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(node, focus: "title")),
+      MenuItem(
+          icon: "chevron-circle-right",
+          command: GraphEditorCommand.addOutport(node)),
+      MenuItem(
+        icon: "search",
+        title: "Find",
+        command: refs.isEmpty ? null : GraphEditorCommand.print("find nodes"),
+      ),
+      MenuItem(
+        icon: "trash-alt",
+        title: "Delete",
+        command: refs.isNotEmpty ? null : GraphEditorCommand.removeNode(node),
+      ),
+      MenuItem(
+          icon: "chevron-circle-left",
+          command: GraphEditorCommand.addInport(node)),
+    ]);
+  }
+
   MenuItemSet getActionNodeMenu(GraphNode node) {
     return MenuItemSet([
       MenuItem(
@@ -352,7 +380,9 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
   MenuItemSet getNodeMenu(GraphNode node) {
     switch (node.type) {
       case GraphNodeType.action:
-        return getActionNodeMenu(node);
+        return graph.isLibrary
+            ? getMethodNodeMenu(node)
+            : getActionNodeMenu(node);
       case GraphNodeType.behavior:
         return getBehaviorNodeMenu(node);
       case GraphNodeType.inport:
@@ -453,6 +483,24 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       ..icon = port.icon;
   }
 
+  MenuItemSet getMethodInportMenu(NodePort port) {
+    return MenuItemSet([
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(port.node,
+              port: port, focus: "name")),
+      MenuItem(icon: "trash-alt", command: GraphEditorCommand.removePort(port)),
+      MenuItem(
+          icon: "hashtag",
+          title: "Value",
+          command: port.hasValue
+              ? null
+              : GraphEditorCommand.setPortValue(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+    ]);
+  }
+
   MenuItemSet getInportMenu(NodePort port) {
     var toolboxMenu = getAttachToolboxMenu(port);
 
@@ -465,9 +513,10 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "hashtag",
           title: "Value",
-          command: !graph.allowAddFlag(port)
+          command: port.hasValue
               ? null
-              : GraphEditorCommand.pushMenu(getInportValueMenu(port))),
+              : GraphEditorCommand.setPortValue(
+                  port, port.flagLabel ?? GraphNode.randomName())),
       MenuItem(
           icon: "toolbox",
           title: "Toolbox",
@@ -511,21 +560,52 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "link",
           title: "Link",
-          command: !graph.allowAddFlag(port)
+          command: port.hasLink
               ? null
-              : GraphEditorCommand.pushMenu(getOutportValueMenu(port))),
+              : GraphEditorCommand.setPortLink(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+    ]);
+  }
+
+  MenuItemSet getMethodOutportMenu(NodePort port) {
+    return MenuItemSet([
+      MenuItem(
+          icon: "edit",
+          title: "Edit",
+          command: GraphEditorCommand.editNode(port.node,
+              port: port, focus: "name")),
+      MenuItem(
+          icon: "bolt",
+          title: "Event",
+          command: port.hasLink
+              ? null
+              : GraphEditorCommand.setPortEvent(
+                  port, port.flagLabel ?? GraphNode.randomName())),
+      MenuItem(icon: "trash-alt", command: GraphEditorCommand.removePort(port)),
     ]);
   }
 
   MenuItemSet getPortMenu(NodePort port) {
-    if (port.isInport) {
-      return getInportMenu(port)
-        ..icon = port.icon
-        ..title = port.name;
+    if (graph.isLibrary) {
+      if (port.isInport) {
+        return getMethodInportMenu(port)
+          ..icon = port.icon
+          ..title = port.name;
+      } else {
+        return getMethodOutportMenu(port)
+          ..icon = port.icon
+          ..title = port.name;
+      }
     } else {
-      return getOutportMenu(port)
-        ..icon = port.icon
-        ..title = port.name;
+      if (port.isInport) {
+        return getInportMenu(port)
+          ..icon = port.icon
+          ..title = port.name;
+      } else {
+        return getOutportMenu(port)
+          ..icon = port.icon
+          ..title = port.name;
+      }
     }
   }
 
@@ -540,6 +620,16 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
         title: "File",
         command: GraphEditorCommand.pushMenu(getToolsMenu()),
       ),
+      if (graph.isLibrary)
+        MenuItem(
+            icon: "plus",
+            title: "add",
+            command: GraphEditorCommand.copyNode(
+                GraphNode.action()
+                  ..library = "user"
+                  ..method = "idle"
+                  ..title = "Method ${graph.nodes.length}",
+                drag: true)),
       MenuItem(
           icon: "redo",
           title: "Redo",

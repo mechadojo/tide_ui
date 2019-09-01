@@ -688,6 +688,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     editor.graph.beginUpdate();
     node.resize();
     editor.graph.endUpdate(true);
+
+    if (editor.graph.isLibrary) {
+      editor.updateNode(editor.graph, node);
+    }
   }
 
   void updateDelay() {

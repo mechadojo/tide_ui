@@ -116,6 +116,12 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.nextLibrary() {
+    handler = (GraphEditorController editor) {
+      editor.nextLibrary();
+    };
+  }
+
   GraphEditorCommand.collapseLibrary() {
     handler = (GraphEditorController editor) {
       if (!editor.library.isCollapsed) {
@@ -209,6 +215,24 @@ class GraphEditorCommand {
   GraphEditorCommand.removeNode(GraphNode node) {
     handler = (GraphEditorController editor) {
       editor.graph.controller.removeNode(node);
+    };
+  }
+
+  GraphEditorCommand.removePort(NodePort port) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.removePort(port);
+    };
+  }
+
+  GraphEditorCommand.addOutport(GraphNode node) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.addOutport(node);
+    };
+  }
+
+  GraphEditorCommand.addInport(GraphNode node) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.addInport(node);
     };
   }
 

@@ -208,6 +208,12 @@ class GraphState {
     }
   }
 
+  Iterable<GraphNode> usingMethod(String library, String method) sync* {
+    for (var node in nodes) {
+      if (node.usingMethod(library, method)) yield node;
+    }
+  }
+
   GraphNode clone(GraphNode node) {
     if (node == null) return null;
 
