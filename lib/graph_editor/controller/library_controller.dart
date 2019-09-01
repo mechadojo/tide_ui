@@ -737,6 +737,7 @@ class LibraryController with MouseController, KeyboardController {
       }
     }
 
+/*
     if (expanded != null) {
       for (var group in library.groups) {
         if (group == expanded) continue;
@@ -747,6 +748,7 @@ class LibraryController with MouseController, KeyboardController {
         }
       }
     }
+*/
 
     library.endUpdate(changed);
     if (changed) return true;

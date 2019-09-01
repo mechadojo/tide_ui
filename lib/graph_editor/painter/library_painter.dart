@@ -344,7 +344,7 @@ class LibraryPainter {
 
     var spacing = Graph.LibraryCollapsedItemSpacing;
 
-    spacing = (rect.height - cy) / (items.length);
+    spacing = (rect.height - cy - 10) / (items.length);
 
     if (spacing < Graph.LibraryCollapsedItemSpacing) {
       spacing = Graph.LibraryCollapsedItemSpacing;
@@ -363,10 +363,7 @@ class LibraryPainter {
           ? Graph.LibraryItemIconHoverColor
           : Graph.LibraryItemIconColor;
 
-      bool defaultShowLabel = library.controller.editor.isTouchMode ||
-          library.mode == LibraryDisplayMode.collapsed;
-
-      bool showLabel = defaultShowLabel;
+      bool showLabel = true;
       bool showHotkey = !library.controller.editor.isTouchMode &&
           library.mode == LibraryDisplayMode.toolbox;
 
@@ -375,9 +372,10 @@ class LibraryPainter {
         icon = item.icon;
         fill = Graph.LibraryItemIconColor;
         factor = .5;
-        showLabel = defaultShowLabel;
-        showHotkey = false;
+        showLabel = true;
+        showHotkey = true;
       }
+      var hotkeyFill = Paint()..color = fill.color.withAlpha(100);
 
       if (item.alerted) {
         fill = Graph.LibraryItemIconAlertColor;
@@ -414,7 +412,8 @@ class LibraryPainter {
         var rrect = RRect.fromRectXY(labelRect.inflate(2), 2, 2);
 
         if (item.isDefault) {
-          VectorIcons.paint(canvas, "star-solid", rrect.center, 12, fill: fill);
+          VectorIcons.paint(canvas, "star-solid", rrect.center, 12,
+              fill: hotkeyFill);
         } else {
           canvas.drawRRect(rrect, fill);
           Graph.font.paint(canvas, hotkey.toString(), labelPos, 8,
@@ -427,6 +426,7 @@ class LibraryPainter {
       cy += spacing;
     }
     cy -= spacing / 2;
+
     return cy - top;
   }
 
@@ -493,8 +493,16 @@ class LibraryPainter {
   double layoutGrid(Canvas canvas, double dy, LibraryState library,
       List<LibraryItem> items, Rect rect) {
     int idx = 0;
-    var spacing =
-        (rect.width - Graph.LibraryGridPadding * 2) / Graph.LibraryGridColumns;
+
+    double gridIconSize = Graph.LibraryGridIconSize;
+    double gridPadding = Graph.LibraryGridPadding;
+    int columns = Graph.LibraryGridColumns;
+    if (library.controller.editor.isTouchMode) {
+      gridIconSize *= 1.25;
+      gridPadding *= 1.5;
+      columns = 4;
+    }
+    var spacing = (rect.width - Graph.LibraryGridPadding * 2) / columns;
 
     double left = rect.left + Graph.LibraryGridPadding + spacing / 2;
     double dx = left;
@@ -507,7 +515,7 @@ class LibraryPainter {
           ? Graph.LibraryItemIconHoverColor
           : Graph.LibraryItemIconColor;
 
-      item.size = Size(Graph.LibraryGridIconSize, Graph.LibraryGridIconSize);
+      item.size = Size(gridIconSize, gridIconSize);
       item.moveTo(dx, dy, update: true);
 
       var sz = item.size.width;
@@ -520,14 +528,14 @@ class LibraryPainter {
       idx++;
       if ((idx % Graph.LibraryGridColumns) == 0) {
         dx = left;
-        dy += Graph.LibraryGridIconSize + Graph.LibraryGridPadding;
+        dy += gridIconSize + gridPadding;
       } else {
         dx += spacing;
       }
     }
 
     if ((idx % Graph.LibraryGridColumns) != 0) {
-      dy += Graph.LibraryGridIconSize / 2 + Graph.LibraryGridPadding;
+      dy += gridIconSize / 2 + gridPadding;
     }
 
     return dy;
@@ -541,6 +549,14 @@ class LibraryPainter {
 
     var cx = rect.left + 10;
     var left = cx + 15;
+
+    var detailedIconSize = Graph.LibraryDetailedIconSize;
+
+    bool touchMode = false;
+    if (library.controller.editor.isTouchMode) {
+      detailedIconSize *= 1.5;
+      touchMode = true;
+    }
 
     if (opmodes.isNotEmpty) {
       drawExpandoBtn(canvas, library.opmodeGroup, Offset(cx, cy), rect);
@@ -625,11 +641,13 @@ class LibraryPainter {
           style: "Bold", fill: fill);
 
       if (library.controller.allowEditGroup(group)) {
-        group.openButton.size =
-            Size(Graph.LibraryDetailedIconSize, Graph.LibraryDetailedIconSize);
+        group.openButton.size = Size(detailedIconSize, detailedIconSize);
         group.openButton.moveTo(
-            rect.right - 10 - Graph.LibraryDetailedIconSize / 2 - 1, cy - 5,
+            rect.right - 10 - detailedIconSize / 2 - 1, cy - 5,
             update: true);
+        if (touchMode) {
+          group.openButton.hitbox = group.openButton.hitbox.inflate(5);
+        }
         drawDetailedItemButton(canvas, group.openButton);
       } else {
         var lib = group.graph as GraphLibraryState;
@@ -694,24 +712,35 @@ class LibraryPainter {
 
   double drawDetailedItem(Canvas canvas, double dy, LibraryState library,
       LibraryItem item, Rect rect) {
-    var cy = dy + Graph.LibraryGroupIconSize / 2;
-    var cx = rect.left + 10 + Graph.LibraryGroupIconSize / 2;
+    var groupIconSize = Graph.LibraryGroupIconSize;
+    var detailedIconSize = Graph.LibraryDetailedIconSize;
+    var groupItemPadding = Graph.LibraryGroupItemPadding;
+
+    bool touchMode = false;
+    if (library.controller.editor.isTouchMode) {
+      detailedIconSize *= 1.5;
+      groupItemPadding *= 1.25;
+      touchMode = true;
+    }
+
+    var cy = dy + groupIconSize / 2;
+    var cx = rect.left + 10 + groupIconSize / 2;
 
     var fill = item.hovered
         ? Graph.LibraryItemIconHoverColor
         : Graph.LibraryItemIconColor;
 
-    var size = Graph.LibraryGroupIconSize;
+    var size = groupIconSize;
     if (item.hovered) size *= 1.25;
 
     VectorIcons.paint(canvas, item.icon, Offset(cx, cy), size, fill: fill);
 
-    cx += Graph.LibraryGroupIconSize / 2 + 10;
+    cx += groupIconSize / 2 + 10;
     var left = rect.left + 10;
-    var right = rect.right -
-        (Graph.LibraryDetailedIconSize + Graph.LibraryDetailedIconSpacing * 2);
+    var right =
+        rect.right - (detailedIconSize + Graph.LibraryDetailedIconSpacing * 2);
 
-    var hh = Graph.LibraryDetailedIconSize / 2;
+    var hh = detailedIconSize / 2;
 
     var limit = Graph.font.limits(
         item.name, Offset(cx, cy), Graph.LibraryGroupLabelSize,
@@ -726,19 +755,19 @@ class LibraryPainter {
         width: rect.right - 40 - cx,
         alignment: Alignment.centerLeft);
 
-    cx = right +
-        Graph.LibraryDetailedIconSize / 2 +
-        Graph.LibraryDetailedIconSpacing;
+    cx = right + detailedIconSize / 2 + Graph.LibraryDetailedIconSpacing;
 
     if (item.graph != null) {
-      item.editButton.size =
-          Size(Graph.LibraryDetailedIconSize, Graph.LibraryDetailedIconSize);
+      item.editButton.size = Size(detailedIconSize, detailedIconSize);
       item.editButton.moveTo(cx, cy, update: true);
+      if (touchMode) {
+        item.editButton.hitbox = item.editButton.hitbox.inflate(5);
+      }
       drawDetailedItemButton(canvas, item.editButton);
-      cx += Graph.LibraryDetailedIconSize + Graph.LibraryDetailedIconSpacing;
+      cx += detailedIconSize + Graph.LibraryDetailedIconSpacing;
     }
 
-    return dy + Graph.LibraryGroupIconSize + Graph.LibraryGroupItemPadding * 2;
+    return dy + groupIconSize + groupItemPadding * 2;
   }
 
   void drawExpandIcon(Canvas canvas, LibraryState library, Rect rect) {

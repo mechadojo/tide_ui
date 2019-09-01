@@ -96,8 +96,8 @@ class Graph {
   static const double LibraryTitleSize = 12;
 
   static const double LibraryFileNameSize = 10;
-  static const double LibraryFileNameSpacing = 15;
-  static const double LibraryFileIconSize = 12;
+  static const double LibraryFileNameSpacing = 20;
+  static const double LibraryFileIconSize = 15;
   static const double LibraryFileIconSpacing = 10;
 
   static Paint LibraryTitleColor = Paint()

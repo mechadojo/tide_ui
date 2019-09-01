@@ -2,6 +2,7 @@ import 'package:flutter_web/material.dart';
 import 'package:flutter_web_ui/ui.dart' as ui show Gradient;
 import 'package:tide_ui/graph_editor/data/canvas_tab.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
+
 import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
@@ -244,7 +245,7 @@ class CanvasTabsPainter extends CustomPainter {
     painter.paint(canvas, icon, item.pos, size);
     item.hitbox = Rect.fromCenter(
         center: item.pos, width: sz.width + 10, height: sz.height + 5);
-    //canvas.drawRect(item.hitbox, selectedOutlineStroke);
+    item.hitbox.inflate(10);
 
     return item.pos.translate(sz.width + spacing, 0);
   }

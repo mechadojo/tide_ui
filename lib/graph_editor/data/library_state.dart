@@ -21,8 +21,8 @@ class LibraryItem extends MenuItem {
       MenuItem(icon: "folder-open", iconAlt: "folder-open-solid");
   MenuItem editButton = MenuItem(icon: "edit");
 
-  MenuItem collapseButton = MenuItem(icon: "caret-up");
-  MenuItem expandButton = MenuItem(icon: "caret-down");
+  MenuItem collapseButton = MenuItem(icon: "angle-down");
+  MenuItem expandButton = MenuItem(icon: "angle-right");
   MenuItem get expandoButton => isCollapsed ? expandButton : collapseButton;
 
   bool collapsed = false;
@@ -119,7 +119,7 @@ class LibraryState extends UpdateNotifier {
   /// list of files used in Tab-Imports mode
   List<MenuItemSet> imports = [];
   List<MenuItem> importButtons = [];
-  
+
   List<LibraryItem> get behaviors =>
       sheets.where((x) => x.graph?.type == GraphType.behavior).toList();
 
