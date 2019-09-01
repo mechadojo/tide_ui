@@ -116,6 +116,10 @@ class LibraryState extends UpdateNotifier {
   /// list of files used in Tab-Files mode
   List<MenuItemSet> files = [];
 
+  /// list of files used in Tab-Imports mode
+  List<MenuItemSet> imports = [];
+  List<MenuItem> importButtons = [];
+  
   List<LibraryItem> get behaviors =>
       sheets.where((x) => x.graph?.type == GraphType.behavior).toList();
 

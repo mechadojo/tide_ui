@@ -3,6 +3,7 @@ import 'package:flutter_web_ui/ui.dart' as ui show Gradient;
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 
 import 'package:tide_ui/graph_editor/data/graph.dart';
+import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
@@ -78,6 +79,9 @@ class LibraryPainter {
       case LibraryDisplayMode.tabs:
         drawTabs(canvas, library, rect);
         switch (library.currentTab) {
+          case LibraryTab.imports:
+            drawImportsTab(canvas, library, rect);
+            break;
           case LibraryTab.files:
             drawFilesTab(canvas, library, rect);
             break;
@@ -110,6 +114,66 @@ class LibraryPainter {
               alignment: Alignment.topCenter);
         }
       }
+    }
+  }
+
+  double drawTabsButton(Canvas canvas, MenuItem btn, double cx, double cy) {
+    var size = Graph.LibraryFileIconSize;
+    if (btn.hovered) size *= 1.25;
+
+    var fill = btn.hovered
+        ? Graph.LibraryItemIconHoverColor
+        : Graph.LibraryItemIconColor;
+
+    btn.size = Size(size, size);
+    btn.moveTo(cx, cy, update: true);
+
+    VectorIcons.paint(canvas, btn.icon, btn.pos, size, fill: fill);
+    cx += Graph.LibraryFileIconSize + Graph.LibraryFileIconSpacing;
+    return cx;
+  }
+
+  double drawImportsTabItem(
+      Canvas canvas, MenuItemSet item, Offset pos, Rect rect) {
+    var count = item.items.length;
+
+    var left = rect.right -
+        (Graph.LibraryFileIconSize + Graph.LibraryFileIconSpacing) * count;
+
+    Graph.font.paint(canvas, item.name, pos, Graph.LibraryFileNameSize,
+        width: left - pos.dx,
+        fill: Graph.LibraryFileColor,
+        alignment: Alignment.centerLeft);
+
+    var cx = left + Graph.LibraryFileIconSize / 2;
+
+    for (var btn in item.items) {
+      cx = drawTabsButton(canvas, btn, cx, pos.dy);
+    }
+    return pos.dy + Graph.LibraryFileNameSize + Graph.LibraryFileNameSpacing;
+  }
+
+  void drawImportsTab(Canvas canvas, LibraryState library, Rect rect) {
+    var cy = rect.top + Graph.LibraryGroupTopPadding + 5;
+    var cx = rect.left + 10;
+
+    Graph.font.paint(canvas, "Imports", Offset(cx, cy), Graph.LibraryTitleSize,
+        style: "Bold", fill: Graph.LibraryTitleColor);
+
+    var left = rect.right -
+        (Graph.LibraryFileIconSize + Graph.LibraryFileIconSpacing) *
+            library.importButtons.length;
+
+    var dx = left;
+    var dy = cy - Graph.LibraryFileIconSize / 2;
+    for (var btn in library.importButtons) {
+      dx = drawTabsButton(canvas, btn, dx, dy);
+    }
+
+    cy += Graph.LibraryTitleSize + Graph.LibraryFileNameSize;
+
+    for (var item in library.imports) {
+      cy = drawImportsTabItem(canvas, item, Offset(cx, cy), rect);
     }
   }
 
@@ -501,12 +565,25 @@ class LibraryPainter {
           canvas, group.name, Offset(left, cy), Graph.LibraryGroupLabelSize,
           style: "Bold", fill: fill);
 
-      group.openButton.size =
-          Size(Graph.LibraryDetailedIconSize, Graph.LibraryDetailedIconSize);
-      group.openButton.moveTo(
-          rect.right - 10 - Graph.LibraryDetailedIconSize / 2 - 1, cy - 5,
-          update: true);
-      drawDetailedItemButton(canvas, group.openButton);
+      if (library.controller.allowEditGroup(group)) {
+        group.openButton.size =
+            Size(Graph.LibraryDetailedIconSize, Graph.LibraryDetailedIconSize);
+        group.openButton.moveTo(
+            rect.right - 10 - Graph.LibraryDetailedIconSize / 2 - 1, cy - 5,
+            update: true);
+        drawDetailedItemButton(canvas, group.openButton);
+      } else {
+        var lib = group.graph as GraphLibraryState;
+        if (lib != null && lib.source != null) {
+          var name = lib.source.replaceAll(".chart", "");
+          Graph.font.paint(canvas, name, Offset(rect.right - 10, cy), 8,
+              style: "RegularItalic",
+              fill: Graph.LibraryGroupLabelColor,
+              alignment: Alignment.bottomRight);
+        }
+
+        group.openButton.resizeTo(0, 0);
+      }
 
       cy += Graph.LibraryGroupLabelSize + Graph.LibraryGroupItemPadding;
       if (group.isExpanded) {

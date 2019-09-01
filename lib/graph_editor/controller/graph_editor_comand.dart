@@ -23,6 +23,8 @@ class GraphEditorCommand {
     after.add(cmd);
   }
 
+  GraphEditorCommand(this.handler);
+
   GraphEditorCommand.all(Iterable<GraphEditorCommand> cmds) {
     handler = (GraphEditorController editor) {
       for (var cmd in cmds) {
@@ -96,15 +98,15 @@ class GraphEditorCommand {
     };
   }
 
-  GraphEditorCommand.showLibrary([LibraryDisplayMode mode, LibraryTab tab]) {
+  GraphEditorCommand.showLibrary(LibraryDisplayMode mode, {LibraryTab tab}) {
     handler = (GraphEditorController editor) {
-      editor.showLibrary(mode, tab);
+      editor.showLibrary(mode, tab: tab);
     };
   }
 
   GraphEditorCommand.showLibraryTab(LibraryTab tab) {
     handler = (GraphEditorController editor) {
-      editor.showLibrary(LibraryDisplayMode.tabs, tab);
+      editor.showLibrary(LibraryDisplayMode.tabs, tab: tab);
     };
   }
 

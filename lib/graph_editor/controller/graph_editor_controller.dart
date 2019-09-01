@@ -170,7 +170,8 @@ class GraphEditorController extends GraphEditorControllerBase
 
     dispatch(
         GraphEditorCommand.restoreCharts()
-          ..then(GraphEditorCommand.showLibrary(LibraryDisplayMode.expanded)),
+          ..then(GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.imports)),
         afterTicks: 5);
   }
 
@@ -181,7 +182,9 @@ class GraphEditorController extends GraphEditorControllerBase
   void newFile() {
     chartFile = TideChartFile()
       ..id = Uuid().v1().toString()
-      ..name = "tide_${GraphNode.randomName()}.chart";
+      ..name = "tide_${GraphNode.randomName()}.chart"
+      ..chart = GraphFile.empty().toChart();
+
     nextSheet = 0;
     loadChart();
   }
@@ -197,8 +200,15 @@ class GraphEditorController extends GraphEditorControllerBase
     return tab;
   }
 
-  CanvasTab loadLibrary(TideChartLibrary library) {
-    var tab = CanvasTab(this, GraphLibraryState()..unpackLibrary(library));
+  CanvasTab loadLibrary(TideChartLibrary library,
+      {bool imported = false, String source}) {
+    var tab = CanvasTab(
+        this,
+        GraphLibraryState()
+          ..unpackLibrary(library)
+          ..imported = imported
+          ..source = source);
+
     tab.zoomToFit();
 
     // graph names need to be unique, however, library graph names
@@ -212,7 +222,7 @@ class GraphEditorController extends GraphEditorControllerBase
     return tab;
   }
 
-  void loadChart() {
+  void loadChart() async {
     beginUpdateAll();
 
     setTitle("Tide Chart Editor - ${chartFile.name}");
@@ -233,7 +243,12 @@ class GraphEditorController extends GraphEditorControllerBase
     }
 
     if (file.sheets.isEmpty) {
-      newTab();
+      if (file.library.isEmpty) {
+        newTab();
+      } else {
+        var name = file.library.first.methods.name;
+        selectTab(name);
+      }
     } else {
       var first = file.sheets.firstWhere((x) => x.type == "opmode",
           orElse: () => file.sheets.first);
@@ -241,7 +256,36 @@ class GraphEditorController extends GraphEditorControllerBase
       selectTab(first.name);
     }
 
+    editor.imports.clear();
+
+    for (var source in file.imports) {
+      if (!editor.imports.contains(source.name)) {
+        editor.imports.add(source.name);
+      }
+    }
+
+    await loadImports();
+
     endUpdateAll();
+  }
+
+  void loadImports({bool reload = false}) async {
+    for (var source in editor.imports) {
+      var libs = editor.library.where((x) => x.source == source).toList();
+
+      if (libs.isEmpty || reload) {
+        var file = await getLocalFile(source);
+        if (file != null) {
+          print("Loading libraries from $source");
+          for (var item in file.chart.library) {
+            var tab = loadLibrary(item, imported: true, source: source);
+            library.controller.addLibrary(tab.graph, expand: false);
+          }
+        }
+      }
+    }
+
+    library.controller.loadImports(editor.imports);
   }
 
   void beginUpdateAll() {
@@ -518,7 +562,7 @@ class GraphEditorController extends GraphEditorControllerBase
     if (library.controller.tabStack.isNotEmpty) {
       var next = library.controller.tabStack.removeLast();
 
-      showLibrary(LibraryDisplayMode.tabs, next, false);
+      showLibrary(LibraryDisplayMode.tabs, tab: next, push: false);
     }
   }
 
@@ -557,11 +601,15 @@ class GraphEditorController extends GraphEditorControllerBase
         mode = LibraryDisplayMode.detailed;
         break;
     }
-    showLibrary(mode, library.currentTab);
+    showLibrary(mode, tab: library.currentTab);
   }
 
-  void showLibrary(
-      [LibraryDisplayMode mode, LibraryTab tab, bool push = true]) {
+  void showLibrary(LibraryDisplayMode mode,
+      {LibraryTab tab, bool push = true, bool pop = false}) {
+    if (pop) {
+      popLibraryTabs();
+    }
+
     if (mode != null) {
       library.controller.setMode(mode, tab, push);
     }
@@ -583,6 +631,50 @@ class GraphEditorController extends GraphEditorControllerBase
       graph.controller.paddingRight = library.controller.width;
       graph.endUpdate(true);
     }
+  }
+
+  void addImport(String filename) {
+    if (editor.imports.contains(filename)) return;
+
+    beginUpdateAll();
+    editor.imports.add(filename);
+    loadImports();
+    endUpdateAll();
+  }
+
+  void addImports(List<String> files) {
+    files = files.where((x) => !editor.imports.contains(x)).toList();
+
+    if (files.isEmpty) return;
+
+    beginUpdateAll();
+    editor.imports.addAll(files);
+    loadImports();
+    endUpdateAll();
+  }
+
+  void removeImport(String filename) {
+    if (!editor.imports.contains(filename)) return;
+
+    beginUpdateAll();
+    editor.imports.remove(filename);
+    loadImports();
+    endUpdateAll();
+  }
+
+  void moveImport(String filename, {int delta = 0}) {
+    if (!editor.imports.contains(filename)) return;
+
+    beginUpdateAll();
+    var idx = editor.imports.indexOf(filename);
+    editor.imports.removeAt(idx);
+
+    var next = idx + delta;
+    if (next < 0) next = 0;
+    editor.imports.insert(next, filename);
+
+    loadImports();
+    endUpdateAll();
   }
 
   void newTab([bool random = false]) {

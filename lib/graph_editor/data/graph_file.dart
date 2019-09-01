@@ -1,6 +1,7 @@
 import 'package:tide_chart/tide_chart.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
+import 'package:uuid/uuid.dart';
 
 class GraphFile {
   List<TideChartGraph> sheets = [];
@@ -19,6 +20,12 @@ class GraphFile {
   String commitDesc;
   String commitNotes;
 
+  static List<String> defaultImports = ["default.chart", "common.chart"];
+
+  GraphFile.empty() {
+    imports = [...defaultImports.map(packSource)];
+  }
+
   GraphFile.editor(GraphEditorState editor) {
     sheets = [
       ...editor.tabs.values
@@ -31,6 +38,15 @@ class GraphFile {
           .where((x) => x.graph is GraphLibraryState)
           .map((x) => (x.graph as GraphLibraryState).packLibrary())
     ];
+
+    imports = [...editor.imports.map(packSource)];
+  }
+
+  static TideChartSource packSource(String filename) {
+    TideChartSource source = TideChartSource();
+    source.id = Uuid().v1().toString();
+    source.name = filename;
+    return source;
   }
 
   GraphFile(TideChartData chart) {

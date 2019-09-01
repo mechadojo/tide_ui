@@ -18,6 +18,8 @@ class GraphLibraryFields {
 
 class GraphLibraryState extends GraphState {
   bool imported = false;
+  String source;
+
   GraphLibraryFields library = GraphLibraryFields();
 
   void unpackLibrary(TideChartLibrary library) {

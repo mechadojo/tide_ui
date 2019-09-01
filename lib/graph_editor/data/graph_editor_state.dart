@@ -10,9 +10,9 @@ import 'update_notifier.dart';
 
 enum GraphDragMode { panning, selecting, viewing }
 
-
 class GraphEditorState extends UpdateNotifier {
   final Map<String, CanvasTab> tabs = {};
+  final List<String> imports = [];
 
   Iterable<GraphState> get sheets sync* {
     for (var tab in tabs.values) {

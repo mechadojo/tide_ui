@@ -1,6 +1,7 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
+import 'package:tide_ui/graph_editor/data/graph_file.dart';
 import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
@@ -9,7 +10,6 @@ import 'package:tide_ui/graph_editor/data/menu_item.dart';
 
 import 'graph_editor_comand.dart';
 import 'graph_editor_controller.dart';
-import 'graph_editor_filesource.dart';
 import 'graph_event.dart';
 import 'keyboard_controller.dart';
 import 'mouse_controller.dart';
@@ -67,6 +67,12 @@ enum LibraryTab {
 
 typedef SelectFileHandler(String filename);
 
+class SelectFileMenuItem extends MenuItem {
+  SelectFileHandler handler;
+
+  SelectFileMenuItem(this.handler);
+}
+
 class LibraryController with MouseController, KeyboardController {
   GraphEditorController editor;
   LibraryState get library => editor.library;
@@ -123,30 +129,45 @@ class LibraryController with MouseController, KeyboardController {
     return 0;
   }
 
-  MenuItemSet createFileMenuItem(String file) {
+  MenuItemSet createFileMenuItem(String file,
+      {SelectFileHandler onSelect,
+      SelectFileHandler onDelete,
+      List<SelectFileMenuItem> items}) {
+    items = items ?? [];
+
     return MenuItemSet([
-      MenuItem()
-        ..icon = "folder-open-solid"
-        ..command = GraphEditorCommand.all([
-          GraphEditorCommand.popLibraryTabs(),
-          GraphEditorCommand.showLibrary(LibraryDisplayMode.detailed),
-          GraphEditorCommand.openFile(FileSourceType.local, file)
-        ]),
-      MenuItem()
-        ..icon = "trash-alt"
-        ..command = GraphEditorCommand.deleteLocalFile(file),
+      ...items.map((x) => MenuItem()
+        ..copy(x)
+        ..command = GraphEditorCommand((editor) {
+          x.handler(file);
+        })),
+      if (onSelect != null)
+        MenuItem()
+          ..icon = "folder-open-solid"
+          ..command = GraphEditorCommand((editor) {
+            onSelect(file);
+          }),
+      if (onDelete != null)
+        MenuItem()
+          ..icon = "trash-alt"
+          ..command = GraphEditorCommand((editor) {
+            onDelete(file);
+          }),
     ])
       ..name = file;
   }
 
-  void openFile(String title, SelectFileHandler onSelect,
-      [List<String> files]) {
+  void selectFile(String title, List<String> files,
+      {SelectFileHandler onSelect, SelectFileHandler onDelete}) {
     files = files ?? [];
 
-    library.files = files.map(createFileMenuItem).toList();
+    library.files = files
+        .map((x) =>
+            createFileMenuItem(x, onSelect: onSelect, onDelete: onDelete))
+        .toList();
 
-    editor.dispatch(GraphEditorCommand.showLibrary(
-        LibraryDisplayMode.tabs, LibraryTab.files));
+    editor.dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+        tab: LibraryTab.files));
 
     onSelectFile = onSelect;
     filesTitle = title;
@@ -183,23 +204,23 @@ class LibraryController with MouseController, KeyboardController {
     library.tabs = [
       MenuItem(
           icon: "share-square-solid",
-          command: GraphEditorCommand.showLibrary(
-              LibraryDisplayMode.tabs, LibraryTab.templates))
+          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.templates))
         ..selected = library.currentTab == LibraryTab.templates,
       MenuItem(
           icon: "puzzle-piece",
-          command: GraphEditorCommand.showLibrary(
-              LibraryDisplayMode.tabs, LibraryTab.widgets))
+          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.widgets))
         ..selected = library.currentTab == LibraryTab.widgets,
       MenuItem(
           icon: "file-import",
-          command: GraphEditorCommand.showLibrary(
-              LibraryDisplayMode.tabs, LibraryTab.imports))
+          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.imports))
         ..selected = library.currentTab == LibraryTab.imports,
       MenuItem(
           icon: "clipboard-solid",
-          command: GraphEditorCommand.showLibrary(
-              LibraryDisplayMode.tabs, LibraryTab.clipboard))
+          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.clipboard))
         ..selected = library.currentTab == LibraryTab.clipboard,
       if (tabStack.isNotEmpty)
         MenuItem(
@@ -337,6 +358,12 @@ class LibraryController with MouseController, KeyboardController {
           yield* item.items;
         }
         break;
+      case LibraryTab.imports:
+        yield* library.importButtons;
+        for (var item in library.imports) {
+          yield* item.items;
+        }
+        break;
       default:
         break;
     }
@@ -416,14 +443,72 @@ class LibraryController with MouseController, KeyboardController {
     }
   }
 
-  void addLibrary(GraphLibraryState graph) {
+  void showAddImportTab() {
+    editor.getLocalFileList().then((files) {
+      selectFile("Select Import", files, onSelect: (filename) {
+        editor.popLibraryTabs();
+        editor.addImport(filename);
+      });
+    });
+  }
+
+  void loadImports(List<String> sources) {
+    library.beginUpdate();
+    library.imports.clear();
+
+    library.importButtons = [
+      if (GraphFile.defaultImports.any((x) => !sources.contains(x)))
+        MenuItem()
+          ..icon = "star"
+          ..command = GraphEditorCommand((editor) {
+            editor.addImports(GraphFile.defaultImports);
+          }),
+      MenuItem()
+        ..icon = "plus"
+        ..command = GraphEditorCommand((editor) {
+          showAddImportTab();
+        })
+    ];
+
+    for (var source in sources) {
+      library.imports.add(MenuItemSet([
+        if (source != sources.first)
+          MenuItem()
+            ..icon = "arrow-up"
+            ..command = GraphEditorCommand((editor) {
+              editor.moveImport(source, delta: -1);
+            }),
+        if (source != sources.last)
+          MenuItem()
+            ..icon = "arrow-down"
+            ..command = GraphEditorCommand((editor) {
+              editor.moveImport(source, delta: 1);
+            }),
+        MenuItem()
+          ..icon = "trash-alt"
+          ..command = GraphEditorCommand((editor) {
+            editor.removeImport(source);
+          }),
+      ])
+        ..name = source);
+    }
+
+    library.endUpdate(true);
+  }
+
+  void addLibrary(GraphLibraryState graph, {bool expand = true}) {
     library.beginUpdate();
     var added = LibraryItem.library(graph);
     library.groups.add(added);
-    for (var group in library.groups) {
-      if (group == added) continue;
-      group.collapsed = true;
+    if (expand) {
+      for (var group in library.groups) {
+        if (group == added) continue;
+        group.collapsed = true;
+      }
+    } else {
+      added.collapsed = true;
     }
+
     library.endUpdate(true);
   }
 
@@ -598,7 +683,7 @@ class LibraryController with MouseController, KeyboardController {
   bool onMouseDown(GraphEvent evt) {
     if (library.hitbox.contains(evt.pos)) {
       if (isHidden) {
-        editor.dispatch(GraphEditorCommand.showLibrary());
+        editor.dispatch(GraphEditorCommand.showLibrary(null));
       } else {
         editor.dispatch(GraphEditorCommand.hideLibrary());
       }
@@ -736,6 +821,12 @@ class LibraryController with MouseController, KeyboardController {
     switch (library.currentTab) {
       case LibraryTab.files:
         for (var item in library.files) {
+          yield* item.items;
+        }
+        break;
+      case LibraryTab.imports:
+        yield* library.importButtons;
+        for (var item in library.imports) {
           yield* item.items;
         }
         break;
