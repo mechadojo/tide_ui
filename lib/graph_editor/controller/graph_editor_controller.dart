@@ -763,10 +763,12 @@ class GraphEditorController extends GraphEditorControllerBase
     var pos = canvas.pos;
     var scale = canvas.scale;
 
+    canvas.beginUpdate();
     canvas.zoomToFit(
-        rect.inflate(25),
+        rect.inflate(50),
         Size(canvas.size.width,
             canvas.size.height - EditNodeDialog.EditNodeDialogHeight));
+    canvas.endUpdate(true);
 
     EditNodeDialog dialog;
     var controller = scaffold.currentState.showBottomSheet((context) {

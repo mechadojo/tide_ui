@@ -293,11 +293,19 @@ class GraphPropertySet extends GraphProperty {
   bool get isNotEmpty => props.isNotEmpty;
   bool get isEmpty => props.isEmpty;
 
+  bool contains(String name) {
+    return props.containsKey(name);
+  }
+
   String getString(String name, [String defval]) {
     var prop = props[name];
     if (prop == null) return defval;
 
     return prop.getValue();
+  }
+
+  GraphProperty get(String name) {
+    return props[name];
   }
 
   bool getBool(String name, [bool defval = false]) {

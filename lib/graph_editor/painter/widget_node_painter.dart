@@ -16,11 +16,20 @@ class WidgetNodePainter {
 
   static void paintNode(Canvas canvas, GraphNode node,
       {WidgetState state, double scale = 1}) {
+    var painter = widgetPainters[node.widget];
+    if (painter == null) return;
+
     canvas.save();
     canvas.translate(node.pos.dx, node.pos.dy);
-    paintWidget(canvas, node.widget, node.size, state, scale);
+
+    state = state ?? widgetDefaultState[node.widget];
+    painter.paint(canvas, node.size, state, scale);
     canvas.restore();
+
+    painter.drawNode(canvas, node, scale);
   }
+
+  void drawNode(Canvas canvas, GraphNode node, double scale) {}
 
   static void paintWidget(Canvas canvas, WidgetNodeType type, Size size,
       [WidgetState state, double scale = 1]) {

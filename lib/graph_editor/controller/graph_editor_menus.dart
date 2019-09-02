@@ -513,7 +513,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "hashtag",
           title: "Value",
-          command: port.hasValue
+          command: port.hasValue || port.node.allowAddFilter
               ? null
               : GraphEditorCommand.setPortValue(
                   port, port.flagLabel ?? GraphNode.randomName())),
@@ -560,7 +560,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
       MenuItem(
           icon: "link",
           title: "Link",
-          command: port.hasLink
+          command: port.hasLink || port.node.allowAddFilter
               ? null
               : GraphEditorCommand.setPortLink(
                   port, port.flagLabel ?? GraphNode.randomName())),

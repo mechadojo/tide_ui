@@ -43,8 +43,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   final delayController = TextEditingController();
   final portNameController = TextEditingController();
   final portGroupController = TextEditingController();
-
   final portValueController = TextEditingController();
+  final portFilterController = TextEditingController();
+
   final scriptController = StreamController<GraphEvent>();
 
   final propNameController = TextEditingController();
@@ -57,6 +58,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   final portNameFocus = FocusNode();
   final portGroupFocus = FocusNode();
   final portValueFocus = FocusNode();
+  final portFilterFocus = FocusNode();
+
   final scriptFocus = FocusNode();
 
   final propNameFocus = FocusNode();
@@ -71,6 +74,18 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       TextStyle(fontSize: 15, fontFamily: "Source Sans Pro");
   TextStyle _defaultLabelStyle = TextStyle(
       fontSize: 15, fontFamily: "Source Sans Pro", fontWeight: FontWeight.bold);
+
+  TextStyle _selectedLabelStyle = TextStyle(
+      color: Colors.black,
+      fontSize: 15,
+      fontFamily: "Source Sans Pro",
+      fontWeight: FontWeight.bold);
+
+  TextStyle _deselectedLabelStyle = TextStyle(
+    color: Colors.grey,
+    fontSize: 15,
+    fontFamily: "Source Sans Pro",
+  );
 
   TextStyle _defaultPortListStyle =
       TextStyle(fontSize: 15, fontFamily: "Source Sans Pro");
@@ -120,6 +135,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     portNameFocus?.dispose();
     portValueFocus?.dispose();
     portGroupFocus?.dispose();
+    portFilterFocus?.dispose();
+
     scriptFocus?.dispose();
     propNameFocus?.dispose();
     propValueFocus?.dispose();
@@ -131,6 +148,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     portNameController?.dispose();
     portGroupController?.dispose();
     portValueController?.dispose();
+    portFilterController?.dispose();
 
     propNameController?.dispose();
     propValueController?.dispose();
@@ -208,6 +226,10 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       ..text = selectedPort?.flagLabel
       ..addListener(updatePortValue);
 
+    portFilterController
+      ..text = selectedPort?.filter
+      ..addListener(updatePortFilter);
+
     portGroupController
       ..text = selectedPort?.syncGroup
       ..addListener(updatePortGroup);
@@ -226,7 +248,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
     portValueFocus
       ..addListener(onChangeFocus(
-          portValueFocus, portValueController, portNameFocus, portGroupFocus));
+          portValueFocus, portValueController, portNameFocus, portFilterFocus));
+
+    portFilterFocus
+      ..addListener(onChangeFocus(portFilterFocus, portFilterController,
+          portValueFocus, portGroupFocus));
 
     portGroupFocus
       ..addListener(onChangeFocus(
@@ -265,6 +291,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         break;
       case "name":
         focused = portNameFocus;
+        break;
+      case "filter":
+        focused = portFilterFocus;
         break;
       case "method":
         focused = methodFocus;
@@ -389,6 +418,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
     portNameController.value =
         portNameController.value.copyWith(text: selectedPort.name);
+
+    portFilterController.value =
+        portFilterController.value.copyWith(text: selectedPort.filter ?? "");
 
     portValueController.value =
         portValueController.value.copyWith(text: selectedPort.flagLabel ?? "");
@@ -1049,6 +1081,16 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     });
   }
 
+  void updatePortFilter() {
+    if (selectedPort == null) return;
+
+    setState(() {
+      selectedPort.filter = portFilterController.text;
+      updatePortFields();
+      update();
+    });
+  }
+
   void updatePortValue() {
     if (selectedPort == null) return;
 
@@ -1281,16 +1323,15 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     ]);
   }
 
-  Widget createTextButton(
-    BuildContext context,
-    String text, {
-    VoidCallback onPressed,
-    double width = 20,
-    double height = 20,
-    double size = 18,
-    EdgeInsets margin = const EdgeInsets.symmetric(vertical: 2, horizontal: 5),
-    EdgeInsets padding = const EdgeInsets.all(2),
-  }) {
+  Widget createTextButton(BuildContext context, String text,
+      {VoidCallback onPressed,
+      double width = 20,
+      double height = 20,
+      double size = 18,
+      EdgeInsets margin =
+          const EdgeInsets.symmetric(vertical: 2, horizontal: 5),
+      EdgeInsets padding = const EdgeInsets.all(2),
+      TextStyle style}) {
     return Padding(
       padding: margin,
       child: GestureDetector(
@@ -1300,7 +1341,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
           child: SizedBox(
               width: width,
               height: height,
-              child: Text(text, style: _defaultLabelStyle)),
+              child: Text(text, style: style ?? _defaultLabelStyle)),
         ),
       ),
     );
@@ -1551,6 +1592,11 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     ]);
   }
 
+  bool get allowPortValueRow {
+    if (node.isAction) return true;
+    return false;
+  }
+
   Iterable<Widget> getPortsFormFields(BuildContext context) sync* {
     var enableName =
         selectedPort == null ? false : selectedPort.allowChangeName;
@@ -1558,7 +1604,12 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     yield createTextField(context, "Name", portNameController,
         enabled: enableName, focus: portNameFocus, width: 175);
 
-    if (node.type == GraphNodeType.action) {
+    if (node.allowAddFilter) {
+      yield createTextField(context, "Filter", portFilterController,
+          padding: 5, width: 175);
+    }
+
+    if (allowPortValueRow) {
       yield createPortValueRow(context, width: 175);
     }
 
@@ -1815,11 +1866,12 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   bool get allowEditTitle {
-    return node.isAnyType(Action_Behavior);
+    return node.isAnyType(Action_Behavior_Widget);
   }
 
   bool get allowEditMethod {
-    return node.type != GraphNodeType.behavior;
+    return node.type != GraphNodeType.behavior &&
+        node.type != GraphNodeType.widget;
   }
 
   String get methodFieldLabel {
@@ -1830,7 +1882,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     var title = widget.title ??
         (editor.graph.isLibrary
             ? "Edit Method Template"
-            : "Edit ${node.typeName} Node");
+            : "Edit ${node.isWidget ? node.widgetTypeName : node.typeName} Node");
     var label = "";
 
     if (node.type == GraphNodeType.behavior) {
@@ -1886,53 +1938,112 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
     return result;
   }
 
+  bool get allowEditInports {
+    if (node.isAnyType(Action_Behavior)) return true;
+
+    return false;
+  }
+
+  bool get allowEditOutports {
+    if (node.isAnyType(Action_Behavior)) return true;
+
+    if (node.isGamepad) return true;
+
+    return false;
+  }
+
+  bool get allowEditProps {
+    return true;
+  }
+
+  bool get allowEditScript {
+    if (node.isGamepad) return false;
+    return true;
+  }
+
+  void setGamepadDriver(int driver) {
+    setState(() {
+      node.props.replace(GraphProperty.asInt("driver", driver));
+      if (node.title.startsWith("Driver")) {
+        node.title = "Driver $driver";
+        titleController.text = node.title;
+      }
+
+      if (selectedProp != null && selectedProp.name == "driver") {
+        selectedProp = node.props.get("driver");
+        updatePropsFields();
+      }
+
+      update();
+    });
+  }
+
+  Iterable<Widget> get actionButtons sync* {
+    if ((editor.graph.isOpMode || editor.graph.isBehavior) && node.isAction) {
+      yield createIconButton(context, "star", onPressed: () {
+        print("add to toolbox");
+      });
+    }
+
+    if (node.isGamepad) {
+      int driver = node.props.getInt("driver", 1);
+
+      yield createTextButton(context, "Driver 1",
+          style: driver == 1 ? _selectedLabelStyle : _deselectedLabelStyle,
+          width: 55, onPressed: () {
+        setGamepadDriver(1);
+      });
+
+      yield createTextButton(context, "Driver 2",
+          style: driver == 2 ? _selectedLabelStyle : _deselectedLabelStyle,
+          width: 55, onPressed: () {
+        setGamepadDriver(2);
+      });
+    }
+    yield createIconButton(context, "window-close-solid", onPressed: () {
+      widget.close(false);
+    });
+  }
+
   Widget createPortTabs(double width) {
     return Container(
       width: width,
       child: Row(
         children: <Widget>[
-          if (node.isAnyType(Action_Behavior))
+          if (allowEditInports)
             FlatButton(
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               child: Text("Inports",
                   style: isInportsTab ? _selectedTabStyle : _defaultTabStyle),
               onPressed: selectInportsTab,
             ),
-          if (node.isAnyType(Action_Behavior))
+          if (allowEditOutports)
             FlatButton(
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               child: Text("Outports",
                   style: isOutportsTab ? _selectedTabStyle : _defaultTabStyle),
               onPressed: selectOutportsTab,
             ),
-          FlatButton(
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            child: Text("Properties",
-                style: isPropsTab ? _selectedTabStyle : _defaultTabStyle),
-            onPressed: selectPropsTab,
-          ),
-          FlatButton(
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            child: Text("Script",
-                style: isScriptTab ? _selectedTabStyle : _defaultTabStyle),
-            onPressed: selectScriptTab,
-          ),
+          if (allowEditProps)
+            FlatButton(
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              child: Text("Properties",
+                  style: isPropsTab ? _selectedTabStyle : _defaultTabStyle),
+              onPressed: selectPropsTab,
+            ),
+          if (allowEditScript)
+            FlatButton(
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              child: Text("Script",
+                  style: isScriptTab ? _selectedTabStyle : _defaultTabStyle),
+              onPressed: selectScriptTab,
+            ),
           Expanded(
             child: Container(
               alignment: Alignment.centerRight,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children: <Widget>[
-                  if ((editor.graph.isOpMode || editor.graph.isBehavior) &&
-                      node.isAction)
-                    createIconButton(context, "star", onPressed: () {
-                      print("add to toolbox");
-                    }),
-                  createIconButton(context, "window-close-solid",
-                      onPressed: () {
-                    widget.close(false);
-                  }),
-                ],
+                children: <Widget>[...actionButtons],
               ),
             ),
           ),
@@ -1969,7 +2080,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
               child: Row(
                 children: <Widget>[
                   createNodeForm(context, height: height),
-                  if (node.isAnyType(Action_Behavior) ||
+                  if (node.isAnyType(Action_Behavior_Widget) ||
                       node.type == GraphNodeType.trigger)
                     createPortsForm(context, width: portsWidth, height: height),
                 ],

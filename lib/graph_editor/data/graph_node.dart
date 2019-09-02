@@ -15,6 +15,11 @@ const Inport_Outport = [GraphNodeType.inport, GraphNodeType.outport];
 const Inport_Trigger = [GraphNodeType.inport, GraphNodeType.trigger];
 const Outport_Event = [GraphNodeType.outport, GraphNodeType.event];
 const Action_Behavior = [GraphNodeType.action, GraphNodeType.behavior];
+const Action_Behavior_Widget = [
+  GraphNodeType.action,
+  GraphNodeType.behavior,
+  GraphNodeType.widget
+];
 const Trigger_Event = [GraphNodeType.trigger, GraphNodeType.event];
 
 enum GraphNodeType {
@@ -257,12 +262,8 @@ class GraphNode extends GraphObject {
     node.resources = [...packed.resources.map((x) => x.clone())];
     node.internal = [...packed.internal.map((x) => GraphState.unpack(x))];
 
-    if (node.isWidget) {
-      var sz = node.settings.getDouble("size", 150);
-      node.size = WidgetNodePainter.measureWidget(node.widget, Size(sz, sz));
-    }
-
     node.resize();
+
     node.moveTo(packed.posX.toDouble(), packed.posY.toDouble(), update: true);
 
     return node;
@@ -276,8 +277,6 @@ class GraphNode extends GraphObject {
     icon = "gamepad";
     type = GraphNodeType.widget;
     widget = WidgetNodeType.gamepad;
-
-    this.size = WidgetNodePainter.measureWidget(widget, Size(size, size));
     resize();
   }
 
@@ -439,23 +438,36 @@ class GraphNode extends GraphObject {
   Iterable<GraphObject> walkNode() sync* {
     for (var port in inports) {
       if (port.showFlag) yield port.flag;
+      if (port.hasFilter) yield port.filterFlag;
       yield port;
     }
 
     for (var port in outports) {
       if (port.showFlag) yield port.flag;
+      if (port.hasFilter) yield port.filterFlag;
       yield port;
     }
 
     yield this;
   }
 
+  bool get allowAddFilter {
+    if (isGamepad) return true;
+
+    return false;
+  }
+
   bool get allowAddInport {
-    return isAnyType(Action_Behavior);
+    if (isAnyType(Action_Behavior)) return true;
+    return false;
   }
 
   bool get allowAddOutport {
-    return isAnyType(Action_Behavior);
+    if (isAnyType(Action_Behavior)) return true;
+
+    if (isGamepad) return true;
+
+    return false;
   }
 
   String get widgetTypeName {
@@ -704,12 +716,39 @@ class GraphNode extends GraphObject {
     }
   }
 
+  double get inportsFilterMargin {
+    double result = 0;
+    for (var port in inports) {
+      if (port.hasFilter) {
+        var sz = Graph.font
+            .limits(port.filter, Offset.zero, Graph.PortValueLabelSize);
+        var width = sz.width + Graph.PortFilterFlagPadding;
+        if (width > result) result = width;
+      }
+    }
+    return result;
+  }
+
+  double get outportsFilterMargin {
+    double result = 0;
+    for (var port in outports) {
+      if (port.hasFilter) {
+        var sz = Graph.font
+            .limits(port.filter, Offset.zero, Graph.PortValueLabelSize);
+        var width = sz.width + Graph.PortFilterFlagPadding;
+        if (width > result) result = width;
+      }
+    }
+    return result;
+  }
+
   bool resize() {
     double width = size.width;
     double height = size.height;
 
     var inports = visibleInports;
     var outports = visibleOutports;
+    var spacing = Graph.DefaultPortSpacing;
 
     var ports = max(inports.length, outports.length);
 
@@ -731,8 +770,11 @@ class GraphNode extends GraphObject {
 
       height = Graph.NodeTriggerHeight;
     } else if (type == GraphNodeType.widget) {
-      width = Graph.DefaultGamepadWidth;
-      height = Graph.DefaultGamepadHeight;
+      var sz = settings.getDouble("size", 150);
+      size = WidgetNodePainter.measureWidget(widget, Size(sz, sz));
+      width = size.width;
+      height = size.height;
+      spacing = Graph.WidgetPortSpacing;
     } else {
       width = Graph.DefaultNodeSize;
       height = Graph.DefaultNodeSize;
@@ -743,8 +785,10 @@ class GraphNode extends GraphObject {
     // update position of inports
     //
     var dy = (height - Graph.DefaultPortPadding) / inports.length;
-    if (dy < Graph.DefaultPortSpacing) dy = Graph.DefaultPortSpacing;
+    if (dy < spacing) dy = spacing;
     var px = pos.dx - (width / 2 + Graph.DefaultPortOffset);
+    px -= inportsFilterMargin;
+
     var py = pos.dy - ((inports.length - 1) * dy) / 2;
 
     for (var port in inports) {
@@ -756,9 +800,11 @@ class GraphNode extends GraphObject {
     // update position of outports
     //
     dy = (height - Graph.DefaultPortPadding) / outports.length;
-    if (dy < Graph.DefaultPortSpacing) dy = Graph.DefaultPortSpacing;
+    if (dy < spacing) dy = spacing;
     py = pos.dy - ((outports.length - 1) * dy) / 2;
     px = pos.dx + (width / 2 + Graph.DefaultPortOffset);
+    px += outportsFilterMargin;
+
     for (var port in outports) {
       changed |= port.moveTo(px, py);
       py += dy;

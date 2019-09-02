@@ -40,6 +40,14 @@ class NodePortPainter {
     if (port.hasLink) return Graph.PortLinkLabelColor;
     if (port.hasEvent) return Graph.PortEventLabelColor;
 
+    if (port.hasFilter) {
+      return port.filter.startsWith("~")
+          ? port.node.props.contains(port.filter.substring(1))
+              ? Graph.PortTriggerLabelColor
+              : Graph.PortErrorLabelColor
+          : Graph.PortValueLabelColor;
+    }
+
     return Graph.whitePaint;
   }
 
@@ -51,31 +59,45 @@ class NodePortPainter {
     return "";
   }
 
+  void drawFilterFlag(Canvas canvas, NodePort port) {
+    var direction = port.type == NodePortType.inport ? 1.0 : -1.0;
+    var label = port.filter;
+
+    drawPortFlag(canvas, port.filterFlag, port.pos, direction, label);
+  }
+
+  void drawPortFlag(
+      Canvas canvas, PortFlag flag, Offset pos, double direction, String text,
+      {String icon}) {
+    if (pos != flag.pos || direction != flag.direction || text != flag.text) {
+      flag.pos = port.pos;
+      flag.direction = direction;
+      flag.text = text;
+      flag.update();
+    }
+
+    canvas.drawPath(flag.path, getFlagPaint());
+    canvas.drawPath(flag.path, Graph.PortValueBorder);
+
+    var p1 = flag.leader.first;
+    var p2 = flag.leader.last;
+    canvas.drawLine(p1, p2, Graph.PortValueBorder);
+
+    Graph.font.paint(canvas, flag.text, flag.textPos, Graph.PortValueLabelSize,
+        fill: Graph.NodeDarkColor, alignment: Alignment.center);
+
+    if (icon != null) {
+      VectorIcons.paint(canvas, icon, flag.iconPos, Graph.PortValueIconSize,
+          fill: Graph.NodeDarkColor);
+    }
+  }
+
   void drawFlag(Canvas canvas, NodePort port) {
     var direction = port.type == NodePortType.inport ? -1.0 : 1.0;
     var label = port.flagLabel;
 
-    if (port.pos != port.flag.pos ||
-        direction != port.flag.direction ||
-        label != port.flag.text) {
-      port.flag.pos = port.pos;
-      port.flag.direction = direction;
-      port.flag.text = label;
-      port.flag.update();
-    }
-
-    canvas.drawPath(port.flag.path, getFlagPaint());
-    canvas.drawPath(port.flag.path, Graph.PortValueBorder);
-
-    var p1 = port.flag.leader.first;
-    var p2 = port.flag.leader.last;
-    canvas.drawLine(p1, p2, Graph.PortValueBorder);
-
-    Graph.font.paint(canvas, label, port.flag.textPos, Graph.PortValueLabelSize,
-        fill: Graph.NodeDarkColor, alignment: Alignment.center);
-    var icon = getFlagIcon();
-    VectorIcons.paint(canvas, icon, port.flag.iconPos, Graph.PortValueIconSize,
-        fill: Graph.NodeDarkColor);
+    drawPortFlag(canvas, port.flag, port.pos, direction, label,
+        icon: getFlagIcon());
   }
 
   void paint(Canvas canvas, double scale, NodePort port) {
@@ -95,6 +117,10 @@ class NodePortPainter {
 
     if (port.showFlag && (Graph.isZoomedIn(scale) || !port.hovered)) {
       drawFlag(canvas, port);
+    }
+
+    if (port.hasFilter) {
+      drawFilterFlag(canvas, port);
     }
 
     if (port.isBlocking) {

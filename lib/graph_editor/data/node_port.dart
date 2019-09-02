@@ -63,6 +63,8 @@ class NodePort extends GraphObject {
   static NodePort none = NodePort()..name = "<none>";
 
   PortFlag flag = PortFlag();
+  PortFlag filterFlag = PortFlag();
+
   NodePortType type = NodePortType.inport;
   GraphNode node = GraphNode.none;
 
@@ -87,6 +89,7 @@ class NodePort extends GraphObject {
     }
   }
 
+  String filter;
   String trigger;
   String link;
   String event;
@@ -97,6 +100,7 @@ class NodePort extends GraphObject {
   bool get hasLink => link != null && link.isNotEmpty;
   bool get hasEvent => event != null && event.isNotEmpty;
   bool get hasSyncGroup => syncGroup != null && syncGroup.isNotEmpty;
+  bool get hasFilter => filter != null && filter.isNotEmpty;
 
   String get flagLabel {
     if (hasValue) return value;
@@ -244,7 +248,7 @@ class NodePort extends GraphObject {
     result.isBlocking = packed.isBlocking;
     result.isQueuing = packed.isQueuing;
     result.syncGroup = packed.syncGroup;
-
+    result.filter = packed.filter;
     return result;
   }
 
@@ -291,6 +295,7 @@ class NodePort extends GraphObject {
     if (trigger != null) result.trigger = trigger;
     if (link != null) result.link = link;
     if (event != null) result.event = event;
+    if (filter != null) result.filter = filter;
 
     return result;
   }

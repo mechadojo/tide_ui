@@ -12,6 +12,7 @@ class Graph {
   static const double DefaultNodeSize = 80;
 
   static const double DefaultPortSpacing = 20;
+  static const double WidgetPortSpacing = 30;
   static const double DefaultPortPadding = 20;
   static const double DefaultPortOffset = 6;
   static const double DefaultPortSize = 8;
@@ -220,6 +221,11 @@ class Graph {
   static Paint NodeHoverColor = Paint()..color = Color(0xFFDFFEFE);
   static Paint NodeSelectedColor = Paint()..color = Color(0xFFDEFCE9);
 
+  static Paint NodeLabelBorder = Paint()
+    ..color = Color(0xFF333333)
+    ..strokeWidth = 1
+    ..style = PaintingStyle.stroke;
+
   static Paint NodeBorder = Paint()
     ..color = Color(0xFF333333)
     ..strokeWidth = 2
@@ -271,15 +277,19 @@ class Graph {
   static double PortValueIconSize = 10;
   static double PortValueLeader = 5;
   static double PortValueHeight = 20;
+
   static double PortValueFlagWidth = 10;
   static double PortValueIconPadding = 3;
   static double PortValuePaddingEnd = 5;
   static double PortValuePaddingStart = 0;
+
+  static double PortFilterFlagPadding = 25;
   static Paint PortValueBorder = Paint()
     ..color = Color(0xFF333333)
     ..strokeWidth = 1.5
     ..style = PaintingStyle.stroke;
 
+  static Paint PortErrorLabelColor = Paint()..color = Colors.red[200];
   static Paint PortValueLabelColor = Paint()..color = Colors.yellow[200];
   static Paint PortTriggerLabelColor = Paint()..color = Colors.green[200];
   static Paint PortLinkLabelColor = Paint()..color = Colors.purple[100];

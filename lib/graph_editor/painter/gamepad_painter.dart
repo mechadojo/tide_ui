@@ -1,8 +1,10 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/gamepad_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
+import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/widget_state.dart';
 import '../utility/parse_path.dart' show parseSvgPathData;
+import 'node_port_painter.dart';
 import 'widget_node_painter.dart';
 
 class GamepadPainter extends WidgetNodePainter {
@@ -233,6 +235,8 @@ class GamepadPainter extends WidgetNodePainter {
 
   static Size gamepadSize = Size(521, 342);
 
+  NodePortPainter portPainter = NodePortPainter();
+
   Offset getRightThumbPos({Offset pos = Offset.zero}) {
     var cx = pos.dx * 20;
     var cy = pos.dy * 20;
@@ -252,7 +256,9 @@ class GamepadPainter extends WidgetNodePainter {
   @override
   Size measure(Size size, WidgetState state, double zoom) {
     var scale = size.width / gamepadSize.width;
-    return gamepadSize * scale;
+    var result =
+        Size(gamepadSize.width * scale, (gamepadSize.height - 35) * scale);
+    return result;
   }
 
   @override
@@ -277,6 +283,31 @@ class GamepadPainter extends WidgetNodePainter {
     drawLed(canvas, gamepad);
 
     canvas.restore();
+  }
+
+  @override
+  void drawNode(Canvas canvas, GraphNode node, double scale) {
+    var rect = Rect.fromCenter(
+        center: node.pos, width: node.size.width, height: node.size.height);
+
+    var pos = rect.bottomCenter;
+
+    var limits =
+        Graph.font.limits(node.title, pos, 8, alignment: Alignment.topCenter);
+
+    var rrect = RRect.fromRectXY(limits.inflate(5), 5, 5);
+    if (node.selected) {
+      canvas.drawRRect(rrect, Graph.NodeSelectedColor);
+      canvas.drawRRect(rrect, Graph.NodeLabelBorder);
+    } else {
+      canvas.drawRRect(rrect, Graph.CanvasColor);
+    }
+    Graph.font.paint(canvas, node.title, pos, 8,
+        fill: Graph.NodeDarkColor, alignment: Alignment.topCenter);
+
+    for (var port in node.outports) {
+      portPainter.paint(canvas, scale, port);
+    }
   }
 
   void drawTriggers(Canvas canvas, GamepadState gamepad) {
