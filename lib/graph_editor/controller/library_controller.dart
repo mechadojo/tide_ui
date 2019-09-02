@@ -728,11 +728,11 @@ class LibraryController with MouseController, KeyboardController {
     bool changed = false;
     library.beginUpdate();
 
-    LibraryItem expanded;
+    //   LibraryItem expanded;
     for (var group in library.groups) {
       if (group.expandoButton.hitbox.contains(evt.pos)) {
         group.collapsed = !group.collapsed;
-        if (group.isExpanded) expanded = group;
+        // if (group.isExpanded) expanded = group;
         changed = true;
       }
     }

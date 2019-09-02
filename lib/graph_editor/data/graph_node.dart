@@ -275,6 +275,45 @@ class GraphNode extends GraphObject {
     return "$name";
   }
 
+  void removePort(NodePort port) {
+    if (port.isInport) {
+      var idx = inports.indexWhere((x) => x.name == port.name);
+      if (idx >= 0) {
+        inports.removeAt(idx);
+      }
+    } else {
+      var idx = outports.indexWhere((x) => x.name == port.name);
+      if (idx >= 0) {
+        outports.removeAt(idx);
+      }
+    }
+
+    resize();
+  }
+
+  NodePort addInport() {
+    int idx = inports.length + 1;
+    while (inports.any((x) => x.name == "in$idx")) {
+      idx++;
+    }
+    var result = NodePort.input(this, inports.length + 1, "in${idx}");
+    inports.add(result);
+    resize();
+    return result;
+  }
+
+  NodePort addOutport() {
+    int idx = outports.length + 1;
+    while (outports.any((x) => x.name == "out$idx")) {
+      idx++;
+    }
+
+    var result = NodePort.output(this, outports.length + 1, "out${idx}");
+    outports.add(result);
+    resize();
+    return result;
+  }
+
   bool usingGraph(String name) {
     return type == GraphNodeType.behavior && method == name;
   }

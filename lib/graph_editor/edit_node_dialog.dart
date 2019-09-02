@@ -595,7 +595,19 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   void onAddPort() {
-    print("Add new port");
+    setState(() {
+      if (isInportsTab) {
+        var port = node.addInport();
+        if (!editor.graph.isLibrary) port.isRequired = false;
+        selectPort(port);
+      }
+
+      if (isOutportsTab) {
+        var port = node.addOutport();
+        if (!editor.graph.isLibrary) port.isRequired = false;
+        selectPort(port);
+      }
+    });
   }
 
   String getNextPropertyName(String type) {
@@ -637,7 +649,24 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   void onDeletePort() {
-    print("Delete $selectedPort");
+    setState(() {
+      node.removePort(selectedPort);
+      if (selectedPort.isInport) {
+        if (node.inports.isNotEmpty) {
+          selectPort(node.inports.first);
+        } else {
+          selectedPort = null;
+        }
+      } else {
+        if (node.outports.isNotEmpty) {
+          selectPort(node.outports.first);
+        } else {
+          selectedPort = null;
+        }
+      }
+
+      update();
+    });
   }
 
   void onDeleteProperty() {

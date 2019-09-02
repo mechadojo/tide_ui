@@ -334,11 +334,23 @@ class GraphController with MouseController, KeyboardController {
     }
   }
 
-  void addInport(GraphNode node) {}
+  void addInport(GraphNode node) {
+    graph.beginUpdate();
+    node.addInport();
+    graph.endUpdate(true);
+  }
 
-  void addOutport(GraphNode node) {}
+  void addOutport(GraphNode node) {
+    graph.beginUpdate();
+    node.addOutport();
+    graph.endUpdate(true);
+  }
 
-  void removePort(NodePort port) {}
+  void removePort(NodePort port) {
+    graph.beginUpdate();
+    port.node.removePort(port);
+    graph.endUpdate(true);
+  }
 
   void removeNode(GraphNode node,
       {bool save = true, bool locked = false, bool relink = false}) {
