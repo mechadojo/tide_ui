@@ -116,6 +116,10 @@ class GraphState {
     }
   }
 
+  GraphState.unpack(TideChartGraph source) {
+    unpackGraph(source);
+  }
+
   void beginUpdate() {
     controller.editor.graphNotifier.beginUpdate();
   }

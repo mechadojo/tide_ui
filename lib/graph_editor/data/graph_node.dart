@@ -5,6 +5,7 @@ import 'package:tide_chart/tide_chart.dart';
 import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
+import 'package:tide_ui/graph_editor/painter/widget_node_painter.dart';
 
 import 'graph.dart';
 import 'graph_property_set.dart';
@@ -17,13 +18,78 @@ const Action_Behavior = [GraphNodeType.action, GraphNodeType.behavior];
 const Trigger_Event = [GraphNodeType.trigger, GraphNodeType.event];
 
 enum GraphNodeType {
+  /// action nodes use library/method to handle messages
   action,
+
+  /// behavior nodes reference a behavior graph to handle its messages
   behavior,
+
+  /// inports define inbound message ports for use as a behavior node
   inport,
+
+  /// outports define outboard message ports for use as a behavior node
   outport,
+
+  /// trigger nodes monitor for event broadcasts and produce a message
   trigger,
+
+  /// messages routed into an event node are broadcasted as an event
   event,
+
+  /// widgets can combine the features of all the other node types
+  widget,
+
+  /// node type name was not recognized
+  unknown,
+}
+
+enum WidgetNodeType {
+  /// placeholder value when a node is not a widget node
+  none,
+
+  /// generates events from gamepad input
   gamepad,
+
+  /// combine, split, sequence and route messages
+  router,
+
+  /// condionally transform and drop messages passing thru them
+  filter,
+
+  /// execute groups of nodes as steps and produce events on step change
+  sequence,
+
+  /// produce events over time
+  timeline,
+
+  /// produce messages over time based on input values
+  controller,
+
+  /// produce events from external values (sensors)
+  input,
+
+  /// control external mechanism based on events (motors/servos)
+  output,
+
+  /// combine inputs, outputs and logic into subsystems
+  mechanism,
+
+  /// generates events from configuration data
+  config,
+
+  /// routes messages to/from global configuration
+  global,
+
+  /// cancel message routing based on events
+  reset,
+
+  /// generate custom scripts from configuration data
+  blocks,
+
+  /// routes messages to/from a remote source
+  remote,
+
+  /// widget name was not recognized
   unknown,
 }
 
@@ -41,6 +107,7 @@ class GraphNode extends GraphObject {
   static GraphNode none = GraphNode()..name = "<none>";
 
   GraphNodeType type = GraphNodeType.action;
+  WidgetNodeType widget = WidgetNodeType.none;
 
   String name;
   String title;
@@ -60,11 +127,31 @@ class GraphNode extends GraphObject {
   bool get isTrigger => type == GraphNodeType.trigger;
   bool get isInport => type == GraphNodeType.inport;
   bool get isOutport => type == GraphNodeType.outport;
+  bool get isWidget => type == GraphNodeType.widget;
+
+  bool get isGamepad => widget == WidgetNodeType.gamepad;
+  bool get isRouter => widget == WidgetNodeType.router;
+  bool get isFilter => widget == WidgetNodeType.filter;
+  bool get isSequence => widget == WidgetNodeType.sequence;
+  bool get isTimeline => widget == WidgetNodeType.timeline;
+  bool get isController => widget == WidgetNodeType.controller;
+  bool get isInput => widget == WidgetNodeType.input;
+  bool get isOutput => widget == WidgetNodeType.output;
+  bool get isMechanism => widget == WidgetNodeType.mechanism;
+  bool get isConfig => widget == WidgetNodeType.config;
+  bool get isGlobal => widget == WidgetNodeType.global;
+  bool get isReset => widget == WidgetNodeType.reset;
+  bool get isBlocks => widget == WidgetNodeType.blocks;
+  bool get isRemote => widget == WidgetNodeType.remote;
 
   double delay = 0;
 
   List<NodePort> inports = [];
   List<NodePort> outports = [];
+
+  List<GraphState> internal = [];
+  List<TideChartSource> resources = [];
+  List<TideChartNote> notes = [];
 
   bool get hideLocalInports => !showLocalInports;
   bool get hideLocalOutports => !showLocalOutports;
@@ -144,6 +231,8 @@ class GraphNode extends GraphObject {
     var node = lookup(packed.name) as GraphNode;
 
     node.type = GraphNode.parseNodeType(packed.type);
+    node.widget = GraphNode.parseWidgetType(packed.widget);
+
     node.name = packed.name;
     node.title = packed.title;
     node.icon = packed.icon;
@@ -163,10 +252,33 @@ class GraphNode extends GraphObject {
 
     node.inports = [...packed.inports.map((x) => NodePort.unpack(x, lookup))];
     node.outports = [...packed.outports.map((x) => NodePort.unpack(x, lookup))];
+
+    node.notes = [...packed.notes.map((x) => x.clone())];
+    node.resources = [...packed.resources.map((x) => x.clone())];
+    node.internal = [...packed.internal.map((x) => GraphState.unpack(x))];
+
+    if (node.isWidget) {
+      var sz = node.settings.getDouble("size", 150);
+      node.size = WidgetNodePainter.measureWidget(node.widget, Size(sz, sz));
+    }
+
     node.resize();
-    node.moveTo(packed.posX.toDouble(), packed.posY.toDouble());
+    node.moveTo(packed.posX.toDouble(), packed.posY.toDouble(), update: true);
 
     return node;
+  }
+
+  GraphNode.gamepad([int driver = 1, double size = 150]) {
+    name = GraphNode.randomName();
+    title = "Driver $driver";
+    props.replace(GraphProperty.asInt("driver", driver));
+    settings.replace(GraphProperty.asDouble("size", size));
+    icon = "gamepad";
+    type = GraphNodeType.widget;
+    widget = WidgetNodeType.gamepad;
+
+    this.size = WidgetNodePainter.measureWidget(widget, Size(size, size));
+    resize();
   }
 
   GraphNode.outport([String method]) {
@@ -346,6 +458,49 @@ class GraphNode extends GraphObject {
     return isAnyType(Action_Behavior);
   }
 
+  String get widgetTypeName {
+    var result = widget.toString().split(".").last;
+    result = result[0].toUpperCase() + result.substring(1);
+    return result;
+  }
+
+  static WidgetNodeType parseWidgetType(String type) {
+    if (type == null || type.isEmpty) return WidgetNodeType.none;
+    switch (type) {
+      case "none":
+        return WidgetNodeType.none;
+      case "gamepad":
+        return WidgetNodeType.gamepad;
+      case "router":
+        return WidgetNodeType.router;
+      case "filter":
+        return WidgetNodeType.filter;
+      case "sequence":
+        return WidgetNodeType.sequence;
+      case "timeline":
+        return WidgetNodeType.timeline;
+      case "controller":
+        return WidgetNodeType.controller;
+      case "input":
+        return WidgetNodeType.input;
+      case "output":
+        return WidgetNodeType.output;
+      case "mechanism":
+        return WidgetNodeType.mechanism;
+      case "config":
+        return WidgetNodeType.config;
+      case "global":
+        return WidgetNodeType.global;
+      case "reset":
+        return WidgetNodeType.reset;
+      case "blocks":
+        return WidgetNodeType.blocks;
+      case "remote":
+        return WidgetNodeType.remote;
+    }
+    return WidgetNodeType.unknown;
+  }
+
   static GraphNodeType parseNodeType(String type) {
     switch (type) {
       case "action":
@@ -360,8 +515,8 @@ class GraphNode extends GraphObject {
         return GraphNodeType.trigger;
       case "event":
         return GraphNodeType.event;
-      case "gamepad":
-        return GraphNodeType.gamepad;
+      case "widget":
+        return GraphNodeType.widget;
     }
 
     return GraphNodeType.unknown;
@@ -452,6 +607,12 @@ class GraphNode extends GraphObject {
   TideChartNode pack() {
     TideChartNode result = TideChartNode();
     result.type = type.toString().split(".").last;
+    var wt = widget.toString().split(".").last;
+
+    if (wt != null && wt != "none") {
+      result.widget = wt;
+    }
+
     result.name = name;
     result.icon = icon;
 
@@ -475,6 +636,11 @@ class GraphNode extends GraphObject {
 
     result.props.addAll(props.packList());
     result.settings.addAll(settings.packList());
+
+    result.notes.addAll(notes.map((x) => x.clone()));
+    result.resources.addAll(resources.map((x) => x.clone()));
+    result.internal.addAll(internal.map((x) => x.pack()));
+
     return result;
   }
 
@@ -564,7 +730,7 @@ class GraphNode extends GraphObject {
           Graph.NodeTriggerLabelPadding;
 
       height = Graph.NodeTriggerHeight;
-    } else if (type == GraphNodeType.gamepad) {
+    } else if (type == GraphNodeType.widget) {
       width = Graph.DefaultGamepadWidth;
       height = Graph.DefaultGamepadHeight;
     } else {

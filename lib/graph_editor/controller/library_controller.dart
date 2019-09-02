@@ -128,12 +128,14 @@ class LibraryController with MouseController, KeyboardController {
   }
 
   void setScrollHeight(double height) {
-    scrollHeight = height;
-    // dispatch the call because updated heights come from painting
-    // possibly we could have a layout phase that is independed of painting
-    editor.dispatch(GraphEditorCommand((editor) {
-      updateScrollPos();
-    }));
+    if (height != scrollHeight) {
+      scrollHeight = height;
+      // dispatch the call because updated heights come from painting
+      // possibly we could have a layout phase that is independed of painting
+      editor.dispatch(GraphEditorCommand((editor) {
+        updateScrollPos();
+      }));
+    }
   }
 
   void setScrollPos(double pos) {
@@ -257,7 +259,7 @@ class LibraryController with MouseController, KeyboardController {
               tab: LibraryTab.templates))
         ..selected = library.currentTab == LibraryTab.templates,
       MenuItem(
-          icon: "puzzle-piece",
+          icon: "hat-wizard",
           command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
               tab: LibraryTab.widgets))
         ..selected = library.currentTab == LibraryTab.widgets,
@@ -298,8 +300,8 @@ class LibraryController with MouseController, KeyboardController {
           tabsItem,
           gridItem..selected = true,
           detailsItem,
-          searchItem,
           optionsItem,
+          searchItem,
         ];
         break;
       case LibraryDisplayMode.detailed:
@@ -308,8 +310,8 @@ class LibraryController with MouseController, KeyboardController {
           tabsItem,
           gridItem,
           detailsItem..selected = true,
-          searchItem,
           optionsItem,
+          searchItem,
         ];
         break;
       case LibraryDisplayMode.search:
@@ -318,8 +320,8 @@ class LibraryController with MouseController, KeyboardController {
           tabsItem,
           gridItem,
           detailsItem,
-          searchItem..selected = true,
           optionsItem,
+          searchItem..selected = true,
         ];
         break;
       case LibraryDisplayMode.tabs:
@@ -328,8 +330,8 @@ class LibraryController with MouseController, KeyboardController {
           tabsItem,
           gridItem,
           detailsItem,
-          searchItem,
           optionsItem..selected = true,
+          searchItem,
         ];
         break;
       default:
@@ -419,6 +421,9 @@ class LibraryController with MouseController, KeyboardController {
         for (var item in library.imports) {
           yield* item.items;
         }
+        break;
+      case LibraryTab.widgets:
+        yield* library.widgets;
         break;
       default:
         break;
@@ -557,6 +562,20 @@ class LibraryController with MouseController, KeyboardController {
 
     library.groups = [...library.groups.where((x) => x.graph.name != name)];
 
+    library.endUpdate(true);
+  }
+
+  void addWidgets(List<GraphNode> widgets) {
+    library.beginUpdate();
+    for (var widget in widgets) {
+      addWidget(widget);
+    }
+    library.endUpdate(true);
+  }
+
+  void addWidget(GraphNode widget) {
+    library.beginUpdate();
+    library.widgets.add(LibraryItem.widget(widget));
     library.endUpdate(true);
   }
 
@@ -878,7 +897,15 @@ class LibraryController with MouseController, KeyboardController {
         }
 
         break;
-
+      case LibraryDisplayMode.tabs:
+        switch (library.currentTab) {
+          case LibraryTab.widgets:
+            yield* library.widgets;
+            break;
+          default:
+            break;
+        }
+        break;
       default:
         break;
     }

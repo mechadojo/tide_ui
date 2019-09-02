@@ -35,6 +35,11 @@ class LibraryItem extends MenuItem {
     items = [...nodes.map((x) => LibraryItem.method(x))];
   }
 
+  LibraryItem.widget(this.node) {
+    icon = node.icon;
+    name = node.hasTitle ? node.title : node.widgetTypeName;
+  }
+
   LibraryItem.node(this.node) {
     icon = node.icon;
     name = node.hasTitle ? node.title : node.name;
@@ -119,6 +124,9 @@ class LibraryState extends UpdateNotifier {
   /// list of files used in Tab-Imports mode
   List<MenuItemSet> imports = [];
   List<MenuItem> importButtons = [];
+
+  /// list of widgets used in Tab-Widgets mode
+  List<LibraryItem> widgets = [];
 
   List<LibraryItem> get behaviors =>
       sheets.where((x) => x.graph?.type == GraphType.behavior).toList();

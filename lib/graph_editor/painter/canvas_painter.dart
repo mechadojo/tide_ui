@@ -1,9 +1,7 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
-import 'package:tide_ui/graph_editor/data/gamepad_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
-import 'package:tide_ui/graph_editor/painter/gamepad_painter.dart';
 import 'package:tide_ui/graph_editor/painter/graph_link_painter.dart';
 
 import '../data/canvas_state.dart';
@@ -13,6 +11,7 @@ import '../data/graph.dart';
 
 import 'canvas_grid_painter.dart';
 import 'graph_node_painter.dart';
+import 'widget_node_painter.dart';
 
 class CanvasPainter extends CustomPainter {
   final GraphEditorController editor;
@@ -23,9 +22,7 @@ class CanvasPainter extends CustomPainter {
   final CanvasGridPainter gridPainter = CanvasGridPainter();
   final GraphNodePainter nodePainter = GraphNodePainter();
   final GraphLinkPainter linkPainter = GraphLinkPainter();
-  final GamepadPainter gamepadPainter = GamepadPainter();
-  final GamepadState gamepad = GamepadState();
-
+  final WidgetNodePainter widgetPainter = WidgetNodePainter();
   CanvasPainter(this.editor);
 
   @override
@@ -47,9 +44,6 @@ class CanvasPainter extends CustomPainter {
     canvas.scale(state.scale, state.scale);
     canvas.translate(state.pos.dx, state.pos.dy);
 
-    gamepadPainter.paint(canvas, Size(150, 150), gamepad,
-        zoomedOut: Graph.isZoomedOut(state.scale));
-
     for (var link in graph.links) {
       linkPainter.paint(canvas, size, state.pos, state.scale, link);
     }
@@ -66,12 +60,12 @@ class CanvasPainter extends CustomPainter {
 
     for (var node in graph.nodes) {
       if (node.selected) continue;
-      nodePainter.paint(canvas, state.scale, node);
+      drawNode(canvas, node, state.scale);
     }
 
     for (var node in graph.nodes) {
       if (!node.selected) continue;
-      nodePainter.paint(canvas, state.scale, node);
+      drawNode(canvas, node, state.scale);
     }
 
     if (graph.controller.dropping != null) {
@@ -96,12 +90,20 @@ class CanvasPainter extends CustomPainter {
     }
   }
 
+  void drawNode(Canvas canvas, GraphNode node, double scale) {
+    if (node.isWidget) {
+      WidgetNodePainter.paintNode(canvas, node, scale: state.scale);
+    } else {
+      nodePainter.paint(canvas, state.scale, node);
+    }
+  }
+
   void drawDropPreview(Canvas canvas, GraphSelection dropping) {
     canvas.save();
     canvas.translate(dropping.pos.dx, dropping.pos.dy);
 
     for (var node in dropping.nodes) {
-      nodePainter.paint(canvas, state.scale, node);
+      drawNode(canvas, node, state.scale);
     }
 
     canvas.restore();

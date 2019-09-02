@@ -1,9 +1,11 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/gamepad_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
+import 'package:tide_ui/graph_editor/data/widget_state.dart';
 import '../utility/parse_path.dart' show parseSvgPathData;
+import 'widget_node_painter.dart';
 
-class GamepadPainter {
+class GamepadPainter extends WidgetNodePainter {
   static Color colorBodyStart = Color(0xFF6B7592);
   static Color colorBodyEnd = Color(0xFF1C273D);
   static Paint paintBody = Paint()..color = colorBodyStart;
@@ -247,23 +249,30 @@ class GamepadPainter {
     return Offset(cx, cy);
   }
 
-  void paint(Canvas canvas, Size size, GamepadState gamepad,
-      {bool zoomedOut = false}) {
-    var rect = Rect.fromCenter(
-        center: Offset.zero, width: size.width, height: size.height);
+  @override
+  Size measure(Size size, WidgetState state, double zoom) {
+    var scale = size.width / gamepadSize.width;
+    return gamepadSize * scale;
+  }
+
+  @override
+  void paint(Canvas canvas, Size size, WidgetState state, double zoom) {
+    var gamepad = state as GamepadState ?? GamepadState();
 
     canvas.save();
     var scale = size.width / gamepadSize.width;
     canvas.scale(scale, scale);
     canvas.translate(-gamepadSize.width / 2, -gamepadSize.height / 2);
 
+    var zoomedOut = Graph.isZoomedOut(zoom);
+
     drawTriggers(canvas, gamepad);
     drawBumpers(canvas, gamepad);
-    drawBody(canvas, gamepad);
-    drawABXYButtons(canvas, gamepad);
+    drawBody(canvas, gamepad, zoomedOut);
+    drawABXYButtons(canvas, gamepad, zoomedOut);
     drawDpad(canvas, gamepad);
     drawThumbsticks(canvas, gamepad);
-    drawSmallButtons(canvas, gamepad);
+    drawSmallButtons(canvas, gamepad, zoomedOut);
     drawCenterButton(canvas, gamepad, zoomedOut);
     drawLed(canvas, gamepad);
 
@@ -288,7 +297,7 @@ class GamepadPainter {
     canvas.drawPath(rightBumper, penBumper);
   }
 
-  void drawBody(Canvas canvas, GamepadState gamepad) {
+  void drawBody(Canvas canvas, GamepadState gamepad, bool zoomedOut) {
     canvas.drawPath(gamepadBody, paintBody);
     canvas.drawPath(rightGrip, paintGrip);
     canvas.drawPath(leftGrip, paintGrip);
@@ -304,41 +313,45 @@ class GamepadPainter {
 
     canvas.drawOval(circleLeftThumbBase, paintThumbBase);
     canvas.drawOval(circleRightThumbBase, paintThumbBase);
+    if (!zoomedOut) {
+      canvas.drawOval(circleLeftButtonBase, paintButtonBase);
+      canvas.drawOval(circleRightButtonBase, paintButtonBase);
 
-    canvas.drawOval(circleLeftButtonBase, paintButtonBase);
-    canvas.drawOval(circleRightButtonBase, paintButtonBase);
-
-    canvas.drawOval(circleLeftButtonTop, paintButtonTop);
-    canvas.drawOval(circleRightButtonTop, paintButtonTop);
-
+      canvas.drawOval(circleLeftButtonTop, paintButtonTop);
+      canvas.drawOval(circleRightButtonTop, paintButtonTop);
+    }
     canvas.drawOval(circleDpadBase, paintThumbBase);
     canvas.drawOval(circleDpadTop, paintDpadTop);
   }
 
-  void drawABXYButtons(Canvas canvas, GamepadState gamepad) {
-    canvas.drawOval(circleABase, paintButtonBase);
-    canvas.drawOval(circleBBase, paintButtonBase);
-    canvas.drawOval(circleXBase, paintButtonBase);
-    canvas.drawOval(circleYBase, paintButtonBase);
+  void drawABXYButtons(Canvas canvas, GamepadState gamepad, bool zoomedOut) {
+    if (!zoomedOut) {
+      canvas.drawOval(circleABase, paintButtonBase);
+      canvas.drawOval(circleBBase, paintButtonBase);
+      canvas.drawOval(circleXBase, paintButtonBase);
+      canvas.drawOval(circleYBase, paintButtonBase);
+    }
 
     canvas.drawOval(circleATop, paintAButton);
     canvas.drawOval(circleBTop, paintBButton);
     canvas.drawOval(circleXTop, paintXButton);
     canvas.drawOval(circleYTop, paintYButton);
 
-    canvas.drawOval(circleATop, penABXYButton);
-    canvas.drawOval(circleBTop, penABXYButton);
-    canvas.drawOval(circleXTop, penABXYButton);
-    canvas.drawOval(circleYTop, penABXYButton);
+    if (!zoomedOut) {
+      canvas.drawOval(circleATop, penABXYButton);
+      canvas.drawOval(circleBTop, penABXYButton);
+      canvas.drawOval(circleXTop, penABXYButton);
+      canvas.drawOval(circleYTop, penABXYButton);
 
-    Graph.font.paint(canvas, "A", circleATop.center, 18,
-        fill: paintABXYLabel, alignment: Alignment.center);
-    Graph.font.paint(canvas, "B", circleBTop.center, 18,
-        fill: paintABXYLabel, alignment: Alignment.center);
-    Graph.font.paint(canvas, "X", circleXTop.center, 18,
-        fill: paintABXYLabel, alignment: Alignment.center);
-    Graph.font.paint(canvas, "Y", circleYTop.center, 18,
-        fill: paintABXYLabel, alignment: Alignment.center);
+      Graph.font.paint(canvas, "A", circleATop.center, 18,
+          fill: paintABXYLabel, alignment: Alignment.center);
+      Graph.font.paint(canvas, "B", circleBTop.center, 18,
+          fill: paintABXYLabel, alignment: Alignment.center);
+      Graph.font.paint(canvas, "X", circleXTop.center, 18,
+          fill: paintABXYLabel, alignment: Alignment.center);
+      Graph.font.paint(canvas, "Y", circleYTop.center, 18,
+          fill: paintABXYLabel, alignment: Alignment.center);
+    }
   }
 
   void drawDpad(Canvas canvas, GamepadState gamepad) {
@@ -357,30 +370,34 @@ class GamepadPainter {
     canvas.drawCircle(rightPos, 28, paintThumbButtonTop);
   }
 
-  void drawSmallButtons(Canvas canvas, GamepadState gamepad) {
-    canvas.drawRRect(rrectBackBase, paintSmallButtonShadow);
-    canvas.drawRRect(rrectStartBase, paintSmallButtonShadow);
-    canvas.drawRRect(rrectModeBase, paintSmallButtonShadow);
+  void drawSmallButtons(Canvas canvas, GamepadState gamepad, bool zoomedOut) {
+    if (!zoomedOut) {
+      canvas.drawRRect(rrectBackBase, paintSmallButtonShadow);
+      canvas.drawRRect(rrectStartBase, paintSmallButtonShadow);
+      canvas.drawRRect(rrectModeBase, paintSmallButtonShadow);
+    }
 
     canvas.drawRRect(rrectBackTop, paintSmallButtonTop);
     canvas.drawRRect(rrectStartTop, paintSmallButtonTop);
     canvas.drawRRect(rrectModeTop, paintSmallButtonTop);
 
-    canvas.drawRRect(rrectBackTop, penSmallButton);
-    canvas.drawRRect(rrectStartTop, penSmallButton);
-    canvas.drawRRect(rrectModeTop, penSmallButton);
+    if (!zoomedOut) {
+      canvas.drawRRect(rrectBackTop, penSmallButton);
+      canvas.drawRRect(rrectStartTop, penSmallButton);
+      canvas.drawRRect(rrectModeTop, penSmallButton);
 
-    Graph.font.paint(canvas, "BACK",
-        Offset(rrectBackTop.center.dx, rrectBackTop.bottom + 2), 8,
-        fill: paintSmallLabel, alignment: Alignment.topCenter);
+      Graph.font.paint(canvas, "BACK",
+          Offset(rrectBackTop.center.dx, rrectBackTop.bottom + 2), 8,
+          fill: paintSmallLabel, alignment: Alignment.topCenter);
 
-    Graph.font.paint(canvas, "START",
-        Offset(rrectStartTop.center.dx, rrectStartTop.bottom + 2), 8,
-        fill: paintSmallLabel, alignment: Alignment.topCenter);
+      Graph.font.paint(canvas, "START",
+          Offset(rrectStartTop.center.dx, rrectStartTop.bottom + 2), 8,
+          fill: paintSmallLabel, alignment: Alignment.topCenter);
 
-    Graph.font.paint(canvas, "MODE",
-        Offset(rrectModeTop.center.dx, rrectModeTop.bottom + 2), 8,
-        fill: paintSmallLabel, alignment: Alignment.topCenter);
+      Graph.font.paint(canvas, "MODE",
+          Offset(rrectModeTop.center.dx, rrectModeTop.bottom + 2), 8,
+          fill: paintSmallLabel, alignment: Alignment.topCenter);
+    }
   }
 
   void drawCenterButton(Canvas canvas, GamepadState gamepad, bool zoomedOut) {

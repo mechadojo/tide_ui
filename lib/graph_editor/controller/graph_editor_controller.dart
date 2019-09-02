@@ -149,7 +149,9 @@ class GraphEditorController extends GraphEditorControllerBase
 
     tabs.controller = CanvasTabsController(this);
     menu.controller = RadialMenuController(this);
-    library.controller = LibraryController(this);
+    library.controller = LibraryController(this)
+      ..addWidgets([GraphNode.gamepad()]);
+
     editor.keyboardHandler = KeyboardHandler(this);
     editor.mouseHandler = MouseHandler(this);
 
@@ -600,25 +602,28 @@ class GraphEditorController extends GraphEditorControllerBase
 
   void nextExpandedLibrary() {
     var mode = library.mode;
+    var tab = library.currentTab;
 
     switch (library.mode) {
       case LibraryDisplayMode.expanded:
         mode = LibraryDisplayMode.detailed;
         break;
       case LibraryDisplayMode.detailed:
-        mode = LibraryDisplayMode.search;
-        break;
-      case LibraryDisplayMode.search:
         mode = LibraryDisplayMode.tabs;
+        tab = LibraryTab.widgets;
         break;
       case LibraryDisplayMode.tabs:
         mode = LibraryDisplayMode.expanded;
         break;
+      case LibraryDisplayMode.search:
+        mode = LibraryDisplayMode.expanded;
+        break;
+
       default:
         mode = LibraryDisplayMode.detailed;
         break;
     }
-    showLibrary(mode, tab: library.currentTab);
+    showLibrary(mode, tab: tab);
   }
 
   void showLibrary(LibraryDisplayMode mode,
