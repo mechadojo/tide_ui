@@ -1,6 +1,7 @@
 import 'package:flutter_web/material.dart';
 import 'package:flutter_web_ui/ui.dart' as ui show Gradient;
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
+import 'package:tide_ui/graph_editor/data/gamepad_state.dart';
 
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
@@ -8,7 +9,12 @@ import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
+import 'gamepad_painter.dart';
+
 class LibraryPainter {
+  final gamepad = GamepadState();
+  final gamepadPainter = GamepadPainter();
+
   Path createTabPath(Offset pos, Rect rect) {
     var result = Path();
 
@@ -102,6 +108,10 @@ class LibraryPainter {
           case LibraryTab.files:
             height = drawFilesTab(canvas, library, rect);
             break;
+          case LibraryTab.widgets:
+            height = drawWidgetsTab(canvas, library, rect);
+            break;
+
           default:
             break;
         }
@@ -259,6 +269,20 @@ class LibraryPainter {
       cx += Graph.LibraryFileIconSize + Graph.LibraryFileIconSpacing;
     }
     return pos.dy + Graph.LibraryFileNameSize + Graph.LibraryFileNameSpacing;
+  }
+
+  double drawWidgetsTab(Canvas canvas, LibraryState library, Rect rect) {
+    var cy = rect.top + Graph.LibraryGroupTopPadding + 5;
+    var top = cy;
+
+    canvas.save();
+    canvas.translate(rect.center.dx, top + 100);
+    gamepadPainter.paint(canvas, Size(rect.width - 20, 150), gamepad);
+
+    canvas.restore();
+
+    cy += 200;
+    return cy - top;
   }
 
   double drawFilesTab(Canvas canvas, LibraryState library, Rect rect) {

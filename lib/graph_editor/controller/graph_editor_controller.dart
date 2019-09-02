@@ -171,7 +171,7 @@ class GraphEditorController extends GraphEditorControllerBase
     dispatch(
         GraphEditorCommand.restoreCharts()
           ..then(GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
-              tab: LibraryTab.imports)),
+              tab: LibraryTab.widgets)),
         afterTicks: 5);
   }
 

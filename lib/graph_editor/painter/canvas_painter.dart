@@ -1,7 +1,9 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
+import 'package:tide_ui/graph_editor/data/gamepad_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
+import 'package:tide_ui/graph_editor/painter/gamepad_painter.dart';
 import 'package:tide_ui/graph_editor/painter/graph_link_painter.dart';
 
 import '../data/canvas_state.dart';
@@ -21,6 +23,8 @@ class CanvasPainter extends CustomPainter {
   final CanvasGridPainter gridPainter = CanvasGridPainter();
   final GraphNodePainter nodePainter = GraphNodePainter();
   final GraphLinkPainter linkPainter = GraphLinkPainter();
+  final GamepadPainter gamepadPainter = GamepadPainter();
+  final GamepadState gamepad = GamepadState();
 
   CanvasPainter(this.editor);
 
@@ -42,6 +46,9 @@ class CanvasPainter extends CustomPainter {
 
     canvas.scale(state.scale, state.scale);
     canvas.translate(state.pos.dx, state.pos.dy);
+
+    gamepadPainter.paint(canvas, Size(150, 150), gamepad,
+        zoomedOut: Graph.isZoomedOut(state.scale));
 
     for (var link in graph.links) {
       linkPainter.paint(canvas, size, state.pos, state.scale, link);
