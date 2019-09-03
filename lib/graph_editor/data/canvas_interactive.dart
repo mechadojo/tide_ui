@@ -69,8 +69,8 @@ mixin CanvasInteractive {
         Rect.fromCenter(center: pos, width: size.width, height: size.height);
   }
 
-  bool moveTo(double dx, double dy) {
-    if (pos.dx != dx || pos.dy != dy) {
+  bool moveTo(double dx, double dy, {bool update = false}) {
+    if (pos.dx != dx || pos.dy != dy || update) {
       pos = Offset(dx, dy);
       hitbox =
           Rect.fromCenter(center: pos, width: size.width, height: size.height);

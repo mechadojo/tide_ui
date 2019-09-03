@@ -28,9 +28,12 @@ return {
 
 static VectorFontGlyph glyph_undefined = VectorFontGlyph("", 0, "");
 static VectorFontGlyph glyph_33 = VectorFontGlyph("exclam", 289, "M116 198l-11 378l-2 94h83l-2 -94l-11 -378h-57zM145 -12q-25 0 -42.5 17.5t-17.5 44.5q0 29 17.5 46.5t42.5 17.5q24 0 41.5 -17.5t17.5 -46.5q0 -27 -17.5 -44.5t-41.5 -17.5z");
+static VectorFontGlyph glyph_34 = VectorFontGlyph("quotedbl", 425, "M99 431l-16 167l-3 92h88l-3 -92l-16 -167h-50zM275 431l-16 167l-3 92h88l-3 -92l-16 -167h-50z");
 static VectorFontGlyph glyph_35 = VectorFontGlyph("numbersign", 497, "M90 0l25 204h-80v57h87l18 148h-85v58h92l23 183h53l-23 -183h133l24 183h53l-24 -183h81v-58h-87l-18 -148h85v-57h-92l-25 -204h-53l24 204h-132l-25 -204h-54zM176 261h132l18 148h-132z");
 static VectorFontGlyph glyph_36 = VectorFontGlyph("dollar", 497, "M222 -110v99q-48 5 -93 26.5t-77 50.5l38 57q32 -28 70.5 -47.5t84.5 -19.5q56 0 83.5 28t27.5 75q0 40 -20.5 66.5t-51.5 46t-67.5 36.5t-67.5 39t-51.5 53.5t-20.5 80.5q0 67 39.5 111.5t105.5 54.5v101h60v-99q48 -5 81.5 -26t60.5 -50l-44 -49q-28 27 -54.5 42 t-67.5 15q-46 0 -73 -26t-27 -70q0 -36 20.5 -59t51.5 -40.5t67.5 -34t67.5 -40t51.5 -58t20.5 -88.5q0 -72 -41.5 -118t-113.5 -56v-101h-60z");
 static VectorFontGlyph glyph_37 = VectorFontGlyph("percent", 824, "M184 254q-68 0 -108.5 54t-40.5 154q0 99 40.5 152.5t108.5 53.5q67 0 108 -53.5t41 -152.5q0 -100 -41 -154t-108 -54zM184 305q38 0 62 39.5t24 117.5t-24 116.5t-62 38.5q-39 0 -63 -38.5t-24 -116.5t24 -117.5t63 -39.5zM202 -12l362 680h56l-362 -680h-56zM641 -12 q-68 0 -108.5 54t-40.5 154q0 99 40.5 152.5t108.5 53.5q67 0 108 -53.5t41 -152.5q0 -100 -41 -154t-108 -54zM641 39q38 0 62 39.5t24 117.5t-24 116.5t-62 38.5q-39 0 -63 -38.5t-24 -116.5t24 -117.5t63 -39.5z");
+static VectorFontGlyph glyph_38 = VectorFontGlyph("ampersand", 609, "M232 -12q-45 0 -81.5 13.5t-63 37.5t-41 57.5t-14.5 73.5q0 33 10.5 60t28.5 50t41.5 42.5t48.5 36.5q-20 41 -31.5 79.5t-11.5 74.5q0 33 11 61t31 49t48 33t62 12q61 0 95 -36t34 -94q0 -32 -13 -59t-34 -50.5t-47.5 -44t-53.5 -40.5q32 -51 75.5 -98t90.5 -86 q30 41 53.5 89t38.5 105h77q-20 -65 -48 -124t-67 -111q34 -23 65 -39t58 -24l-22 -68q-35 10 -73 28.5t-78 46.5q-38 -34 -84.5 -54.5t-104.5 -20.5zM189 514q0 -27 8.5 -56t22.5 -59q22 15 42.5 30.5t36 32t24.5 35t9 40.5q0 29 -14.5 50.5t-47.5 21.5q-37 0 -59 -27 t-22 -68zM241 54q34 0 65 14t60 39q-48 42 -92.5 91.5t-79.5 103.5q-35 -28 -58.5 -58.5t-23.5 -68.5q0 -27 10 -49.5t27.5 -38.5t41 -24.5t50.5 -8.5z");
+static VectorFontGlyph glyph_39 = VectorFontGlyph("quotesingle", 249, "M99 431l-16 167l-3 92h88l-3 -92l-16 -167h-50z");
 static VectorFontGlyph glyph_40 = VectorFontGlyph("parenleft", 303, "M214 -176q-62 100 -97 211t-35 243t35 242.5t97 211.5l51 -24q-58 -96 -86.5 -205.5t-28.5 -224.5t28.5 -224.5t86.5 -205.5z");
 static VectorFontGlyph glyph_41 = VectorFontGlyph("parenright", 303, "M89 -176l-51 24q58 96 86.5 205.5t28.5 224.5t-28.5 224.5t-86.5 205.5l51 24q62 -101 97 -211.5t35 -242.5t-35 -243t-97 -211z");
 static VectorFontGlyph glyph_42 = VectorFontGlyph("asterisk", 418, "M138 420l-40 29l57 94l-97 40l15 46l102 -25l9 108h49l9 -107l103 24l15 -46l-97 -40l56 -94l-39 -29l-71 86z");
@@ -51,6 +54,8 @@ static VectorFontGlyph glyph_56 = VectorFontGlyph("eight", 497, "M250 -12q-45 0 
 static VectorFontGlyph glyph_57 = VectorFontGlyph("nine", 497, "M235 310q32 0 67.5 20t66.5 65q-8 94 -44 142t-97 48q-23 0 -43.5 -10t-35.5 -28.5t-23.5 -44.5t-8.5 -57q0 -63 29 -99t89 -36zM205 -12q-51 0 -89.5 19t-64.5 48l46 52q20 -23 47.5 -37t57.5 -14q34 0 64 14t53 46.5t37 84.5t15 129q-30 -38 -70 -60t-80 -22 q-83 0 -132 49t-49 148q0 46 15 83.5t40.5 64.5t60 42t72.5 15q47 0 87.5 -19t70 -57.5t46 -96t16.5 -134.5q0 -96 -20 -163.5t-54 -110t-77.5 -62t-91.5 -19.5z");
 static VectorFontGlyph glyph_58 = VectorFontGlyph("colon", 249, "M125 349q-25 0 -42.5 17.5t-17.5 44.5q0 29 17.5 46.5t42.5 17.5q24 0 41.5 -17.5t17.5 -46.5q0 -27 -17.5 -44.5t-41.5 -17.5zM125 -12q-25 0 -42.5 17.5t-17.5 44.5q0 29 17.5 46.5t42.5 17.5q24 0 41.5 -17.5t17.5 -46.5q0 -27 -17.5 -44.5t-41.5 -17.5z");
 static VectorFontGlyph glyph_59 = VectorFontGlyph("semicolon", 249, "M125 349q-25 0 -42.5 17.5t-17.5 44.5q0 29 17.5 46.5t42.5 17.5q24 0 41.5 -17.5t17.5 -46.5q0 -27 -17.5 -44.5t-41.5 -17.5zM67 -170l-20 48q43 19 67 50.5t23 71.5q-3 -1 -10 -1q-24 0 -41.5 14.5t-17.5 42.5q0 27 18 42.5t43 15.5q32 0 50.5 -26t18.5 -71 q0 -65 -35 -113t-96 -74z");
+static VectorFontGlyph glyph_60 = VectorFontGlyph("less", 497, "M463 131l-429 168v66l429 168v-71l-211 -78l-134 -50v-4l134 -50l211 -78v-71z");
+static VectorFontGlyph glyph_61 = VectorFontGlyph("equal", 497, "M34 406v62h429v-62h-429zM34 193v62h429v-62h-429z");
 static VectorFontGlyph glyph_62 = VectorFontGlyph("greater", 497, "M34 131v71l211 78l134 50v4l-134 50l-211 78v71l429 -168v-66z");
 static VectorFontGlyph glyph_63 = VectorFontGlyph("question", 425, "M160 198q-6 39 2.5 70.5t23.5 58t34.5 49.5t36.5 45.5t28.5 45.5t11.5 50q0 40 -24.5 68.5t-72.5 28.5q-33 0 -62.5 -15.5t-52.5 -42.5l-47 43q32 36 74.5 59.5t97.5 23.5q76 0 121.5 -42.5t45.5 -117.5q0 -33 -12 -60t-29.5 -51t-37 -47.5t-36 -48.5t-25.5 -53.5 t-5 -63.5h-72zM198 -12q-25 0 -42 17.5t-17 44.5q0 29 17 46.5t42 17.5t42.5 -17.5t17.5 -46.5q0 -27 -17.5 -44.5t-42.5 -17.5z");
 static VectorFontGlyph glyph_64 = VectorFontGlyph("at", 847, "M403 -155q-74 0 -138 23t-111.5 68.5t-75 112.5t-27.5 154q0 100 33.5 182t91 140t133 89.5t159.5 31.5q76 0 136.5 -24t103 -67.5t65.5 -104.5t23 -135q0 -66 -18.5 -115.5t-47.5 -83t-64.5 -50.5t-69.5 -17q-41 0 -69.5 19t-33.5 57h-2q-25 -29 -57 -48.5t-65 -19.5 q-51 0 -85.5 36t-34.5 105q0 40 13.5 81.5t38.5 75t60.5 54.5t79.5 21q26 0 46 -11.5t34 -36.5h2l11 40h55l-39 -200q-30 -117 54 -117q24 0 47.5 14t43 40.5t31.5 65t12 87.5q0 60 -17.5 111.5t-52.5 88.5t-87 58t-120 21q-67 0 -130 -27.5t-112 -77.5t-78.5 -121 t-29.5 -159q0 -73 22.5 -130t62.5 -96t94.5 -59.5t118.5 -20.5q46 0 87 12.5t75 32.5l22 -49q-85 -51 -190 -51zM385 113q21 0 43.5 14t48.5 45l29 159q-14 23 -29 32.5t-35 9.5q-30 0 -53.5 -16t-40 -41t-25 -55t-8.5 -58q0 -48 20 -69t50 -21z");
@@ -83,6 +88,9 @@ static VectorFontGlyph glyph_90 = VectorFontGlyph("Z", 539, "M45 0v50l345 536h-3
 static VectorFontGlyph glyph_91 = VectorFontGlyph("bracketleft", 303, "M94 -152v860h179v-47h-117v-766h117v-47h-179z");
 static VectorFontGlyph glyph_92 = VectorFontGlyph("backslash", 350, "M281 -160l-267 870h59l267 -870h-59z");
 static VectorFontGlyph glyph_93 = VectorFontGlyph("bracketright", 303, "M31 -152v47h116v766h-116v47h178v-860h-178z");
+static VectorFontGlyph glyph_94 = VectorFontGlyph("asciicircum", 497, "M60 284l152 386h73l152 -386h-72l-65 176l-49 133h-4l-50 -133l-65 -176h-72z");
+static VectorFontGlyph glyph_95 = VectorFontGlyph("underscore", 500, "M12 -126v55h476v-55h-476z");
+static VectorFontGlyph glyph_96 = VectorFontGlyph("grave", 542, "M285 573l-157 153l58 55l141 -167z");
 static VectorFontGlyph glyph_97 = VectorFontGlyph("a", 504, "M194 -12q-61 0 -101.5 36t-40.5 102q0 80 71 122.5t227 59.5q0 23 -4.5 45t-15.5 39t-30.5 27.5t-49.5 10.5q-42 0 -79 -16t-66 -36l-32 57q34 22 83 42.5t108 20.5q89 0 129 -54.5t40 -145.5v-298h-68l-7 58h-3q-35 -29 -75 -49.5t-86 -20.5zM218 54q35 0 66 16.5 t66 48.5v135q-61 -8 -102.5 -19t-67 -26t-37 -34.5t-11.5 -42.5q0 -42 25 -60t61 -18z");
 static VectorFontGlyph glyph_98 = VectorFontGlyph("b", 553, "M297 -12q-34 0 -70.5 16.5t-68.5 45.5h-3l-7 -50h-66v712h82v-194l-2 -88q33 29 72 48.5t80 19.5q47 0 83 -17.5t60.5 -50t37 -78t12.5 -101.5q0 -62 -17 -111t-46 -83t-67 -51.5t-80 -17.5zM283 57q30 0 55.5 13.5t44 38t29 60.5t10.5 81q0 40 -7 73t-22.5 56.5 t-40 36.5t-58.5 13q-59 0 -130 -66v-255q32 -28 63.5 -39.5t55.5 -11.5z");
 static VectorFontGlyph glyph_99 = VectorFontGlyph("c", 456, "M274 -12q-48 0 -90 17t-72.5 49.5t-48 80t-17.5 107.5q0 61 19 108.5t51 80.5t74.5 50t89.5 17q48 0 82 -17t60 -40l-42 -54q-21 19 -44.5 31t-52.5 12q-33 0 -61 -13.5t-48 -38.5t-31.5 -59.5t-11.5 -76.5t11 -76t30.5 -58.5t47.5 -38t61 -13.5q34 0 62.5 14.5 t51.5 34.5l36 -55q-33 -29 -73 -45.5t-84 -16.5z");
@@ -110,7 +118,9 @@ static VectorFontGlyph glyph_120 = VectorFontGlyph("x", 446, "M14 0l159 254l-147
 static VectorFontGlyph glyph_121 = VectorFontGlyph("y", 467, "M90 -209q-17 0 -31 2.5t-26 7.5l16 65l18 -4.5t19 -2.5q42 0 68.5 29.5t41.5 74.5l11 36l-195 487h85l99 -269q11 -32 23.5 -67.5t23.5 -69.5h4q11 33 21 69t20 68l87 269h80l-183 -526q-13 -36 -29 -67t-38 -53.5t-50 -35.5t-65 -13z");
 static VectorFontGlyph glyph_122 = VectorFontGlyph("z", 425, "M31 0v44l256 375h-228v67h332v-44l-256 -375h264v-67h-368z");
 static VectorFontGlyph glyph_123 = VectorFontGlyph("braceleft", 303, "M228 -152q-59 0 -88 28t-29 105q0 27 1.5 51.5t3 47.5l3 46t1.5 48q0 15 -4 28.5t-13.5 24.5t-26.5 18t-42 7v52q25 0 42 7t26.5 17.5t13.5 24.5t4 28q0 51 -4.5 95t-4.5 99q0 77 29 105t88 28h45v-47h-27q-41 0 -54.5 -21t-13.5 -70q0 -46 3 -88t3 -93q0 -49 -14 -74.5 t-46 -34.5v-4q32 -9 46 -35t14 -74q0 -51 -3 -93t-3 -88q0 -49 13.5 -70t54.5 -21h27v-47h-45z");
+static VectorFontGlyph glyph_124 = VectorFontGlyph("bar", 241, "M92 -250v1000h58v-1000h-58z");
 static VectorFontGlyph glyph_125 = VectorFontGlyph("braceright", 303, "M31 -152v47h26q41 0 54.5 21t13.5 70q0 46 -2.5 88t-2.5 93q0 48 13.5 74t45.5 35v4q-32 9 -45.5 34.5t-13.5 74.5q0 51 2.5 93t2.5 88q0 49 -13.5 70t-54.5 21h-26v47h44q30 0 52 -6.5t36.5 -21.5t21.5 -40.5t7 -64.5q0 -55 -4.5 -99t-4.5 -95q0 -29 18 -52.5t68 -24.5 v-52q-25 0 -41.5 -7t-26.5 -18t-14 -24.5t-4 -28.5q0 -25 1.5 -48l3 -46t3 -47.5t1.5 -51.5q0 -39 -7 -64.5t-21.5 -40.5t-36.5 -21.5t-52 -6.5h-44z");
+static VectorFontGlyph glyph_126 = VectorFontGlyph("asciitilde", 497, "M336 257q-30 0 -53.5 13t-44 29t-39.5 29t-40 13q-22 0 -41 -14.5t-36 -46.5l-46 33q27 48 60 69t65 21q30 0 53.5 -13t44 -29t39.5 -29t40 -13q22 0 41 14.5t36 46.5l46 -34q-27 -48 -60 -68.5t-65 -20.5z");
 static VectorFontGlyph glyph_162 = VectorFontGlyph("cent", 497, "M143 310q0 -67 31 -111t88 -57v335q-55 -13 -87 -57t-32 -110zM262 -33v104q-45 5 -82 23.5t-63.5 48.5t-41 72t-14.5 95q0 52 15.5 93t42.5 71t64 48.5t79 24.5v106h52v-103q44 -2 76 -19t55 -39l-40 -52q-20 18 -42.5 29t-48.5 13v-344q32 2 58 15.5t46 31.5l36 -52 q-29 -26 -65 -43t-75 -20v-103h-52z");
 static VectorFontGlyph glyph_163 = VectorFontGlyph("sterling", 497, "M54 0v50q51 28 78.5 75.5t27.5 104.5q0 14 -2 27.5t-5 27.5h-100v52l67 4h18q-10 32 -18.5 62.5t-8.5 62.5q0 42 13.5 76t38 58t58.5 37t76 13q54 0 91.5 -21.5t63.5 -53.5l-48 -47q-19 23 -43 38t-58 15q-54 0 -82.5 -32.5t-28.5 -84.5q0 -32 7.5 -61.5t16.5 -61.5h159 v-56h-146q2 -14 3.5 -27.5t1.5 -28.5q0 -53 -16 -88t-46 -66v-4h281v-71h-399z");
 static VectorFontGlyph glyph_165 = VectorFontGlyph("yen", 497, "M207 0v158h-162v48h162v65h-162v47h141l-163 320h86l78 -171q15 -33 29.5 -66.5t30.5 -68.5h4q17 35 31.5 68.5t29.5 66.5l78 171h84l-164 -320h142v-47h-163v-65h163v-48h-163v-158h-82z");
@@ -320,12 +330,18 @@ VectorFontGlyph getGlyph(int codepoint) {
 switch (codepoint) {
 case 33:
 return glyph_33;
+case 34:
+return glyph_34;
 case 35:
 return glyph_35;
 case 36:
 return glyph_36;
 case 37:
 return glyph_37;
+case 38:
+return glyph_38;
+case 39:
+return glyph_39;
 case 40:
 return glyph_40;
 case 41:
@@ -366,6 +382,10 @@ case 58:
 return glyph_58;
 case 59:
 return glyph_59;
+case 60:
+return glyph_60;
+case 61:
+return glyph_61;
 case 62:
 return glyph_62;
 case 63:
@@ -430,6 +450,12 @@ case 92:
 return glyph_92;
 case 93:
 return glyph_93;
+case 94:
+return glyph_94;
+case 95:
+return glyph_95;
+case 96:
+return glyph_96;
 case 97:
 return glyph_97;
 case 98:
@@ -484,8 +510,12 @@ case 122:
 return glyph_122;
 case 123:
 return glyph_123;
+case 124:
+return glyph_124;
 case 125:
 return glyph_125;
+case 126:
+return glyph_126;
 case 162:
 return glyph_162;
 case 163:

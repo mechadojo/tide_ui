@@ -25,12 +25,18 @@ class SourceSansProBoldFont extends VectorFontGlyphProvider {
   static VectorFontGlyph glyph_undefined = VectorFontGlyph("", 0, "");
   static VectorFontGlyph glyph_33 = VectorFontGlyph("exclam", 340,
       "M122 231l-21 306l-5 133h148l-5 -133l-21 -306h-96zM170 -12q-38 0 -63.5 26.5t-25.5 65.5q0 40 25.5 66.5t63.5 26.5t63.5 -26.5t25.5 -66.5q0 -39 -25.5 -65.5t-63.5 -26.5z");
+  static VectorFontGlyph glyph_34 = VectorFontGlyph("quotedbl", 536,
+      "M110 354l-29 199l-5 133h148l-5 -133l-29 -199h-80zM346 354l-29 199l-5 133h148l-5 -133l-29 -199h-80z");
   static VectorFontGlyph glyph_35 = VectorFontGlyph("numbersign", 528,
       "M86 0l22 187h-74v94h85l14 110h-79v94h91l21 165h84l-20 -165h104l21 165h84l-20 -165h79v-94h-91l-13 -110h84v-94h-95l-23 -187h-85l22 187h-103l-23 -187h-85zM205 281h103l14 110h-104z");
   static VectorFontGlyph glyph_36 = VectorFontGlyph("dollar", 528,
       "M215 -110v100q-44 5 -92.5 24.5t-83.5 51.5l64 99q38 -29 72.5 -43.5t70.5 -14.5q42 0 61.5 17t19.5 52q0 26 -19.5 44t-49 34.5t-63.5 33t-63.5 39.5t-49 54t-19.5 76q0 74 40.5 122.5t111.5 62.5v103h97v-101q48 -7 84 -29t65 -53l-74 -84q-27 25 -52 37.5t-57 12.5 q-36 0 -55 -15t-19 -49q0 -24 19.5 -40.5t49 -31.5t63.5 -31t63.5 -39t49 -55.5t19.5 -80.5q0 -72 -39 -123.5t-117 -68.5v-104h-97z");
   static VectorFontGlyph glyph_37 = VectorFontGlyph("percent", 857,
       "M188 250q-35 0 -65 14t-51.5 41t-33.5 65.5t-12 87.5t12 87t33.5 64.5t51.5 40.5t65 14t65 -14t51.5 -40.5t34 -64.5t12.5 -87t-12.5 -87.5t-34 -65.5t-51.5 -41t-65 -14zM188 332q25 0 42.5 28t17.5 98t-17.5 97t-42.5 27t-42.5 -27t-17.5 -97t17.5 -98t42.5 -28z M210 -12l352 676h85l-352 -676h-85zM669 -12q-35 0 -65 14t-51.5 41t-33.5 65.5t-12 87.5t12 87t33.5 64.5t51.5 40.5t65 14t65 -14t51.5 -40.5t34 -64.5t12.5 -87t-12.5 -87.5t-34 -65.5t-51.5 -41t-65 -14zM669 70q25 0 42.5 28t17.5 98t-17.5 97t-42.5 27t-42.5 -27 t-17.5 -97t17.5 -98t42.5 -28z");
+  static VectorFontGlyph glyph_38 = VectorFontGlyph("ampersand", 667,
+      "M242 -12q-53 0 -93.5 15t-68 40.5t-41.5 59t-14 71.5q0 34 9.5 61.5t26 49.5t38 40t45.5 33q-19 35 -29.5 69.5t-10.5 65.5q0 35 12.5 66t35.5 54.5t55.5 37t73.5 13.5q74 0 117 -40t43 -108q0 -32 -11.5 -58.5t-31 -49t-44 -41.5t-49.5 -36q28 -32 61.5 -62.5 t69.5 -56.5q25 32 44 71t31 85h134q-18 -60 -44.5 -114.5t-64.5 -105.5q31 -16 59.5 -26.5t53.5 -14.5l-35 -119q-41 8 -83 25t-84 41q-42 -31 -92.5 -48.5t-112.5 -17.5zM225 494q0 -18 5.5 -38t15.5 -40q35 21 59 44t24 56q0 23 -11 37t-34 14q-25 0 -42 -19.5t-17 -53.5z M261 100q41 0 82 26q-38 31 -72 65t-63 70q-20 -17 -32 -36t-12 -42q0 -37 26.5 -60t70.5 -23z");
+  static VectorFontGlyph glyph_39 = VectorFontGlyph(
+      "quotesingle", 300, "M110 354l-29 199l-5 133h148l-5 -133l-29 -199h-80z");
   static VectorFontGlyph glyph_40 = VectorFontGlyph("parenleft", 344,
       "M204 -179q-63 103 -97.5 214t-34.5 243t34.5 243t97.5 214l92 -38q-55 -98 -80 -205t-25 -214t25 -214t80 -205z");
   static VectorFontGlyph glyph_41 = VectorFontGlyph("parenright", 344,
@@ -71,6 +77,10 @@ class SourceSansProBoldFont extends VectorFontGlyphProvider {
       "M150 312q-38 0 -63.5 26.5t-25.5 65.5q0 40 25.5 66.5t63.5 26.5t63.5 -26.5t25.5 -66.5q0 -39 -25.5 -65.5t-63.5 -26.5zM150 -12q-38 0 -63.5 26.5t-25.5 65.5q0 40 25.5 66.5t63.5 26.5t63.5 -26.5t25.5 -66.5q0 -39 -25.5 -65.5t-63.5 -26.5z");
   static VectorFontGlyph glyph_59 = VectorFontGlyph("semicolon", 300,
       "M150 312q-38 0 -63.5 26.5t-25.5 65.5q0 40 25.5 66.5t63.5 26.5t63.5 -26.5t25.5 -66.5q0 -39 -25.5 -65.5t-63.5 -26.5zM76 -194l-30 78q56 20 85 52t28 70h-8q-35 0 -62 21.5t-27 61.5q0 38 27 61t65 23q50 0 76 -36.5t26 -102.5q0 -83 -46 -142.5t-134 -85.5z");
+  static VectorFontGlyph glyph_60 = VectorFontGlyph("less", 528,
+      "M494 104l-460 177v102l460 177v-121l-176 -58l-135 -47v-4l135 -47l176 -58v-121z");
+  static VectorFontGlyph glyph_61 = VectorFontGlyph(
+      "equal", 528, "M34 394v104h460v-104h-460zM34 163v104h460v-104h-460z");
   static VectorFontGlyph glyph_62 = VectorFontGlyph("greater", 528,
       "M34 104v121l176 58l135 47v4l-135 47l-176 58v121l460 -177v-102z");
   static VectorFontGlyph glyph_63 = VectorFontGlyph("question", 463,
@@ -135,6 +145,12 @@ class SourceSansProBoldFont extends VectorFontGlyphProvider {
       VectorFontGlyph("backslash", 339, "M230 -160l-202 870h96l202 -870h-96z");
   static VectorFontGlyph glyph_93 = VectorFontGlyph(
       "bracketright", 344, "M46 -152v78h102v704h-102v78h211v-860h-211z");
+  static VectorFontGlyph glyph_94 = VectorFontGlyph("asciicircum", 528,
+      "M50 274l155 396h118l155 -396h-121l-46 128l-45 135h-4l-45 -135l-46 -128h-121z");
+  static VectorFontGlyph glyph_95 =
+      VectorFontGlyph("underscore", 500, "M12 -140v83h476v-83h-476z");
+  static VectorFontGlyph glyph_96 =
+      VectorFontGlyph("grave", 555, "M268 572l-181 157l99 97l154 -182z");
   static VectorFontGlyph glyph_97 = VectorFontGlyph("a", 527,
       "M190 -12q-34 0 -61.5 11.5t-46.5 32t-29.5 47.5t-10.5 59q0 78 66 122t213 59q-2 33 -19.5 52.5t-58.5 19.5q-32 0 -63.5 -12t-67.5 -33l-53 97q48 29 100.5 47t111.5 18q96 0 146.5 -54.5t50.5 -169.5v-284h-120l-10 51h-4q-32 -28 -67 -45.5t-77 -17.5zM240 102 q25 0 43 11t38 31v87q-78 -11 -108 -32t-30 -50q0 -24 15.5 -35.5t41.5 -11.5z");
   static VectorFontGlyph glyph_98 = VectorFontGlyph("b", 573,
@@ -189,8 +205,12 @@ class SourceSansProBoldFont extends VectorFontGlyphProvider {
       "z", 460, "M38 0v79l208 302h-185v115h368v-78l-208 -303h215v-115h-398z");
   static VectorFontGlyph glyph_123 = VectorFontGlyph("braceleft", 344,
       "M235 -152q-66 0 -97 30.5t-31 111.5q0 27 1.5 48t3.5 40.5t3.5 39t1.5 43.5q0 13 -4.5 26t-14.5 23.5t-26.5 17t-40.5 7.5v86q24 1 40.5 7.5t26.5 17t14.5 23.5t4.5 26q0 24 -1.5 43.5t-3.5 39t-3.5 40.5t-1.5 48q0 81 31 111.5t97 30.5h63v-78h-19q-31 0 -42 -14.5 t-11 -55.5t2 -79t2 -84q0 -57 -18 -82.5t-56 -34.5v-4q38 -9 56 -34.5t18 -82.5q0 -46 -2 -84t-2 -79t11 -55.5t42 -14.5h19v-78h-63z");
+  static VectorFontGlyph glyph_124 =
+      VectorFontGlyph("bar", 268, "M86 -250v1000h96v-1000h-96z");
   static VectorFontGlyph glyph_125 = VectorFontGlyph("braceright", 344,
       "M46 -152v78h19q31 0 42 14.5t11 55.5t-2 79t-2 84q0 57 18 82.5t56 34.5v4q-38 9 -56 34.5t-18 82.5q0 46 2 84t2 79t-11 55.5t-42 14.5h-19v78h63q66 0 97 -30.5t31 -111.5q0 -27 -1.5 -48t-3.5 -40.5t-3.5 -39t-1.5 -43.5q0 -13 4.5 -26t14.5 -23.5t26.5 -17t40.5 -7.5 v-86q-24 -1 -40.5 -7.5t-26.5 -17t-14.5 -23.5t-4.5 -26q0 -24 1.5 -43.5t3.5 -39t3.5 -40.5t1.5 -48q0 -81 -31 -111.5t-97 -30.5h-63z");
+  static VectorFontGlyph glyph_126 = VectorFontGlyph("asciitilde", 528,
+      "M349 240q-31 0 -54 12t-42.5 26t-37 26t-38.5 12q-20 0 -38 -15t-34 -43l-76 59q37 57 74.5 80t75.5 23q31 0 54 -12t42.5 -26t37 -26t38.5 -12t38.5 15t33.5 43l76 -59q-37 -57 -74.5 -80t-75.5 -23z");
   static VectorFontGlyph glyph_162 = VectorFontGlyph("cent", 528,
       "M203 307q0 -45 18.5 -77.5t53.5 -47.5v250q-36 -16 -54 -48t-18 -77zM275 -41v95q-49 6 -88.5 26t-67.5 52.5t-43.5 76.5t-15.5 98q0 53 16 96t45 74.5t68 52t86 28.5v97h81v-93q39 -4 70.5 -18.5t53.5 -37.5l-67 -90q-30 24 -57 27v-272q21 4 39 13.5t33 21.5l59 -93 q-29 -25 -63 -39.5t-68 -19.5v-95h-81z");
   static VectorFontGlyph glyph_163 = VectorFontGlyph("sterling", 528,
@@ -604,12 +624,18 @@ class SourceSansProBoldFont extends VectorFontGlyphProvider {
     switch (codepoint) {
       case 33:
         return glyph_33;
+      case 34:
+        return glyph_34;
       case 35:
         return glyph_35;
       case 36:
         return glyph_36;
       case 37:
         return glyph_37;
+      case 38:
+        return glyph_38;
+      case 39:
+        return glyph_39;
       case 40:
         return glyph_40;
       case 41:
@@ -650,6 +676,10 @@ class SourceSansProBoldFont extends VectorFontGlyphProvider {
         return glyph_58;
       case 59:
         return glyph_59;
+      case 60:
+        return glyph_60;
+      case 61:
+        return glyph_61;
       case 62:
         return glyph_62;
       case 63:
@@ -714,6 +744,12 @@ class SourceSansProBoldFont extends VectorFontGlyphProvider {
         return glyph_92;
       case 93:
         return glyph_93;
+      case 94:
+        return glyph_94;
+      case 95:
+        return glyph_95;
+      case 96:
+        return glyph_96;
       case 97:
         return glyph_97;
       case 98:
@@ -768,8 +804,12 @@ class SourceSansProBoldFont extends VectorFontGlyphProvider {
         return glyph_122;
       case 123:
         return glyph_123;
+      case 124:
+        return glyph_124;
       case 125:
         return glyph_125;
+      case 126:
+        return glyph_126;
       case 162:
         return glyph_162;
       case 163:

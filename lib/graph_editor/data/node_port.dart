@@ -1,5 +1,6 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_chart/tide_chart.dart';
+import 'package:tide_ui/graph_editor/data/graph_property_set.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 
 import 'graph.dart';
@@ -62,14 +63,33 @@ class NodePort extends GraphObject {
   static NodePort none = NodePort()..name = "<none>";
 
   PortFlag flag = PortFlag();
+  PortFlag filterFlag = PortFlag();
+
   NodePortType type = NodePortType.inport;
   GraphNode node = GraphNode.none;
 
   String name = "";
+
   int ordinal = 0;
   bool isDefault = false;
+  bool isRequired = true;
+  bool isBlocking = false;
+  bool isQueuing = false;
+  String syncGroup;
 
-  String value;
+  bool get isLocal => name != null && name.startsWith("_");
+  bool get isGlobal => !isLocal;
+
+  String get value => isOutport ? null : node.props.getString(name);
+  set value(String next) {
+    if (next == null || next.isEmpty || type != NodePortType.inport) {
+      node.props.remove(name);
+    } else {
+      node.props.replace(GraphProperty.parse(name, next));
+    }
+  }
+
+  String filter;
   String trigger;
   String link;
   String event;
@@ -79,6 +99,8 @@ class NodePort extends GraphObject {
   bool get hasTrigger => trigger != null && trigger.isNotEmpty;
   bool get hasLink => link != null && link.isNotEmpty;
   bool get hasEvent => event != null && event.isNotEmpty;
+  bool get hasSyncGroup => syncGroup != null && syncGroup.isNotEmpty;
+  bool get hasFilter => filter != null && filter.isNotEmpty;
 
   String get flagLabel {
     if (hasValue) return value;
@@ -86,6 +108,57 @@ class NodePort extends GraphObject {
     if (hasLink) return link;
     if (hasEvent) return event;
     return null;
+  }
+
+  String get flagType {
+    if (hasValue) return "Value";
+    if (hasTrigger) return "Trigger";
+    if (hasLink) return "Link";
+    if (hasEvent) return "Event";
+    return null;
+  }
+
+  int get syncGroupIndex {
+    var keys = Set<String>();
+    for (var port in node.inports) {
+      if (port.hasSyncGroup) keys.add(port.syncGroup);
+    }
+
+    var sorted = keys.toList();
+    sorted.sort();
+
+    return sorted.indexOf(syncGroup);
+  }
+
+  void rename(String next) {
+    if (node != null) {
+      var ports = isInport ? node.inports : node.outports;
+      if (ports.any((x) => x != this && x.name == next)) {
+        next = next + "_";
+      }
+
+      if (isOutport) {
+        node.props.remove(next);
+      } else if (hasValue) {
+        node.props.rename(name, next);
+      }
+    }
+
+    var last = name;
+    name = next;
+
+    var lastLocal = last.startsWith("_");
+    var nextLocal = next.startsWith("_");
+    if (lastLocal != nextLocal) {
+      node.resize();
+    }
+  }
+
+  void clearFlag() {
+    value = null;
+    trigger = null;
+    link = null;
+    event = null;
   }
 
   void setValue(String value) {
@@ -99,6 +172,7 @@ class NodePort extends GraphObject {
 
   void setTrigger(String trigger) {
     this.trigger = trigger;
+
     if (trigger != null) {
       value = null;
       link = null;
@@ -108,6 +182,7 @@ class NodePort extends GraphObject {
 
   void setLink(String link) {
     this.link = link;
+
     if (link != null) {
       value = null;
       trigger = null;
@@ -117,6 +192,7 @@ class NodePort extends GraphObject {
 
   void setEvent(String event) {
     this.event = event;
+
     if (event != null) {
       value = null;
       trigger = null;
@@ -136,8 +212,12 @@ class NodePort extends GraphObject {
     return "${node}:$name";
   }
 
-  bool allowSetValue() {
+  bool get allowSetValue {
     return !hasValue && node.isAnyType(Action_Behavior);
+  }
+
+  bool get allowChangeName {
+    return node.type == GraphNodeType.action || !isRequired;
   }
 
   bool canLinkTo(NodePort other) {
@@ -160,11 +240,15 @@ class NodePort extends GraphObject {
         packed.name, NodePort.parsePortType(packed.type),
         autoResize: false);
     result.isDefault = packed.isDefault;
+    result.isRequired = packed.isRequired;
     result.value = packed.value;
     result.trigger = packed.trigger;
     result.event = packed.event;
     result.link = packed.link;
-
+    result.isBlocking = packed.isBlocking;
+    result.isQueuing = packed.isQueuing;
+    result.syncGroup = packed.syncGroup;
+    result.filter = packed.filter;
     return result;
   }
 
@@ -187,6 +271,8 @@ class NodePort extends GraphObject {
   }
 
   bool equalTo(NodePort other) {
+    if (other == null) return false;
+
     if (node.name != other.node.name) return false;
     if (name != other.name) return false;
 
@@ -200,11 +286,16 @@ class NodePort extends GraphObject {
     result.name = name;
     result.ordinal = ordinal;
     result.isDefault = isDefault;
+    result.isRequired = isRequired;
+    result.isBlocking = isBlocking;
+    result.isQueuing = isQueuing;
 
+    if (syncGroup != null) result.syncGroup = syncGroup;
     if (value != null) result.value = value;
     if (trigger != null) result.trigger = trigger;
     if (link != null) result.link = link;
     if (event != null) result.event = event;
+    if (filter != null) result.filter = filter;
 
     return result;
   }

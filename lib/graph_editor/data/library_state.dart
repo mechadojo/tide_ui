@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_event.dart';
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
+import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'graph_node.dart';
 import 'menu_item.dart';
@@ -16,15 +17,69 @@ class LibraryItem extends MenuItem {
   bool isDefault = false;
   List<LibraryItem> items = [];
 
+  MenuItem openButton =
+      MenuItem(icon: "folder-open", iconAlt: "folder-open-solid");
+  MenuItem editButton = MenuItem(icon: "edit");
+
+  MenuItem collapseButton = MenuItem(icon: "angle-down");
+  MenuItem expandButton = MenuItem(icon: "angle-right");
+  MenuItem get expandoButton => isCollapsed ? expandButton : collapseButton;
+
+  bool collapsed = false;
+  bool get isCollapsed => collapsed;
+  bool get isExpanded => !collapsed;
+
+  LibraryItem.group(String name, List<GraphNode> nodes) {
+    this.name = name;
+    this.icon = "cogs";
+    items = [...nodes.map((x) => LibraryItem.method(x))];
+  }
+
+  LibraryItem.widget(this.node) {
+    icon = node.icon;
+    name = node.hasTitle ? node.title : node.widgetTypeName;
+  }
+
   LibraryItem.node(this.node) {
     icon = node.icon;
     name = node.hasTitle ? node.title : node.name;
+  }
+
+  LibraryItem.method(this.node) {
+    icon = node.icon;
+    name =
+        node.hasTitle ? node.title : node.hasMethod ? node.method : node.name;
   }
 
   LibraryItem.graph(GraphState graph) {
     this.graph = graph;
     icon = graph.icon;
     name = graph.title;
+  }
+
+  LibraryItem.library(GraphLibraryState next) {
+    graph = next;
+    icon = next.icon;
+    name = next.title;
+
+    Map<String, List<GraphNode>> groups = {};
+
+    for (var node in graph.nodes) {
+      var libname = node.library ?? "";
+      if (!groups.containsKey(libname)) {
+        groups[libname] = List<GraphNode>();
+      }
+
+      // Add a copy of the node so that drag/drop doesn't impact
+      // the actual node pos on the library graph
+      groups[libname].add(GraphNode.clone(node)..name = GraphNode.randomName());
+    }
+
+    var keys = groups.keys.toList();
+    keys.sort();
+    for (var key in keys) {
+      items.add(LibraryItem.group(key, groups[key]));
+    }
   }
 
   GraphNode get dropNode {
@@ -39,6 +94,8 @@ class LibraryItem extends MenuItem {
 class LibraryState extends UpdateNotifier {
   LibraryController controller;
 
+  LibraryTab currentTab = LibraryTab.widgets;
+
   LibraryDisplayMode mode = LibraryDisplayMode.hidden;
   LibraryDisplayMode lastCollapsed = LibraryDisplayMode.toolbox;
   LibraryDisplayMode lastExpanded = LibraryDisplayMode.expanded;
@@ -49,8 +106,8 @@ class LibraryState extends UpdateNotifier {
   /// toolbar of small icon buttoms at top of panel
   List<MenuItem> menu = [];
 
-  /// track location of headers in expanded and detailed modes
-  List<MenuItem> headers = [];
+  /// a second row of small icon buttoms at top of panel
+  List<MenuItem> tabs = [];
 
   /// items displayed in toolbox mode have a hotkey and default tags
   List<LibraryItem> toolbox = [];
@@ -60,6 +117,25 @@ class LibraryState extends UpdateNotifier {
 
   /// expanded and detailed modes display groups of items and subgroups
   List<LibraryItem> groups = [];
+
+  /// list of files used in Tab-Files mode
+  List<MenuItemSet> files = [];
+
+  /// list of files used in Tab-Imports mode
+  List<MenuItemSet> imports = [];
+  List<MenuItem> importButtons = [];
+
+  /// list of widgets used in Tab-Widgets mode
+  List<LibraryItem> widgets = [];
+
+  List<LibraryItem> get behaviors =>
+      sheets.where((x) => x.graph?.type == GraphType.behavior).toList();
+
+  List<LibraryItem> get opmodes =>
+      sheets.where((x) => x.graph?.type == GraphType.opmode).toList();
+
+  LibraryItem behaviorGroup = LibraryItem.group("Behaviors", []);
+  LibraryItem opmodeGroup = LibraryItem.group("OpModes", []);
 
   Rect hitbox = Rect.zero;
 
@@ -71,7 +147,9 @@ class LibraryState extends UpdateNotifier {
 
   bool get isExpanded =>
       mode == LibraryDisplayMode.expanded ||
-      mode == LibraryDisplayMode.detailed;
+      mode == LibraryDisplayMode.detailed ||
+      mode == LibraryDisplayMode.search ||
+      mode == LibraryDisplayMode.tabs;
 
   LibraryState() {
     int count = 10;
@@ -79,6 +157,22 @@ class LibraryState extends UpdateNotifier {
       ...GraphState.randomNodes(count).map((x) => LibraryItem.node(x))
     ];
     toolbox[Random().nextInt(count)].isDefault = true;
+  }
+
+  void clear() {
+    sheets.clear();
+    groups.clear();
+  }
+
+  bool isModalTab(LibraryTab tab) {
+    switch (tab) {
+      case LibraryTab.files:
+        return true;
+      case LibraryTab.history:
+        return true;
+      default:
+        return false;
+    }
   }
 
   GraphNode getDefaultNode([GraphEvent evt]) {

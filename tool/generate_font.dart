@@ -2,7 +2,7 @@ import "dart:io";
 import 'package:xml/xml.dart' as xml;
 
 var libraryName = "";
-var className = "SourceSansProFont";
+var className = "";
 
 Map<String, String> paths = {};
 Map<String, String> widths = {};
@@ -13,7 +13,17 @@ Map<String, String> fontface = {};
 
 List<String> names = [];
 var allowed =
-    r"ABCČĆDĐEFGHIJKLMNOPQRSŠTUVWXYZŽabcčćdđefghijklmnopqrsštuvwxyzžАБВГҐДЂЕЁЄЖЗЅИІЇЙЈКЛЉМНЊОПРСТЋУЎФХЦЧЏШЩЪЫЬЭЮЯабвгґдђеёєжзѕиіїйјклљмнњопрстћуўфхцчџшщъыьэюяΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωάΆέΈέΉίϊΐΊόΌύΰϋΎΫὰάὲέὴήὶίὸόὺύὼώΏĂÂÊÔƠƯăâêôơư1234567890‘?’“!”(%)[#]{@}/&\<-+÷×=>®©$€£¥¢:;,.*";
+    r"ABCČĆDĐEFGHIJKLMNOPQRSŠTUVWXYZŽabcčćdđefghijklmnopqrsštuvwxyzžАБВГҐДЂЕЁЄЖЗЅИІЇЙЈКЛЉМНЊОПРСТЋУЎФХЦЧЏШЩЪЫЬЭЮЯабвгґдђеёєжзѕиіїйјклљмнњопрстћуўфхцчџшщъыьэюяΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψωάΆέΈέΉίϊΐΊόΌύΰϋΎΫὰάὲέὴήὶίὸόὺύὼώΏĂÂÊÔƠƯăâêôơư1234567890‘?’“!”(%)[#]{@}/&\<-+÷×=>®©$€£¥¢:;,.*!@#$%^&*()_+-={}[]\|:;'<>,./?"
+    '"';
+var remap = {
+  "equal": "=",
+  "less": "<",
+  "greater": ">",
+  "ampersand": "&",
+  "quotedbl": '"',
+  "asciitilde": "~",
+  "grave": "`"
+};
 
 void main(List<String> arguments) {
   var file = File(arguments.first);
@@ -55,15 +65,31 @@ void main(List<String> arguments) {
         width = value;
       }
     }
+
+    if (name != null) {
+      if (remap.containsKey(name)) {
+        print("Found $name");
+        unicode = remap[name];
+
+        if (path == null) print("no path");
+      }
+    }
+
     if (path == null || unicode == null || unicode.isEmpty) continue;
-    if (unicode.codeUnits.length > 1) continue;
+    if (unicode.codeUnits.length > 1) {
+      if (remap.containsKey(name)) print("CodeUnits too long");
+      continue;
+    }
+    ;
 
     var cp = unicode.codeUnits.first;
-    if (allowedCodepoints.isNotEmpty) {
+    if (allowedCodepoints.isNotEmpty && !remap.containsKey(name)) {
       if (!allowedCodepoints.contains(cp)) {
+        if (remap.containsKey(name)) print("CodePoint not allowed");
         continue;
       }
     }
+    if (remap.containsKey(name)) print("Adding: $cp");
 
     codepointsByIndex[cp] = name;
     codepointsByName[name] = cp;
@@ -76,6 +102,10 @@ void main(List<String> arguments) {
   if (allowedCodepoints.isNotEmpty) {
     print(
         "Found ${names.length} of ${allowedCodepoints.length} allowed glyphs");
+    var missing =
+        allowedCodepoints.where((x) => !codepointsByIndex.containsKey(x));
+
+    print(missing.map((x) => String.fromCharCode(x)));
   } else {
     print("Found ${names.length} glyphs");
   }

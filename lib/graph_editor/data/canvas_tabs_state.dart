@@ -68,15 +68,6 @@ class CanvasTabsState extends UpdateNotifier {
     return tabs.any((x) => x.name == name);
   }
 
-  /// Add a new tab and optionally [select] it.
-  CanvasTab add({String title, String name, String icon, bool select}) {
-    if (name == null) name = "tab${nextTab++}";
-
-    var tab = CanvasTab(title: title, name: name, icon: icon);
-    addTab(tab, select);
-    return tab;
-  }
-
   /// Get the currently selected tab.
   CanvasTab get current {
     if (tabs.isEmpty) return null;
@@ -144,6 +135,23 @@ class CanvasTabsState extends UpdateNotifier {
     }
   }
 
+  void selectOrAddTab(CanvasTab tab, {bool replace = false}) {
+    if (tab == null) return;
+    if (!tabs.any((x) => x.name == tab.name)) {
+      tabs = [...tabs, tab];
+    }
+
+    if (replace) {
+      List<CanvasTab> next = [];
+      for (var item in tabs) {
+        next.add(item.name == tab.name ? tab : item);
+      }
+      tabs = next;
+    }
+
+    selected = tab.name;
+  }
+
   /// Select a [tab].
   void selectTab(CanvasTab tab) {
     if (tab == null) return;
@@ -151,7 +159,6 @@ class CanvasTabsState extends UpdateNotifier {
     if (tab.name == selected) return;
 
     selected = tab.name;
-    notifyListeners();
   }
 
   /// Select the first tab.
@@ -180,17 +187,12 @@ class CanvasTabsState extends UpdateNotifier {
     selectTab(tab);
   }
 
-  void addTab(CanvasTab tab,
-      [bool select = false, bool replace = true, bool notify = true]) {
+  void addTab(CanvasTab tab, {bool select = false, bool replace = true}) {
     tabs = replace
         ? [...tabs.where((x) => x.name != tab.name), tab]
         : [...tabs, tab];
 
     if (select) selected = tab.name;
-
-    if (notify) {
-      notifyListeners();
-    }
   }
 
   void removeAll(List<String> names, [String select]) {
@@ -227,8 +229,6 @@ class CanvasTabsState extends UpdateNotifier {
       selected = select;
       if (current == null) selected = null;
     }
-
-    notifyListeners();
   }
 
   void remove(String name) {
@@ -247,14 +247,13 @@ class CanvasTabsState extends UpdateNotifier {
     }
 
     tabs = tabs.where((x) => x.name != name).toList();
-    notifyListeners();
   }
 
   void restore([bool select = false]) {
     if (history.isNotEmpty) {
       var last = history.removeLast();
       last.clearInteractive();
-      addTab(last, select);
+      addTab(last, select: select);
     }
   }
 
@@ -270,6 +269,5 @@ class CanvasTabsState extends UpdateNotifier {
     tabs.clear();
     history.clear();
     selected = null;
-    notifyListeners();
   }
 }

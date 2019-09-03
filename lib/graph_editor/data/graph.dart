@@ -12,6 +12,7 @@ class Graph {
   static const double DefaultNodeSize = 80;
 
   static const double DefaultPortSpacing = 20;
+  static const double WidgetPortSpacing = 30;
   static const double DefaultPortPadding = 20;
   static const double DefaultPortOffset = 6;
   static const double DefaultPortSize = 8;
@@ -22,6 +23,15 @@ class Graph {
 
   static const double DefaultTabReloadMargin = 35; // clicking version #
 
+  static TextStyle DefaultDialogTitleStyle = TextStyle(
+      fontSize: 20, fontFamily: "Source Sans Pro", fontWeight: FontWeight.bold);
+
+  static TextStyle DefaultDialogContentStyle =
+      TextStyle(fontSize: 15, fontFamily: "Source Sans Pro");
+
+  static TextStyle DefaultDialogButtonStyle =
+      TextStyle(fontSize: 15, fontFamily: "Source Sans Pro");
+
   //
   // Canvas Styling
   //
@@ -31,6 +41,11 @@ class Graph {
   //
   // Library Styling
   //
+
+  static Paint LibraryScrollBarFront = Paint()
+    ..color = Color(0xff000000).withAlpha(100);
+  static Paint LibraryScrollBarBack = Paint()
+    ..color = Color(0xff333300).withAlpha(50);
 
   static const double LibraryCollapsedWidth = 75;
   static const double LibraryExpandedWidth = 200;
@@ -50,6 +65,60 @@ class Graph {
   static const double LibraryCollapsedItemMaxSpacing = 75;
 
   static const double LibraryDragIconSize = 40;
+
+  static const double LibraryGroupTopPadding = 40;
+  static const double LibraryGroupLabelSize = 9;
+  static const double LibraryGroupTextSize = 15;
+  static const double LibrarySubGroupLabelSize = 7;
+  static const double LibraryGroupItemPadding = 5;
+
+  static const double LibraryGroupCollapsedPadding = 10;
+  static const double LibraryGroupPadding = 10;
+  static const double LibraryGroupIconSize = 20;
+
+  static const double LibraryGridPadding = 10;
+  static const double LibraryGridLabelSize = 12;
+  static const double LibraryGridIconSize = 20;
+  static const int LibraryGridColumns = 5;
+
+  static const double LibraryTabPadding = 12;
+  static const double LibraryTabIconSize = 15;
+
+  static const double LibraryTabTop = 30;
+  static const double LibraryTabBottom = 5;
+
+  static const double LibraryFirstTabPos = 5;
+  static const double LibraryFirstTabWidth = 65;
+  static const double LibraryFirstTabPadding = -2;
+
+  static const double LibraryDetailedIconSize = 15;
+  static const double LibraryDetailedIconSpacing = 10;
+
+  static const double LibraryTitleSize = 12;
+
+  static const double LibraryFileNameSize = 10;
+  static const double LibraryFileNameSpacing = 20;
+  static const double LibraryFileIconSize = 15;
+  static const double LibraryFileIconSpacing = 10;
+
+  static Paint LibraryTitleColor = Paint()
+    ..color = Color(0xff333333).withAlpha(200);
+
+  static Paint LibraryFileColor = Paint()
+    ..color = Color(0xff333333).withAlpha(200);
+
+  static Paint LibraryTabsBackFill = Paint()
+    ..color = Color(0xffeeeeee)
+    ..style = PaintingStyle.fill;
+
+  static Paint LibraryTabsOutline = Paint()
+    ..color = Color(0xff888888)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+
+  static Paint LibraryGroupLabelColor = Paint()
+    ..color = Color(0xff333333).withAlpha(200);
+
   static Paint LibraryDragIconColor = Paint()
     ..color = Color(0xff333333).withAlpha(150);
 
@@ -57,6 +126,9 @@ class Graph {
     ..color = Color(0xff888888).withAlpha(100)
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1;
+
+  static Paint LibraryItemIconActiveColor = Paint()
+    ..color = Color(0xff333333).withAlpha(200);
 
   static Paint LibraryItemIconColor = Paint()
     ..color = Color(0xff333333).withAlpha(150);
@@ -100,6 +172,7 @@ class Graph {
   static const double ZoomSliderBottomMargin = 15;
 
   static const double ZoomSliderSize = 10;
+
   static Paint ZoomSliderLeftLine = Paint()
     ..color = Color(0xff333300).withAlpha(100)
     ..color = Color(0xff000000).withAlpha(100)
@@ -148,6 +221,11 @@ class Graph {
   static Paint NodeHoverColor = Paint()..color = Color(0xFFDFFEFE);
   static Paint NodeSelectedColor = Paint()..color = Color(0xFFDEFCE9);
 
+  static Paint NodeLabelBorder = Paint()
+    ..color = Color(0xFF333333)
+    ..strokeWidth = 1
+    ..style = PaintingStyle.stroke;
+
   static Paint NodeBorder = Paint()
     ..color = Color(0xFF333333)
     ..strokeWidth = 2
@@ -178,6 +256,10 @@ class Graph {
   //  Port Styling
   //
   static Paint PortColor = Paint()..color = Colors.white;
+  static Paint PortIconColor = Paint()
+    ..color = Color(0xFF333333).withAlpha(128);
+
+  static Paint DefaultPortColor = PortColor;
   static Paint PortHoverColor = Paint()..color = Colors.cyan[50];
   static Paint PortBorder = Paint()
     ..color = Color(0xFF333333).withAlpha(128)
@@ -195,15 +277,19 @@ class Graph {
   static double PortValueIconSize = 10;
   static double PortValueLeader = 5;
   static double PortValueHeight = 20;
+
   static double PortValueFlagWidth = 10;
   static double PortValueIconPadding = 3;
   static double PortValuePaddingEnd = 5;
   static double PortValuePaddingStart = 0;
+
+  static double PortFilterFlagPadding = 25;
   static Paint PortValueBorder = Paint()
     ..color = Color(0xFF333333)
     ..strokeWidth = 1.5
     ..style = PaintingStyle.stroke;
 
+  static Paint PortErrorLabelColor = Paint()..color = Colors.red[200];
   static Paint PortValueLabelColor = Paint()..color = Colors.yellow[200];
   static Paint PortTriggerLabelColor = Paint()..color = Colors.green[200];
   static Paint PortLinkLabelColor = Paint()..color = Colors.purple[100];

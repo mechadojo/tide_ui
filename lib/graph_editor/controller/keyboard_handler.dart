@@ -13,6 +13,7 @@ class KeyboardHandler {
   CanvasTabsController get tabs => editor.tabs.controller;
   CanvasController get canvas => editor.canvas.controller;
   GraphController get graph => editor.graph.controller;
+  GraphKeyPress get modalKeyHandler => editor.modalKeyHandler;
 
   bool ctrlKey = false;
   bool shiftKey = false;
@@ -59,6 +60,11 @@ class KeyboardHandler {
 
     if (evt.key == "Tab") {
       evt.preventDefault();
+    }
+
+    if (modalKeyHandler != null) {
+      modalKeyHandler(evt);
+      return;
     }
 
     if (evt.key == "Tab" && !evt.ctrlKey && editor.tabFocus != null) {

@@ -7,11 +7,13 @@ import 'package:flutter_web_ui/ui.dart' as ui;
 import 'package:tide_chart/tide_chart.dart';
 
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_history.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 import 'package:uuid/uuid.dart';
 
 import 'canvas_interactive.dart';
+import 'graph_property_set.dart';
 import 'update_notifier.dart';
 import 'graph_link.dart';
 import 'graph_node.dart';
@@ -21,27 +23,138 @@ typedef GetNodeByName(String name);
 
 class GraphSelection {
   Offset pos = Offset.zero;
+  Offset origin = Offset.zero;
+  Size size = Size.zero;
 
   List<GraphNode> nodes = [];
   List<GraphLink> links = [];
 
   GraphSelection.node(GraphNode node) {
-    nodes.add(node);
+    nodes.add(GraphNode.clone(node)..name = GraphNode.randomName());
+  }
+
+  GraphSelection.copy(GraphSelection other) {
+    pos = other.pos;
+    origin = other.origin;
+    size = other.size;
+
+    Map<String, String> renameFrom = {};
+    Map<String, GraphNode> renameTo = {};
+
+    for (var node in other.nodes) {
+      var next = GraphNode.clone(node);
+      next.name = GraphNode.randomName();
+
+      renameFrom[node.name] = next.name;
+      renameTo[next.name] = next;
+
+      this.nodes.add(next);
+    }
+
+    var lookup = (String name) {
+      return renameTo[name];
+    };
+
+    for (var link in other.links) {
+      var packed = link.pack();
+      packed.inNode = renameFrom[link.inPort.node.name];
+      packed.outNode = renameFrom[link.outPort.node.name];
+
+      this.links.add(GraphLink.unpack(packed, lookup));
+    }
+  }
+
+  GraphSelection.all(List<GraphNode> nodes, List<GraphLink> links) {
+    var rect = GraphState.getExtents(
+        [...nodes.expand((x) => x.interactive()), ...links]);
+
+    origin = rect.center;
+    size = rect.size;
+
+    Map<String, String> renameFrom = {};
+    Map<String, GraphNode> renameTo = {};
+
+    for (var node in nodes) {
+      var next = GraphNode.clone(node);
+      next.name = GraphNode.randomName();
+      next.moveBy(-origin.dx, -origin.dy);
+
+      renameFrom[node.name] = next.name;
+      renameTo[next.name] = next;
+
+      this.nodes.add(next);
+    }
+    var lookup = (String name) {
+      return renameTo[name];
+    };
+
+    for (var link in links) {
+      var packed = link.pack();
+      packed.inNode = renameFrom[link.inPort.node.name];
+      packed.outNode = renameFrom[link.outPort.node.name];
+
+      this.links.add(GraphLink.unpack(packed, lookup));
+    }
   }
 }
 
-class GraphState extends UpdateNotifier {
+enum GraphType {
+  /// a graph that can be used as a behavior node in other graphs
+  behavior,
+
+  /// a top level graph that cannot be included in other graphs
+  opmode,
+
+  /// used for subgraphs (regions) and generated graphs (widgets)
+  internal,
+
+  /// defines a library of methods (node templates)
+  library,
+
+  /// a graph that is available on the shared template page
+  template,
+
+  /// used when parsed type is unknown
+  unknown
+}
+
+class GraphStateNotifier extends UpdateNotifier {
+  GraphEditorController editor;
+  GraphState get graph => editor.graph;
+  GraphController get controller => editor.graph.controller;
+  GraphStateNotifier(this.editor);
+}
+
+class GraphState {
   GraphController controller;
 
-  GlobalKey graphKey = GlobalKey();
+  GraphType type = GraphType.behavior;
 
   String id = Uuid().v1().toString();
   String name = GraphNode.randomName();
   String title = "";
   String icon = VectorIcons.getRandomName();
-  String type = "";
+
+  String script;
+  GraphPropertySet props = GraphPropertySet();
+  GraphPropertySet settings = GraphPropertySet();
+
+  bool get isOpMode => type == GraphType.opmode;
+  bool get isBehavior => type == GraphType.behavior;
+  bool get isLibrary => type == GraphType.library;
+  bool get isTemplate => type == GraphType.template;
+  bool get isInternal => type == GraphType.internal;
+
+  String get opModeType => settings.getString("opmode_type", "Teleop");
+  set opModeType(String type) =>
+      settings.replace(GraphProperty.asString("opmode_type", type));
 
   int version = 0;
+
+  bool isLogging = false;
+  bool isDebugging = false;
+  bool isPaused = false;
+  bool isDisabled = false;
 
   List<GraphNode> nodes = [];
   List<GraphLink> links = [];
@@ -69,10 +182,44 @@ class GraphState extends UpdateNotifier {
     }
   }
 
-  Future<Uint8List> getImage() async {
-    RenderRepaintBoundary boundary = graphKey.currentContext.findRenderObject();
+  GraphState.unpack(TideChartGraph source) {
+    unpackGraph(source);
+  }
 
-    ui.Image image = await boundary.toImage(pixelRatio: 3.0);
+  void beginUpdate() {
+    controller.editor.graphNotifier.beginUpdate();
+  }
+
+  void endUpdate(bool changed) {
+    controller.editor.graphNotifier.endUpdate(changed);
+  }
+
+  String get typeName {
+    if (type == GraphType.opmode) return "OpMode";
+    var result = type.toString().split(".").last;
+    result = result[0].toUpperCase() + result.substring(1);
+    return result;
+  }
+
+  Future<Uint8List> getImage({double width = 500, double height = 500}) async {
+    var picture = ui.PictureRecorder();
+    print("Rendering $width,$height");
+    //var limits = extents;
+
+    //var state = CanvasState();
+    var canvas = Canvas(picture, Rect.fromLTWH(0, 0, width, height));
+
+    //state.zoomToFit(limits, limits.size);
+    //var painter = CanvasPainter(state, this);
+    //painter.paint(canvas, limits.size);
+
+    canvas.drawRect(
+        Rect.fromLTWH(10, 10, 100, 100), Paint()..color = Colors.red);
+
+    var pic = picture.endRecording();
+
+    // this doesn't work because Flutter web doesn't implement toImage
+    ui.Image image = await pic.toImage(width.round(), height.round());
     ByteData byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     var pngBytes = byteData.buffer.asUint8List();
     return pngBytes;
@@ -84,12 +231,22 @@ class GraphState extends UpdateNotifier {
     result.name = name;
     result.icon = icon;
 
+    result.isDebugging = isDebugging;
+    result.isLogging = isLogging;
+    result.isPaused = isPaused;
+    result.isDisabled = isDisabled;
+
     if (title != null) result.title = title;
-    if (type != null) result.type = type;
+    if (type != null) result.type = type.toString().split(".").last;
+    if (script != null) result.script = script;
 
     result.nodes.addAll(nodes.map((x) => x.pack()));
     result.links.addAll(links.map((x) => x.pack()));
     result.history.addAll(history.undoCmds);
+
+    result.props.addAll(props.packList());
+    result.settings.addAll(settings.packList());
+
     return result;
   }
 
@@ -115,6 +272,18 @@ class GraphState extends UpdateNotifier {
     return result;
   }
 
+  Iterable<GraphNode> usingGraph(String name) sync* {
+    for (var node in nodes) {
+      if (node.usingGraph(name)) yield node;
+    }
+  }
+
+  Iterable<GraphNode> usingMethod(String library, String method) sync* {
+    for (var node in nodes) {
+      if (node.usingMethod(library, method)) yield node;
+    }
+  }
+
   GraphNode clone(GraphNode node) {
     if (node == null) return null;
 
@@ -123,17 +292,42 @@ class GraphState extends UpdateNotifier {
     return unpackNode(packed);
   }
 
+  static GraphType parseType(String type) {
+    switch (type) {
+      case "":
+      case "behavior":
+        return GraphType.behavior;
+      case "opmode":
+        return GraphType.opmode;
+      case "internal":
+        return GraphType.internal;
+      case "library":
+        return GraphType.library;
+      case "template":
+        return GraphType.template;
+    }
+    return GraphType.unknown;
+  }
+
   void unpackGraph(TideChartGraph graph) {
     id = graph.id;
     name = graph.name;
     title = graph.title;
     icon = graph.icon;
-    type = graph.type;
+    type = parseType(graph.type);
+    script = graph.script;
+
+    isDisabled = graph.isDisabled;
+    isLogging = graph.isLogging;
+    isDebugging = graph.isDebugging;
+    isPaused = graph.isPaused;
 
     nodes = [...graph.nodes.map((x) => unpackNode(x))];
     links = [...graph.links.map((x) => unpackLink(x))];
 
     history = GraphHistory()..undoCmds = [...graph.history];
+    props = GraphPropertySet.unpack(graph.props);
+    settings = GraphPropertySet.unpack(graph.settings);
   }
 
   GraphNode unpackNode(TideChartNode node) {
@@ -179,7 +373,20 @@ class GraphState extends UpdateNotifier {
     return link;
   }
 
-  Rect getExtents(Iterable<CanvasInteractive> items) {
+  bool allowDeletePort(NodePort port) {
+    if (port == null) return false;
+
+    if (port.isRequired) return false;
+    if (port.showFlag) return false;
+
+    if (links.any((x) => x.outPort.equalTo(port) || x.inPort.equalTo(port))) {
+      return false;
+    }
+
+    return true;
+  }
+
+  static Rect getExtents(Iterable<CanvasInteractive> items) {
     double top = 0;
     double left = 0;
     double bottom = 0;
@@ -272,31 +479,11 @@ class GraphState extends UpdateNotifier {
     return true;
   }
 
-  bool copy(GraphState other) {
-    bool changed = true;
+  bool allowAddFlag(NodePort port) {
+    if (port == null) return false;
+    if (port.node.type != GraphNodeType.action) return false;
 
-    beginUpdate();
-
-    id = other.id;
-    title = other.title;
-    icon = other.icon;
-    name = other.name;
-    type = other.type;
-
-    version = other.version;
-    nodes = [...other.nodes];
-    links = [...other.links];
-
-    referenced.clear();
-    for (var name in other.referenced.keys) {
-      referenced[name] = other.referenced[name];
-    }
-
-    history.copy(other.history);
-
-    endUpdate(changed);
-
-    return changed;
+    return !links.any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port));
   }
 
   void clear() {}

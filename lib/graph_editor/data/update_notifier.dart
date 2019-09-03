@@ -8,12 +8,16 @@ class UpdateNotifier with ChangeNotifier {
     updating++;
   }
 
+  void notify() {
+    notifyListeners();
+  }
+
   void endUpdate(bool changed) {
     updating--;
     hasChanged |= changed;
 
     if (updating <= 0 && hasChanged) {
-      notifyListeners();
+      notify();
       hasChanged = false;
       updating = 0;
     }

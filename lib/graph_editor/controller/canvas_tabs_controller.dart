@@ -101,33 +101,29 @@ class CanvasTabsController with MouseController, KeyboardController {
       return true;
     }
 
-    tabs.beginUpdate();
-
     for (var item in tabs.menu) {
       if (item.hitbox.contains(pt) && !item.disabled) {
         if (item.command != null) {
           editor.dispatch(item.command);
         }
 
-        tabs.endUpdate(true);
         return true;
       }
     }
 
     for (var tab in tabs.tabs) {
       if (tab.closeBtn.hitbox.contains(pt) && !tab.closeBtn.disabled) {
-        tabs.remove(tab.name);
-        tabs.endUpdate(true);
+        editor.dispatch(GraphEditorCommand.closeTab(tab.name));
         return true;
       }
 
       if (tab.hitbox.contains(pt) && !tab.disabled) {
-        tabs.select(tab.name);
-        tabs.endUpdate(true);
+        editor.dispatch(GraphEditorCommand.selectTab(tab.name));
+
         return true;
       }
     }
-    tabs.endUpdate(false);
+
     return false;
   }
 
@@ -150,8 +146,7 @@ class CanvasTabsController with MouseController, KeyboardController {
 
     tabs.endUpdate(notify);
 
-    editor.dispatch(
-        GraphEditorCommand.setCursor(hovered ? "pointer" : "default"));
+    editor.setCursor(hovered ? "pointer" : "default");
 
     return true;
   }

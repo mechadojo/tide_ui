@@ -86,6 +86,10 @@ class MouseHandler {
       var useCanvas =
           clicking && shouldAutoPan(evt) || canvas.panning || canvas.zooming;
 
+      if (clicking && graph.dropping != null) {
+        useCanvas = false;
+      }
+
       if (useCanvas) {
         yield canvas;
       } else {
@@ -355,6 +359,7 @@ class MouseHandler {
     int release = editor.graph.controller.dragRelease;
     if (release > 0) return false;
     if (editor.isViewMode) return false;
+    if (graph.dropping != null) return false;
 
     return true;
   }

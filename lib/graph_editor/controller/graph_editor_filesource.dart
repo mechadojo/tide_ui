@@ -1,8 +1,14 @@
+import 'package:flutter_web/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'dart:convert';
 import 'dart:html';
 import 'dart:indexed_db';
 import 'dart:typed_data';
 
+import 'package:tide_chart/tide_chart.dart';
+import 'package:tide_ui/graph_editor/controller/library_controller.dart';
+import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_file.dart';
 import 'graph_editor_controller.dart';
 
@@ -31,19 +37,22 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     return chartFile.writeToJson();
   }
 
-  void loadChartBlob(Blob blob) {
+  void loadChartBlob(Blob blob, [String filename]) {
     FileReader reader = FileReader();
     reader.onLoad.listen((evt) {
       var data = reader.result as Uint8List;
-      loadChartBytes(data);
+      loadChartBytes(data, filename);
     });
 
     reader.readAsArrayBuffer(blob);
   }
 
-  void loadChartBytes(Uint8List bytes) {
+  void loadChartBytes(Uint8List bytes, [String filename]) {
     chartFile.clear();
     chartFile.mergeFromBuffer(bytes);
+    if (filename != null) {
+      chartFile.name = filename;
+    }
     editor.controller.loadChart();
   }
 
@@ -56,6 +65,12 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
     updateChartFile();
     var data = chartFile.writeToBuffer();
     return Base64Encoder().convert(data);
+  }
+
+  Future<String> getGraphImageUrl() async {
+    var data = await graph.getImage();
+    var file = Blob([data], "image/png");
+    return Url.createObjectUrlFromBlob(file);
   }
 
   String getChartObjectUrl() {
@@ -72,6 +87,16 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
       var file = Blob([data], "application/base64");
       return Url.createObjectUrlFromBlob(file);
     }
+  }
+
+  void printFile() {
+    getGraphImageUrl().then((String url) {
+      print("Got url");
+      AnchorElement link = AnchorElement();
+      link.href = url;
+      link.download = "sheet_${graph.name}.png";
+      link.click();
+    });
   }
 
   /// Save the current file to the file system
@@ -123,28 +148,183 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
 
     upload.onChange.listen((evt) {
       if (upload.files.isNotEmpty) {
-        loadChartBlob(upload.files.first);
+        var file = upload.files.first;
+        loadChartBlob(file, file.name);
       }
     });
 
     upload.click();
   }
 
-  /// Open a file from local storage
-  void openLocalFile() {
+  void openLastFile() {
     if (!window.localStorage.containsKey("LastChartFile")) return;
-
     var lastFile = window.localStorage["LastChartFile"];
+    openLocalFile(lastFile);
+  }
 
+  Future<List<String>> getLocalFileList() async {
     if (window.navigator.userAgent.contains("iPhone") ||
         !IdbFactory.supported) {
-      var path = "charts:${lastFile}";
+      List<String> result = [];
+      for (var key in window.localStorage.keys) {
+        if (key.startsWith("charts:")) {
+          result.add(key.substring("charts:".length));
+        }
+      }
+
+      return Future<List<String>>.value(result);
+    }
+
+    var db = await window.indexedDB
+        .open("charts", version: 1, onUpgradeNeeded: initChartsStore);
+
+    Transaction txn = db.transaction("charts", "readonly");
+    var store = txn.objectStore("charts");
+    var result = Completer<List<String>>();
+
+    var request = store.getAllKeys(null);
+    request.onSuccess.listen((onData) {
+      List<dynamic> keys = request.result;
+
+      result.complete(keys.map((x) => x.toString()).toList());
+    });
+
+    return result.future;
+  }
+
+  Future<bool> showConfirmDialog(String title, String message) {
+    var completer = Completer<bool>();
+
+    editor.controller.dialogActive = true;
+    editor.controller.setCursor("default");
+    showDialog<bool>(
+        context: editor.controller.scaffold.currentContext,
+        builder: (BuildContext context) {
+          return AlertDialog(
+              title: Text(title, style: Graph.DefaultDialogTitleStyle),
+              content: Text(message, style: Graph.DefaultDialogContentStyle),
+              actions: <Widget>[
+                FlatButton(
+                  child: Text("CANCEL", style: Graph.DefaultDialogButtonStyle),
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                ),
+                FlatButton(
+                  child:
+                      Text("CONTINUE", style: Graph.DefaultDialogButtonStyle),
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  },
+                ),
+              ]);
+        }).then((bool result) {
+      editor.controller.dialogActive = false;
+      completer.complete(result ?? false);
+    });
+
+    return completer.future;
+  }
+
+  void deleteLocalFile(String filename, {bool confirmed = false}) {
+    if (!confirmed) {
+      showConfirmDialog(
+              "Delete file?", "This will permanently delete $filename.")
+          .then((bool result) {
+        if (result) {
+          deleteLocalFile(filename, confirmed: true);
+        }
+      });
+
+      return;
+    }
+
+    print("Delete file: $filename");
+  }
+
+  Future<TideChartFile> getServerFile(String filename) {
+    var completer = Completer<TideChartFile>();
+    http.get("/charts/$filename").then((response) {
+      if (response.statusCode != 200) {
+        completer.complete(null);
+        return;
+      }
+
+      var bytes = response.bodyBytes;
+      TideChartFile result = TideChartFile()..mergeFromBuffer(bytes);
+      completer.complete(result);
+    }).catchError((err) {
+      completer.complete(null);
+    });
+    return completer.future;
+  }
+
+  Future<TideChartFile> getLocalFile(String filename) {
+    if (useLocalStorage) {
+      var path = "charts:${filename}";
+      if (!window.localStorage.containsKey(path)) return Future.value(null);
+
+      var base64 = window.localStorage[path];
+      var bytes = Base64Decoder().convert(base64);
+      TideChartFile result = TideChartFile()..mergeFromBuffer(bytes);
+      return Future.value(result);
+    }
+
+    var completer = Completer<TideChartFile>();
+
+    window.indexedDB
+        .open("charts", version: 1, onUpgradeNeeded: initChartsStore)
+        .then((db) {
+      Transaction txn = db.transaction("charts", "readonly");
+      var store = txn.objectStore("charts");
+
+      store.getObject(filename).then((data) {
+        var blob = data["content"];
+
+        FileReader reader = FileReader();
+        reader.onLoad.listen((evt) {
+          var bytes = reader.result as Uint8List;
+          TideChartFile result = TideChartFile()..mergeFromBuffer(bytes);
+          completer.complete(result);
+        });
+
+        reader.readAsArrayBuffer(blob);
+      }).catchError((err) {
+        completer.complete(null);
+      });
+    }).catchError((err) {
+      completer.complete(null);
+    });
+
+    return completer.future;
+  }
+
+  bool get useLocalStorage {
+    return window.navigator.userAgent.contains("iPhone") ||
+        !IdbFactory.supported;
+  }
+
+  /// Open a file from local storage
+  void openLocalFile([String filename]) {
+    if (filename == null) {
+      getLocalFileList().then((List<String> files) {
+        library.controller.selectFile("Open File", files, onSelect: (file) {
+          openLocalFile(file);
+          editor.controller.showLibrary(LibraryDisplayMode.detailed, pop: true);
+        });
+      });
+
+      return;
+    }
+
+    if (useLocalStorage) {
+      var path = "charts:${filename}";
       if (!window.localStorage.containsKey(path)) return;
 
       var base64 = window.localStorage[path];
       loadChartBytes(Base64Decoder().convert(base64));
 
-      print("Loaded ${lastFile} from Local Storage");
+      print("Loaded ${filename} from Local Storage");
       return;
     }
 
@@ -154,14 +334,15 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
       Transaction txn = db.transaction("charts", "readonly");
       var store = txn.objectStore("charts");
 
-      store.getObject(lastFile).then((data) {
+      store.getObject(filename).then((data) {
         loadChartBlob(data["content"]);
+        window.localStorage["LastChartFile"] = filename;
         print("Loaded ${data['filename']} from IndexedDB");
       });
     });
   }
 
-  void openFileType(FileSourceType source) {
+  void openFileType(FileSourceType source, [String filename]) {
     source = source ?? lastSource;
     lastSource = source;
 
@@ -170,7 +351,7 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
         openSystemFile();
         break;
       case FileSourceType.local:
-        openLocalFile();
+        openLocalFile(filename);
         break;
       default:
         print("Open File Type $source not implemented.");

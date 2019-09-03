@@ -34,6 +34,7 @@ class GraphController with MouseController, KeyboardController {
   List<GraphNode> savedSelection = [];
 
   GraphSelection dropping;
+  bool dropped = false;
 
   GraphController(this.editor);
 
@@ -59,6 +60,8 @@ class GraphController with MouseController, KeyboardController {
   bool updating = false;
 
   void applyCommand(TideChartCommand cmd, {bool reverse = false}) {
+    if (cmd.isLocked && reverse) return;
+
     graph.beginUpdate();
 
     switch (cmd.whichCommand()) {
@@ -141,7 +144,7 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
   }
 
-  void endDrop(GraphSelection dropping) {
+  void endDrop(GraphSelection dropping, {bool select = false}) {
     graph.beginUpdate();
     this.dropping = null;
     var dx = dropping.pos.dx;
@@ -149,12 +152,27 @@ class GraphController with MouseController, KeyboardController {
 
     print("Drop at $dx, $dy");
     var cmd = TideChartCommand()..group = TideChartGroupCommand();
+    var copy = GraphSelection.copy(dropping);
 
-    for (var node in dropping.nodes) {
-      var next = graph.clone(node);
-      next.moveBy(dx, dy);
+    Set<String> exclude = {};
 
-      cmd.group.commands.add(GraphCommand.addNode(next));
+    for (var node in copy.nodes) {
+      if (node.isBehavior) {
+        if (node.method == graph.name ||
+            !editor.editor.tabs.containsKey(node.method)) {
+          exclude.add(node.name);
+          continue;
+        }
+      }
+
+      node.moveBy(dx, dy);
+      cmd.group.commands.add(GraphCommand.addNode(node));
+    }
+    for (var link in copy.links) {
+      if (exclude.contains(link.outPort.node.name)) continue;
+      if (exclude.contains(link.inPort.node.name)) continue;
+
+      cmd.group.commands.add(GraphCommand.addLink(link));
     }
 
     if (cmd.group.commands.isNotEmpty) {
@@ -162,14 +180,26 @@ class GraphController with MouseController, KeyboardController {
       graph.history.push(cmd);
     }
 
+    if (select) {
+      selectNames(copy.nodes.map((x) => x.name).toList());
+      dropped = true;
+    }
+
     graph.endUpdate(true);
   }
 
   void undoHistory() {
     if (!graph.history.canUndo) return;
+    if (graph.history.undoCmds.isEmpty) return;
+
+    var cmd = graph.history.undo();
+    if (cmd.isLocked) {
+      undoHistory();
+      return;
+    }
 
     graph.beginUpdate();
-    var cmd = graph.history.undo();
+
     applyCommand(cmd, reverse: true);
 
     clearSelection();
@@ -182,7 +212,7 @@ class GraphController with MouseController, KeyboardController {
     var cmd = graph.history.redo();
 
     applyCommand(cmd);
-    graph.history.push(cmd, false);
+    graph.history.push(cmd, clear: false);
 
     clearSelection();
     graph.endUpdate(true);
@@ -196,6 +226,33 @@ class GraphController with MouseController, KeyboardController {
       node.selected = false;
     }
     selection.clear();
+    graph.endUpdate(true);
+  }
+
+  void selectAll() {
+    graph.beginUpdate();
+    selection.clear();
+
+    for (var node in graph.nodes) {
+      selection.add(node);
+      node.selected = true;
+    }
+
+    graph.endUpdate(true);
+  }
+
+  void selectNames(List<String> names) {
+    graph.beginUpdate();
+    selection.clear();
+
+    for (var node in graph.nodes) {
+      if (names.contains(node.name)) {
+        selection.add(node);
+        node.selected = true;
+      } else {
+        node.selected = false;
+      }
+    }
     graph.endUpdate(true);
   }
 
@@ -229,14 +286,12 @@ class GraphController with MouseController, KeyboardController {
   void setPortValue(NodePort port, String value, {bool save = true}) {
     // not allowed to set a value on a port that also has a link
     if (value != null) {
-      if (graph.links
-          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+      if (!graph.allowAddFlag(port)) {
         return;
       }
     }
 
     graph.beginUpdate();
-
     port.setValue(value);
     graph.endUpdate(true);
   }
@@ -244,14 +299,12 @@ class GraphController with MouseController, KeyboardController {
   void setPortTrigger(NodePort port, String trigger, {bool save = true}) {
     // not allowed to set a value on a port that also has a link
     if (trigger != null) {
-      if (graph.links
-          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+      if (!graph.allowAddFlag(port)) {
         return;
       }
     }
 
     graph.beginUpdate();
-
     port.setTrigger(trigger);
     graph.endUpdate(true);
   }
@@ -259,14 +312,12 @@ class GraphController with MouseController, KeyboardController {
   void setPortLink(NodePort port, String link, {bool save = true}) {
     // not allowed to set a value on a port that also has a link
     if (link != null) {
-      if (graph.links
-          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+      if (!graph.allowAddFlag(port)) {
         return;
       }
     }
 
     graph.beginUpdate();
-
     port.setLink(link);
     graph.endUpdate(true);
   }
@@ -274,14 +325,12 @@ class GraphController with MouseController, KeyboardController {
   void setPortEvent(NodePort port, String event, {bool save = true}) {
     // not allowed to set a value on a port that also has a link
     if (event != null) {
-      if (graph.links
-          .any((x) => x.inPort.equalTo(port) || x.outPort.equalTo(port))) {
+      if (!graph.allowAddFlag(port)) {
         return;
       }
     }
 
     graph.beginUpdate();
-
     port.setEvent(event);
     graph.endUpdate(true);
   }
@@ -290,10 +339,7 @@ class GraphController with MouseController, KeyboardController {
     // not allowed to set a value on a port that also has a link
     graph.beginUpdate();
 
-    port.event = null;
-    port.value = null;
-    port.trigger = null;
-    port.link = null;
+    port.clearFlag();
 
     graph.endUpdate(true);
   }
@@ -310,7 +356,52 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
   }
 
-  void removeNode(GraphNode node, {bool save = true, bool relink = false}) {
+  void removeNodes(List<GraphNode> nodes,
+      {bool save = true, bool locked = false, bool relink = false}) {
+    List<TideChartCommand> cmds = [];
+
+    graph.beginUpdate();
+
+    for (var node in nodes) {
+      var idx = graph.findNode(node);
+      if (idx < 0) continue;
+      node = graph.nodes.removeAt(idx);
+      cmds.add(GraphCommand.removeNode(node));
+
+      var links = graph.getNodeLinks(node).toList();
+      for (var link in links) {
+        removeLink(link.outPort, link.inPort, save: false);
+        cmds.add(GraphCommand.removeLink(link));
+      }
+    }
+
+    graph.endUpdate(true);
+
+    if (save) {
+      graph.history.push(GraphCommand.all(cmds), locked: locked);
+    }
+  }
+
+  void addInport(GraphNode node) {
+    graph.beginUpdate();
+    node.addInport();
+    graph.endUpdate(true);
+  }
+
+  void addOutport(GraphNode node) {
+    graph.beginUpdate();
+    node.addOutport();
+    graph.endUpdate(true);
+  }
+
+  void removePort(NodePort port) {
+    graph.beginUpdate();
+    port.node.removePort(port);
+    graph.endUpdate(true);
+  }
+
+  void removeNode(GraphNode node,
+      {bool save = true, bool locked = false, bool relink = false}) {
     var idx = graph.findNode(node);
     if (idx < 0) return;
 
@@ -328,8 +419,12 @@ class GraphController with MouseController, KeyboardController {
 
     graph.endUpdate(true);
 
+    if (graph.isLibrary) {
+      editor.updateGraph(graph);
+    }
+
     if (save) {
-      graph.history.push(GraphCommand.all(cmds));
+      graph.history.push(GraphCommand.all(cmds), locked: locked);
     }
   }
 
@@ -355,6 +450,10 @@ class GraphController with MouseController, KeyboardController {
 
     if (save) {
       graph.history.push(GraphCommand.all(cmds));
+    }
+
+    if (graph.isLibrary) {
+      editor.updateGraph(graph);
     }
   }
 
@@ -504,8 +603,14 @@ class GraphController with MouseController, KeyboardController {
   @override
   bool onMouseDown(GraphEvent evt) {
     var pt = getPos(evt.pos);
-
     moveStart = pt;
+
+    if (dropping != null) {
+      endDrop(dropping, select: true);
+      print("Selected: ${selection.length}");
+      startDragging(pt);
+      return true;
+    }
 
     if (moveMode == MouseMoveMode.dragging) {
       --dragRelease;
@@ -548,7 +653,7 @@ class GraphController with MouseController, KeyboardController {
       }
 
       startDragging(pt);
-    } else if (focus is NodePort) {
+    } else if (focus is NodePort && !graph.isLibrary) {
       linkStart = focus as NodePort;
       moveMode = MouseMoveMode.linking;
       nextGroup = GraphNode.nodeRandom.nextInt(Graph.MaxGroupNumber);
@@ -573,13 +678,15 @@ class GraphController with MouseController, KeyboardController {
 
     dragDrop = false;
 
-    if (focus == null && dragging && moveStart == moveEnd) {
+    if (focus == null && dragging && moveStart == moveEnd && !dropped) {
       print("Cancel Selection and Editing");
 
       clearSelection();
       editor.cancelEditing();
       return true;
     }
+
+    dropped = false;
 
     if (focus is NodePort && linkStart != null) {
       var port = focus as NodePort;
@@ -624,6 +731,10 @@ class GraphController with MouseController, KeyboardController {
     switch (moveMode) {
       case MouseMoveMode.none:
         changed = onMouseHover(evt);
+        if (dropping != null) {
+          changed = true;
+          dropping.pos = pt;
+        }
         break;
       case MouseMoveMode.dragging:
         changed = onMouseDrag(evt);
@@ -773,6 +884,9 @@ class GraphController with MouseController, KeyboardController {
         }
       }
 
+      dropped = false;
+      dropping = null;
+
       clearSelection();
       editor.cancelDrop();
       editor.cancelEditing();
@@ -798,18 +912,14 @@ class GraphController with MouseController, KeyboardController {
           editor.dispatch(GraphEditorCommand.expandLibrary());
         }
       } else {
-        if (!editor.library.isExpanded) {
-          var mode = editor.library.mode == LibraryDisplayMode.toolbox
-              ? LibraryDisplayMode.collapsed
-              : LibraryDisplayMode.toolbox;
-          editor.dispatch(GraphEditorCommand.showLibrary(mode));
+        if (evt.ctrlKey) {
+          editor.dispatch(
+              GraphEditorCommand.showLibrary(LibraryDisplayMode.toolbox));
         } else {
-          var mode = editor.library.mode == LibraryDisplayMode.expanded
-              ? LibraryDisplayMode.detailed
-              : LibraryDisplayMode.expanded;
-          editor.dispatch(GraphEditorCommand.showLibrary(mode));
+          editor.dispatch(GraphEditorCommand.nextLibrary());
         }
       }
+      return true;
     }
 
     if (evt.keyCode >= 48 && evt.keyCode <= 57) {

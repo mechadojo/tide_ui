@@ -122,20 +122,21 @@ class GraphHistory {
         'commands': undoCmds,
       };
 
-  void push(TideChartCommand cmd, [bool clear = true]) {
+  void push(TideChartCommand cmd, {bool clear = true, bool locked = false}) {
     // optimize empty and single command groups
     if (cmd.hasGroup()) {
       if (cmd.group.commands.isEmpty) return;
       if (cmd.group.commands.length == 1) {
-        return push(cmd.group.commands.first, clear);
+        return push(cmd.group.commands.first, clear: clear, locked: locked);
       }
     }
-
+    cmd.isLocked = locked;
     undoCmds.add(cmd);
     if (clear) {
       redoCmds.clear();
     }
   }
+
 
   TideChartCommand undo() {
     var last = undoCmds.removeLast();
@@ -147,8 +148,9 @@ class GraphHistory {
     return redoCmds.removeLast();
   }
 
-  void copy(GraphHistory other) {
-    undoCmds = [...other.undoCmds];
-    redoCmds = [...other.redoCmds];
+  void clear() {
+    undoCmds.clear();
+    redoCmds.clear();
   }
+  
 }

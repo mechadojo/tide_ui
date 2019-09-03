@@ -1,6 +1,9 @@
 import 'package:flutter_web/material.dart';
+import 'package:flutter_web_ui/ui.dart' as ui show Gradient;
 import 'package:tide_ui/graph_editor/data/canvas_tab.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
+
+import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/fonts/SourceSansPro.dart';
 import 'package:tide_ui/graph_editor/icons/icon_painter.dart';
@@ -32,6 +35,14 @@ class CanvasTabsPainter extends CustomPainter {
     ..color = Color(0xffcbcbcb)
     ..style = PaintingStyle.fill;
 
+  final selectedLibraryTabFill = Paint()
+    ..shader = ui.Gradient.linear(
+        Offset(0, 15), Offset(0, 50), [Colors.blue[100], Color(0xfffffff0)]);
+
+  final unselectedLibraryTabFill = Paint()
+    ..shader = ui.Gradient.linear(
+        Offset(0, 15), Offset(0, 50), [Colors.blue[100], Color(0xffcbcbcb)]);
+
   final paddingFill = Paint()..color = Color(0xfffffff0);
 
   final selectedOutlineStroke = Paint()
@@ -62,6 +73,20 @@ class CanvasTabsPainter extends CustomPainter {
   final font = SourceSansProFont;
 
   CanvasTabsPainter(this.state);
+
+  Paint getTabBackFill(CanvasTab tab, bool selected) {
+    if (selected) {
+      return tab.graph is GraphLibraryState
+          ? selectedLibraryTabFill
+          : selectedTabFill;
+    }
+
+    if (tab.hovered) return hoveredTabFill;
+
+    return tab.graph is GraphLibraryState
+        ? unselectedLibraryTabFill
+        : unselectedTabFill;
+  }
 
   void drawTab(CanvasTab tab, Canvas canvas, Size size) {
     //print("Tab: ${tab.title} [${tab.pos}]");
@@ -111,11 +136,8 @@ class CanvasTabsPainter extends CustomPainter {
       ..lineTo(x3, y1)
       ..lineTo(x3, y2);
 
-    canvas.drawPath(
-        path,
-        selected
-            ? selectedTabFill
-            : tab.hovered ? hoveredTabFill : unselectedTabFill);
+    canvas.drawPath(path, getTabBackFill(tab, selected));
+
     canvas.drawPath(
         path, selected ? selectedOutlineStroke : unselectOutlineStroke);
 
@@ -223,7 +245,7 @@ class CanvasTabsPainter extends CustomPainter {
     painter.paint(canvas, icon, item.pos, size);
     item.hitbox = Rect.fromCenter(
         center: item.pos, width: sz.width + 10, height: sz.height + 5);
-    //canvas.drawRect(item.hitbox, selectedOutlineStroke);
+    item.hitbox.inflate(10);
 
     return item.pos.translate(sz.width + spacing, 0);
   }

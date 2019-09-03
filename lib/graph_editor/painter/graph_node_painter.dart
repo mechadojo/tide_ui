@@ -227,7 +227,7 @@ class GraphNodePainter {
       var rr = RRect.fromRectXY(r, radius, radius);
       canvas.drawRRect(rr, Graph.NodeTriggerLabelColor);
     }
-    var label = node.hasMethod ? node.method : node.name;
+    var label = node.hasMethod ? node.method : "";
 
     Graph.font.paint(canvas, label, Offset(cx, cy), Graph.NodeTriggerLabelSize,
         fill: Graph.NodeDarkColor, alignment: Alignment.center);
@@ -269,11 +269,15 @@ class GraphNodePainter {
     }
 
     if (node.isAnyType(Inport_Trigger)) {
-      return Graph.NodeInportIconColor;
+      return node.selected
+          ? Graph.NodeHoverDarkIconColor
+          : Graph.NodeInportIconColor;
     }
 
     if (node.isAnyType(Outport_Event)) {
-      return Graph.NodeOutportIconColor;
+      return node.selected
+          ? Graph.NodeHoverDarkIconColor
+          : Graph.NodeOutportIconColor;
     }
 
     return zoomedIn ? Graph.NodeZoomedIconColor : Graph.NodeIconColor;

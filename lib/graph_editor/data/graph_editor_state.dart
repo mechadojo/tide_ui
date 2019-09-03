@@ -2,7 +2,7 @@ import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
 import 'package:tide_ui/graph_editor/controller/mouse_handler.dart';
-import 'package:tide_ui/graph_editor/data/canvas_state.dart';
+import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 
 import 'canvas_tab.dart';
@@ -12,11 +12,27 @@ enum GraphDragMode { panning, selecting, viewing }
 
 class GraphEditorState extends UpdateNotifier {
   final Map<String, CanvasTab> tabs = {};
+  final List<String> imports = [];
+
+  Iterable<GraphState> get sheets sync* {
+    for (var tab in tabs.values) {
+      if (tab.graph.isOpMode || tab.graph.isBehavior) {
+        yield tab.graph;
+      }
+    }
+  }
+
+  Iterable<GraphLibraryState> get library sync* {
+    for (var tab in tabs.values) {
+      if (tab.graph is GraphLibraryState) {
+        yield tab.graph;
+      }
+    }
+  }
 
   GraphEditorController controller;
   MouseHandler mouseHandler;
   KeyboardHandler keyboardHandler;
-  CanvasTab currentTab;
 
   GraphDragMode dragMode = GraphDragMode.panning;
   bool touchMode = false;
@@ -48,12 +64,13 @@ class GraphEditorState extends UpdateNotifier {
   }
 
   void saveChanges() {
-    if (currentTab != null) {
-      currentTab.canvas.copy(controller.canvas);
-      currentTab.graph.copy(controller.graph);
-    }
+    //  if (currentTab != null) {
+    //    currentTab.canvas.copy(controller.canvas);
+    //    currentTab.graph.copy(controller.graph);
+    //  }
   }
 
+/*
   void onChangeTab(CanvasTab tab, CanvasState canvas, GraphState graph) {
     // Save current canvas and graph state
     if (currentTab != null) {
@@ -61,8 +78,12 @@ class GraphEditorState extends UpdateNotifier {
         return;
       }
 
-      currentTab.canvas.copy(canvas);
-      currentTab.graph.copy(graph);
+      if (controller.closeBottomSheet != null) {
+        controller.closeBottomSheet(true);
+      }
+
+      // currentTab.canvas.copy(canvas);
+      // currentTab.graph.copy(graph);
     }
 
     if (tab == null) {
@@ -80,8 +101,11 @@ class GraphEditorState extends UpdateNotifier {
         tabs[next.name] = next;
       }
 
-      canvas.copy(next.canvas);
-      graph.copy(next.graph);
+      canvas = next.canvas;
+      graph = next.graph;
+
+      //canvas.copy(next.canvas);
+      //graph.copy(next.graph);
       controller.hideMenu();
       currentTab = next;
     } else {
@@ -92,4 +116,6 @@ class GraphEditorState extends UpdateNotifier {
 
     endUpdate(true);
   }
+  */
+
 }

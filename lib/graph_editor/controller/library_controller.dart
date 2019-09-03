@@ -1,6 +1,9 @@
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/data/canvas_interactive.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
+import 'package:tide_ui/graph_editor/data/graph_file.dart';
+import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
+import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
@@ -32,7 +35,42 @@ enum LibraryDisplayMode {
   expanded,
 
   /// shows library items fully expanded
-  detailed
+  detailed,
+
+  // show items that match a search field
+  search,
+
+  // show a page of library items based on the option mode
+  tabs,
+}
+
+enum LibraryTab {
+  /// show widgets that can be added to the graph
+  widgets,
+
+  /// manage the files that are being imported into this chart
+  imports,
+
+  /// show items from the clipboard history
+  clipboard,
+
+  /// displays the examples/templates from imported charts
+  templates,
+
+  /// displays a simple file browser to access files stored locally (IndexedDB)
+  /// or remotely (server, cloud, Lighthouse, OnBot java or attached device)
+  files,
+
+  /// displays the version history for this graph
+  history,
+}
+
+typedef SelectFileHandler(String filename);
+
+class SelectFileMenuItem extends MenuItem {
+  SelectFileHandler handler;
+
+  SelectFileMenuItem(this.handler);
 }
 
 class LibraryController with MouseController, KeyboardController {
@@ -51,8 +89,29 @@ class LibraryController with MouseController, KeyboardController {
   Offset startPos = Offset.zero;
   Offset lastPos = Offset.zero;
 
+  Rect scrollWindow = Rect.zero;
+
+  double scrollStart = 0;
+  double scrollHeight = 0;
+  double scrollDownPos = 0;
+  double scrollDownStart = 0;
+
+  double get scrollPos {
+    var range = scrollRange;
+    if (range == 0) return 0;
+    var pos = scrollStart / range;
+    return pos > 1 ? 1 : pos;
+  }
+
+  double get scrollRange => scrollHeight < scrollWindow.height
+      ? 0
+      : scrollHeight - scrollWindow.height;
+
   MenuItem dragging;
   GraphSelection dropping;
+
+  String filesTitle;
+  SelectFileHandler onSelectFile;
 
   LibraryController(this.editor) {
     _setMenu(library.mode);
@@ -60,10 +119,45 @@ class LibraryController with MouseController, KeyboardController {
 
   /// stores the current display [mode] when hiding the library
   LibraryDisplayMode last = LibraryDisplayMode.collapsed;
+  List<LibraryTab> tabStack = [];
+
   LibraryMouseMode mouseMode = LibraryMouseMode.none;
 
   bool isHovered(Offset pt) {
     return library.hitbox.contains(pt) || pt.dx > editor.canvas.size.width;
+  }
+
+  void setScrollHeight(double height) {
+    if (height != scrollHeight) {
+      scrollHeight = height;
+      // dispatch the call because updated heights come from painting
+      // possibly we could have a layout phase that is independed of painting
+      editor.dispatch(GraphEditorCommand((editor) {
+        updateScrollPos();
+      }));
+    }
+  }
+
+  void setScrollPos(double pos) {
+    if (pos < 0) pos = 0;
+    if (pos > 1) pos = 1;
+
+    if (pos == scrollPos) return;
+    scrollStart = pos * scrollRange;
+
+    editor.dispatch(GraphEditorCommand((editor) {
+      updateScrollPos();
+    }));
+  }
+
+  void updateScrollPos() {
+    library.beginUpdate();
+
+    if (scrollStart > scrollRange) {
+      scrollStart = scrollRange;
+    }
+
+    library.endUpdate(true);
   }
 
   double get width {
@@ -76,10 +170,58 @@ class LibraryController with MouseController, KeyboardController {
         return Graph.LibraryExpandedWidth;
       case LibraryDisplayMode.detailed:
         return Graph.LibraryExpandedWidth;
+      case LibraryDisplayMode.search:
+        return Graph.LibraryExpandedWidth;
+      case LibraryDisplayMode.tabs:
+        return Graph.LibraryExpandedWidth;
       case LibraryDisplayMode.hidden:
         return 0;
     }
     return 0;
+  }
+
+  MenuItemSet createFileMenuItem(String file,
+      {SelectFileHandler onSelect,
+      SelectFileHandler onDelete,
+      List<SelectFileMenuItem> items}) {
+    items = items ?? [];
+
+    return MenuItemSet([
+      ...items.map((x) => MenuItem()
+        ..copy(x)
+        ..command = GraphEditorCommand((editor) {
+          x.handler(file);
+        })),
+      if (onSelect != null)
+        MenuItem()
+          ..icon = "folder-open-solid"
+          ..command = GraphEditorCommand((editor) {
+            onSelect(file);
+          }),
+      if (onDelete != null)
+        MenuItem()
+          ..icon = "trash-alt"
+          ..command = GraphEditorCommand((editor) {
+            onDelete(file);
+          }),
+    ])
+      ..name = file;
+  }
+
+  void selectFile(String title, List<String> files,
+      {SelectFileHandler onSelect, SelectFileHandler onDelete}) {
+    files = files ?? [];
+
+    library.files = files
+        .map((x) =>
+            createFileMenuItem(x, onSelect: onSelect, onDelete: onDelete))
+        .toList();
+
+    editor.dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+        tab: LibraryTab.files));
+
+    onSelectFile = onSelect;
+    filesTitle = title;
   }
 
   void _setMenu(LibraryDisplayMode mode) {
@@ -101,10 +243,50 @@ class LibraryController with MouseController, KeyboardController {
     );
     var searchItem = MenuItem(
       icon: "search",
+      command: GraphEditorCommand.showLibrary(LibraryDisplayMode.search),
     );
-    var addItem = MenuItem(
-      icon: "plus",
+
+    var optionsItem = MenuItem(
+      icon: "tools",
+      command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs),
     );
+
+    // optionsMenu
+    library.tabs = [
+      MenuItem(
+          icon: "share-square-solid",
+          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.templates))
+        ..selected = library.currentTab == LibraryTab.templates,
+      MenuItem(
+          icon: "hat-wizard",
+          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.widgets))
+        ..selected = library.currentTab == LibraryTab.widgets,
+      MenuItem(
+          icon: "file-import",
+          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.imports))
+        ..selected = library.currentTab == LibraryTab.imports,
+      MenuItem(
+          icon: "clipboard-solid",
+          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.clipboard))
+        ..selected = library.currentTab == LibraryTab.clipboard,
+      if (tabStack.isNotEmpty)
+        MenuItem(
+            icon: "window-close-solid",
+            command: GraphEditorCommand.popLibraryTabs()),
+      if (library.currentTab == LibraryTab.history)
+        MenuItem(icon: "history")
+          ..selected = library.currentTab == LibraryTab.history,
+      if (library.currentTab == LibraryTab.files)
+        MenuItem(
+            icon: "folder-open-solid",
+            command: GraphEditorCommand.print("View Files"))
+          ..selected = library.currentTab == LibraryTab.files,
+    ];
+
     switch (mode) {
       case LibraryDisplayMode.toolbox:
         library.menu = [toolboxItem..selected = true, tabsItem];
@@ -118,8 +300,8 @@ class LibraryController with MouseController, KeyboardController {
           tabsItem,
           gridItem..selected = true,
           detailsItem,
+          optionsItem,
           searchItem,
-          addItem,
         ];
         break;
       case LibraryDisplayMode.detailed:
@@ -128,8 +310,28 @@ class LibraryController with MouseController, KeyboardController {
           tabsItem,
           gridItem,
           detailsItem..selected = true,
+          optionsItem,
           searchItem,
-          addItem,
+        ];
+        break;
+      case LibraryDisplayMode.search:
+        library.menu = [
+          toolboxItem,
+          tabsItem,
+          gridItem,
+          detailsItem,
+          optionsItem,
+          searchItem..selected = true,
+        ];
+        break;
+      case LibraryDisplayMode.tabs:
+        library.menu = [
+          toolboxItem,
+          tabsItem,
+          gridItem,
+          detailsItem,
+          optionsItem..selected = true,
+          searchItem,
         ];
         break;
       default:
@@ -138,12 +340,26 @@ class LibraryController with MouseController, KeyboardController {
     }
   }
 
-  void setMode(LibraryDisplayMode next) {
-    if (next == library.mode) return;
+  void setMode(LibraryDisplayMode next, [LibraryTab tab, bool push = true]) {
+    if (next == library.mode && tab == null) return;
 
     library.beginUpdate();
+
+    if (tab != null) {
+      if (library.currentTab != tab && push) {
+        if (library.isModalTab(tab)) {
+          tabStack.add(library.currentTab);
+        } else {
+          tabStack.clear();
+        }
+      }
+      library.currentTab = tab;
+    }
+
     if (library.mode == LibraryDisplayMode.expanded ||
-        library.mode == LibraryDisplayMode.detailed) {
+        library.mode == LibraryDisplayMode.detailed ||
+        library.mode == LibraryDisplayMode.search ||
+        library.mode == LibraryDisplayMode.tabs) {
       library.lastExpanded = library.mode;
     }
 
@@ -172,18 +388,46 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseWheel(GraphEvent evt) {
-    print("Library Wheel: ${evt.pos} ${evt.deltaY}");
+    if (evt.deltaY < 0) {
+      setScrollPos(scrollPos - .2);
+    } else {
+      setScrollPos(scrollPos + .2);
+    }
+
     return true;
   }
 
   @override
   bool onContextMenu(GraphEvent evt) {
+    evt = toScrollCoord(evt);
+
     print("Library Context Menu: ${evt.pos}");
 
     mouseMode = LibraryMouseMode.none;
     dragging = null;
 
     return true;
+  }
+
+  Iterable<CanvasInteractive> tabInteractive() sync* {
+    switch (library.currentTab) {
+      case LibraryTab.files:
+        for (var item in library.files) {
+          yield* item.items;
+        }
+        break;
+      case LibraryTab.imports:
+        yield* library.importButtons;
+        for (var item in library.imports) {
+          yield* item.items;
+        }
+        break;
+      case LibraryTab.widgets:
+        yield* library.widgets;
+        break;
+      default:
+        break;
+    }
   }
 
   Iterable<CanvasInteractive> interactive() sync* {
@@ -193,16 +437,196 @@ class LibraryController with MouseController, KeyboardController {
         yield* library.toolbox;
         break;
       case LibraryDisplayMode.collapsed:
-        yield* library.sheets;
+        yield* library.behaviors;
+        break;
+      case LibraryDisplayMode.expanded:
+        for (var sheet in library.sheets) {
+          yield sheet;
+        }
+
+        if (library.behaviors.isNotEmpty) {
+          yield library.behaviorGroup.expandoButton;
+        }
+
+        if (library.opmodes.isNotEmpty) {
+          yield library.opmodeGroup.expandoButton;
+        }
+
+        for (var group in library.groups) {
+          if (allowEditGroup(group)) {
+            yield group.openButton;
+          }
+
+          yield group.expandoButton;
+
+          if (group.isExpanded) {
+            for (var sub in group.items) {
+              yield* sub.items;
+            }
+          }
+        }
+
+        break;
+      case LibraryDisplayMode.detailed:
+        for (var sheet in library.sheets) {
+          yield sheet.editButton;
+          yield sheet;
+        }
+
+        if (library.behaviors.isNotEmpty) {
+          yield library.behaviorGroup.expandoButton;
+        }
+        if (library.opmodes.isNotEmpty) {
+          yield library.opmodeGroup.expandoButton;
+        }
+
+        for (var group in library.groups) {
+          if (allowEditGroup(group)) {
+            yield group.openButton;
+          }
+
+          yield group.expandoButton;
+
+          if (group.isExpanded) {
+            for (var sub in group.items) {
+              yield* sub.items;
+            }
+          }
+        }
+
+        break;
+      case LibraryDisplayMode.tabs:
+        yield* library.tabs;
+        yield* tabInteractive();
         break;
       default:
         break;
     }
   }
 
+  void showAddImportTab() {
+    editor.getLocalFileList().then((files) {
+      selectFile("Select Import", files, onSelect: (filename) {
+        editor.popLibraryTabs();
+        editor.addImport(filename);
+      });
+    });
+  }
+
+  void loadImports(List<String> sources) {
+    library.beginUpdate();
+    library.imports.clear();
+
+    library.importButtons = [
+      if (GraphFile.defaultImports.any((x) => !sources.contains(x)))
+        MenuItem()
+          ..icon = "star"
+          ..command = GraphEditorCommand((editor) {
+            editor.addImports(GraphFile.defaultImports);
+          }),
+      MenuItem()
+        ..icon = "plus"
+        ..command = GraphEditorCommand((editor) {
+          showAddImportTab();
+        })
+    ];
+
+    for (var source in sources) {
+      library.imports.add(MenuItemSet([
+        if (source != sources.first)
+          MenuItem()
+            ..icon = "arrow-up"
+            ..command = GraphEditorCommand((editor) {
+              editor.moveImport(source, delta: -1);
+            }),
+        if (source != sources.last)
+          MenuItem()
+            ..icon = "arrow-down"
+            ..command = GraphEditorCommand((editor) {
+              editor.moveImport(source, delta: 1);
+            }),
+        MenuItem()
+          ..icon = "trash-alt"
+          ..command = GraphEditorCommand((editor) {
+            editor.removeImport(source);
+          }),
+      ])
+        ..name = source);
+    }
+
+    library.endUpdate(true);
+  }
+
+  void removeLibrary(String name) {
+    library.beginUpdate();
+
+    library.groups = [...library.groups.where((x) => x.graph.name != name)];
+
+    library.endUpdate(true);
+  }
+
+  void addWidgets(List<GraphNode> widgets) {
+    library.beginUpdate();
+    for (var widget in widgets) {
+      addWidget(widget);
+    }
+    library.endUpdate(true);
+  }
+
+  void addWidget(GraphNode widget) {
+    library.beginUpdate();
+    library.widgets.add(LibraryItem.widget(widget));
+    library.endUpdate(true);
+  }
+
+  void addLibrary(GraphLibraryState graph, {bool expand = true}) {
+    library.beginUpdate();
+    var added = LibraryItem.library(graph);
+    library.groups.add(added);
+    if (expand) {
+      for (var group in library.groups) {
+        if (group == added) continue;
+        group.collapsed = true;
+      }
+    } else {
+      added.collapsed = true;
+    }
+
+    library.endUpdate(true);
+  }
+
   void addSheet(GraphState graph) {
     library.beginUpdate();
     library.sheets.add(LibraryItem.graph(graph));
+    library.endUpdate(true);
+  }
+
+  void updateNode(GraphState graph, GraphNode node) {
+    updateGraph(graph);
+  }
+
+  void updateGraph(GraphState graph) {
+    library.beginUpdate();
+
+    if (graph is GraphLibraryState) {
+      var idx = library.groups.indexWhere((x) => x.graph.name == graph.name);
+
+      if (idx >= 0) {
+        library.groups[idx] = LibraryItem.library(graph);
+      }
+    } else {
+      var idx = library.sheets.indexWhere((x) => x.graph.name == graph.name);
+      if (idx >= 0) {
+        library.sheets[idx] = LibraryItem.graph(graph);
+      }
+    }
+
+    library.endUpdate(true);
+  }
+
+  void removeSheet(String name) {
+    library.beginUpdate();
+    library.sheets = [...library.sheets.where((x) => x.graph.name != name)];
     library.endUpdate(true);
   }
 
@@ -220,12 +644,23 @@ class LibraryController with MouseController, KeyboardController {
     return changed;
   }
 
+  GraphEvent toScrollCoord(GraphEvent evt) {
+    if (scrollWindow.contains(evt.pos)) {
+      return GraphEvent.copy(evt)..pos = evt.pos.translate(0, scrollStart);
+    } else {
+      return evt;
+    }
+  }
+
   @override
   bool onMouseMove(GraphEvent evt) {
+    var screen = evt;
+    evt = toScrollCoord(evt);
+
     if (isMouseDown && mouseMode == LibraryMouseMode.none) {
       var dx = evt.pos.dx - startPos.dx;
       var dy = evt.pos.dy - startPos.dy;
-      if (dx.abs() > 5 || dx.abs() > 5) {
+      if (dx.abs() > 5 || dy.abs() > 5) {
         mouseMode = (dx.abs() > dy.abs())
             ? LibraryMouseMode.swiping
             : LibraryMouseMode.scrolling;
@@ -237,13 +672,22 @@ class LibraryController with MouseController, KeyboardController {
     bool changed = false;
     bool hovered = false;
 
+    if (isScrolling) {
+      changed = true;
+
+      var delta = screen.pos.dy - scrollDownPos;
+      scrollStart = scrollDownStart - delta;
+      if (scrollStart < 0) scrollStart = 0;
+      if (scrollStart > scrollRange) scrollStart = scrollRange;
+    }
+
     if (isDragging) {
       changed = true;
-      dragging.pos = evt.pos;
+      dragging.pos = screen.pos;
 
       if (dropping != null) {
-        if (evt.pos.dx < editor.canvas.size.width) {
-          dropping.pos = editor.canvas.toGraphCoord(evt.pos);
+        if (screen.pos.dx < editor.canvas.size.width) {
+          dropping.pos = editor.canvas.toGraphCoord(screen.pos);
           editor.previewDrop(dropping);
         } else {
           editor.cancelDrop();
@@ -252,13 +696,24 @@ class LibraryController with MouseController, KeyboardController {
     }
 
     library.beginUpdate();
+
     if (mouseMode == LibraryMouseMode.none) {
       for (var item in interactive()) {
-        if (item.alerted) continue;
+        var alerted =
+            item.alerted && library.mode == LibraryDisplayMode.collapsed;
+
+        if (alerted) continue;
 
         changed |= item.checkHovered(evt.pos);
-        if (!item.alerted) {
+        if (!alerted) {
           hovered |= item.hovered;
+        }
+      }
+    } else {
+      for (var item in interactive()) {
+        if (item.hovered) {
+          item.hovered = false;
+          changed = true;
         }
       }
     }
@@ -272,10 +727,12 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseDoubleTap(GraphEvent evt) {
-    for (var item in draggable()) {
+    evt = toScrollCoord(evt);
+
+    for (var item in clickable()) {
       if (item.hitbox.contains(evt.pos)) {
         if (item.graph != null) {
-          editor.dispatch(GraphEditorCommand.showTab(item.graph.name));
+          editor.dispatch(GraphEditorCommand.selectTab(item.graph.name));
         }
       }
     }
@@ -286,11 +743,65 @@ class LibraryController with MouseController, KeyboardController {
     return true;
   }
 
+  bool handleGroupExpando(GraphEvent evt) {
+    bool changed = false;
+    library.beginUpdate();
+
+    //   LibraryItem expanded;
+    for (var group in library.groups) {
+      if (group.expandoButton.hitbox.contains(evt.pos)) {
+        group.collapsed = !group.collapsed;
+        // if (group.isExpanded) expanded = group;
+        changed = true;
+      }
+    }
+
+/*
+    if (expanded != null) {
+      for (var group in library.groups) {
+        if (group == expanded) continue;
+
+        if (group.isExpanded) {
+          group.collapsed = true;
+          changed = true;
+        }
+      }
+    }
+*/
+
+    library.endUpdate(changed);
+    if (changed) return true;
+
+    if (library.opmodes.isNotEmpty) {
+      if (library.opmodeGroup.expandoButton.hitbox.contains(evt.pos)) {
+        library.beginUpdate();
+        library.opmodeGroup.collapsed = !library.opmodeGroup.collapsed;
+        library.endUpdate(true);
+        return true;
+      }
+    }
+
+    if (library.behaviors.isNotEmpty) {
+      if (library.behaviorGroup.expandoButton.hitbox.contains(evt.pos)) {
+        library.beginUpdate();
+        library.behaviorGroup.collapsed = !library.behaviorGroup.collapsed;
+        library.endUpdate(true);
+        return true;
+      }
+    }
+    return false;
+  }
+
   @override
   bool onMouseDown(GraphEvent evt) {
+    scrollDownPos = evt.pos.dy;
+    scrollDownStart = scrollStart;
+
+    evt = toScrollCoord(evt);
+
     if (library.hitbox.contains(evt.pos)) {
       if (isHidden) {
-        editor.dispatch(GraphEditorCommand.showLibrary());
+        editor.dispatch(GraphEditorCommand.showLibrary(null));
       } else {
         editor.dispatch(GraphEditorCommand.hideLibrary());
       }
@@ -317,6 +828,38 @@ class LibraryController with MouseController, KeyboardController {
       }
     }
 
+    for (var item in buttons()) {
+      if (item.hitbox.contains(evt.pos)) {
+        editor.dispatch(item.command);
+
+        return true;
+      }
+    }
+
+    for (var item in clickable()) {
+      if (item.editButton.hitbox.contains(evt.pos)) {
+        if (item.graph != null) {
+          editor.dispatch(GraphEditorCommand.selectTab(item.graph.name)
+            ..then(GraphEditorCommand.editGraph(item.graph)));
+          return true;
+        }
+
+        if (item.node != null) {
+          editor.dispatch(GraphEditorCommand.editNode(item.node));
+          return true;
+        }
+      }
+
+      if (item.openButton.hitbox.contains(evt.pos)) {
+        if (item.graph != null) {
+          editor.dispatch(GraphEditorCommand.selectTab(item.graph.name));
+          return true;
+        }
+      }
+    }
+
+    if (handleGroupExpando(evt)) return true;
+
     if (checkStartDrag(evt)) {
       return true;
     }
@@ -334,8 +877,97 @@ class LibraryController with MouseController, KeyboardController {
         break;
 
       case LibraryDisplayMode.collapsed:
-        yield* library.sheets;
+        if (!editor.graph.isLibrary) {
+          yield* library.behaviors;
+        }
         break;
+
+      case LibraryDisplayMode.expanded:
+      case LibraryDisplayMode.detailed:
+        if (!editor.graph.isLibrary) {
+          yield* library.sheets;
+        }
+
+        for (var group in library.groups) {
+          if (group.isExpanded) {
+            for (var sub in group.items) {
+              yield* sub.items;
+            }
+          }
+        }
+
+        break;
+      case LibraryDisplayMode.tabs:
+        switch (library.currentTab) {
+          case LibraryTab.widgets:
+            yield* library.widgets;
+            break;
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  bool allowEditGroup(LibraryItem item) {
+    if (item.graph is GraphLibraryState) {
+      return !(item.graph as GraphLibraryState).imported;
+    }
+    return false;
+  }
+
+  Iterable<LibraryItem> clickable() sync* {
+    switch (library.mode) {
+      case LibraryDisplayMode.expanded:
+      case LibraryDisplayMode.detailed:
+        yield* library.sheets;
+
+        for (var group in library.groups) {
+          if (allowEditGroup(group)) {
+            yield group;
+          }
+
+          if (group.isExpanded) {
+            for (var sub in group.items) {
+              yield* sub.items;
+            }
+          }
+        }
+
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  Iterable<MenuItem> tabButtons() sync* {
+    switch (library.currentTab) {
+      case LibraryTab.files:
+        for (var item in library.files) {
+          yield* item.items;
+        }
+        break;
+      case LibraryTab.imports:
+        yield* library.importButtons;
+        for (var item in library.imports) {
+          yield* item.items;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  Iterable<MenuItem> buttons() sync* {
+    switch (library.mode) {
+      case LibraryDisplayMode.tabs:
+        yield* library.tabs;
+        yield* tabButtons();
+        break;
+
       default:
         break;
     }
@@ -344,6 +976,8 @@ class LibraryController with MouseController, KeyboardController {
   bool checkStartDrag(GraphEvent evt) {
     for (var item in draggable()) {
       if (item.alerted) continue;
+      if (item.graph != null && item.graph.type == GraphType.opmode) continue;
+
       if (item.isHovered(evt.pos)) {
         mouseMode = LibraryMouseMode.dragging;
         dragging = MenuItem()..copy(item);
@@ -359,6 +993,8 @@ class LibraryController with MouseController, KeyboardController {
 
   @override
   bool onMouseUp(GraphEvent evt) {
+    evt = toScrollCoord(evt);
+
     bool changed = mouseMode != LibraryMouseMode.none;
 
     library.beginUpdate();

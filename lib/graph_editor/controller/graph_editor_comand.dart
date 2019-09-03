@@ -17,6 +17,50 @@ class GraphEditorCommand {
   CommandCondition condition;
   Duration waitUntil = Duration.zero;
   int waitTicks = 0;
+  List<GraphEditorCommand> after = [];
+
+  void then(GraphEditorCommand cmd) {
+    after.add(cmd);
+  }
+
+  GraphEditorCommand(this.handler);
+
+  GraphEditorCommand.all(Iterable<GraphEditorCommand> cmds) {
+    handler = (GraphEditorController editor) {
+      for (var cmd in cmds) {
+        editor.dispatch(cmd);
+      }
+    };
+  }
+  GraphEditorCommand.ensureVisible(GlobalKey item) {
+    handler = (GraphEditorController editor) {
+      Scrollable.ensureVisible(item.currentContext);
+    };
+  }
+
+  GraphEditorCommand.requestFocus(FocusNode item) {
+    handler = (GraphEditorController editor) {
+      item.requestFocus();
+    };
+  }
+
+  GraphEditorCommand.selectAll(TextEditingController controller) {
+    handler = (GraphEditorController editor) {
+      controller.value = controller.value.copyWith(
+          selection: TextSelection(
+              baseOffset: 0, extentOffset: controller.text.length),
+          composing: TextRange.empty);
+    };
+  }
+
+  GraphEditorCommand.selectNone(TextEditingController controller) {
+    handler = (GraphEditorController editor) {
+      print("Select None");
+      controller.value = controller.value.copyWith(
+          selection: TextSelection.collapsed(offset: 0),
+          composing: TextRange.empty);
+    };
+  }
 
   GraphEditorCommand.saveChanges() {
     handler = (GraphEditorController editor) {
@@ -36,21 +80,33 @@ class GraphEditorCommand {
     };
   }
 
-  GraphEditorCommand.openFile([FileSourceType source]) {
+  GraphEditorCommand.deleteLocalFile(String filename) {
     handler = (GraphEditorController editor) {
-      editor.openFileType(source);
+      editor.deleteLocalFile(filename);
     };
   }
 
-  GraphEditorCommand.showTab(String name) {
+  GraphEditorCommand.openFile([FileSourceType source, String filename]) {
     handler = (GraphEditorController editor) {
-      editor.showTab(name);
+      editor.openFileType(source, filename);
     };
   }
 
-  GraphEditorCommand.showLibrary([LibraryDisplayMode mode]) {
+  GraphEditorCommand.popLibraryTabs([LibraryDisplayMode mode, LibraryTab tab]) {
     handler = (GraphEditorController editor) {
-      editor.showLibrary(mode);
+      editor.popLibraryTabs();
+    };
+  }
+
+  GraphEditorCommand.showLibrary(LibraryDisplayMode mode, {LibraryTab tab}) {
+    handler = (GraphEditorController editor) {
+      editor.showLibrary(mode, tab: tab);
+    };
+  }
+
+  GraphEditorCommand.showLibraryTab(LibraryTab tab) {
+    handler = (GraphEditorController editor) {
+      editor.showLibrary(LibraryDisplayMode.tabs, tab: tab);
     };
   }
 
@@ -59,6 +115,12 @@ class GraphEditorCommand {
       if (!editor.library.isExpanded) {
         editor.showLibrary(editor.library.lastExpanded);
       }
+    };
+  }
+
+  GraphEditorCommand.nextLibrary() {
+    handler = (GraphEditorController editor) {
+      editor.nextLibrary();
     };
   }
 
@@ -122,9 +184,27 @@ class GraphEditorCommand {
   //
   // ************************************************************
 
-  GraphEditorCommand.editNode(GraphNode node) {
+  GraphEditorCommand.convertToLibrary(GraphState graph) {
     handler = (GraphEditorController editor) {
-      editor.editNode(node);
+      editor.convertToLibrary(graph);
+    };
+  }
+
+  GraphEditorCommand.deleteGraph(GraphState graph) {
+    handler = (GraphEditorController editor) {
+      editor.deleteGraph(graph);
+    };
+  }
+
+  GraphEditorCommand.editGraph(GraphState graph) {
+    handler = (GraphEditorController editor) {
+      editor.editGraph(graph);
+    };
+  }
+
+  GraphEditorCommand.editNode(GraphNode node, {NodePort port, String focus}) {
+    handler = (GraphEditorController editor) {
+      editor.editNode(node, port: port, focus: focus);
     };
   }
 
@@ -137,6 +217,24 @@ class GraphEditorCommand {
   GraphEditorCommand.removeNode(GraphNode node) {
     handler = (GraphEditorController editor) {
       editor.graph.controller.removeNode(node);
+    };
+  }
+
+  GraphEditorCommand.removePort(NodePort port) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.removePort(port);
+    };
+  }
+
+  GraphEditorCommand.addOutport(GraphNode node) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.addOutport(node);
+    };
+  }
+
+  GraphEditorCommand.addInport(GraphNode node) {
+    handler = (GraphEditorController editor) {
+      editor.graph.controller.addInport(node);
     };
   }
 
@@ -250,6 +348,12 @@ class GraphEditorCommand {
     };
   }
 
+  GraphEditorCommand.printGraph() {
+    handler = (GraphEditorController editor) {
+      editor.printFile();
+    };
+  }
+
   GraphEditorCommand.showToolsMenu() {
     handler = (GraphEditorController editor) {
       var menu = editor.getToolsMenu();
@@ -325,6 +429,12 @@ class GraphEditorCommand {
   //
   // ************************************************************
 
+  GraphEditorCommand.selectTab(String name) {
+    handler = (GraphEditorController editor) {
+      editor.selectTab(name);
+    };
+  }
+
   GraphEditorCommand.newTab([bool random = false]) {
     handler = (GraphEditorController editor) {
       editor.newTab(random);
@@ -334,30 +444,36 @@ class GraphEditorCommand {
   GraphEditorCommand.scrollTab(double direction) {
     handler = (GraphEditorController editor) {
       editor.tabs.controller.scroll(direction);
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 
   GraphEditorCommand.closeTab(String tabname) {
     handler = (GraphEditorController editor) {
+      print("Closing Tab: $tabname");
       editor.tabs.remove(tabname);
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 
   GraphEditorCommand.restoreTab() {
     handler = (GraphEditorController editor) {
       editor.tabs.restore(true);
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 
   GraphEditorCommand.prevTab() {
     handler = (GraphEditorController editor) {
       editor.tabs.selectPrev();
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 
   GraphEditorCommand.nextTab() {
     handler = (GraphEditorController editor) {
       editor.tabs.selectNext();
+      editor.selectTab(editor.tabs.selected, reload: true);
     };
   }
 
@@ -369,7 +485,7 @@ class GraphEditorCommand {
 
   GraphEditorCommand.restoreCharts() {
     handler = (GraphEditorController editor) {
-      editor.dispatch(GraphEditorCommand.openFile(FileSourceType.local));
+      editor.openLastFile();
     };
   }
 }

@@ -1,1 +1,1 @@
-generate_font SourceSansPro-LightItalic
+generate_font SourceSansPro-RegularItalic
