@@ -34,7 +34,7 @@ class LibraryItem extends MenuItem {
     this.selection = selection;
     this.name =
         "${selection.nodes.length} nodes - ${selection.links.length} links";
-    this.icon = selection.nodes.first.icon;
+    this.icon = "clipboard-solid";
   }
 
   LibraryItem.group(String name, List<GraphNode> nodes) {

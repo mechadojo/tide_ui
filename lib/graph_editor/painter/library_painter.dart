@@ -338,6 +338,8 @@ class LibraryPainter {
         cy += 10;
       }
     }
+
+    cy += 20;
     return cy - top;
   }
 
