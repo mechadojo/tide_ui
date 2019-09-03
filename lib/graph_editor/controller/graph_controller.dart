@@ -178,6 +178,7 @@ class GraphController with MouseController, KeyboardController {
     if (cmd.group.commands.isNotEmpty) {
       applyCommand(cmd);
       graph.history.push(cmd);
+      editor.updateHistory(graph);
     }
 
     if (select) {
@@ -194,6 +195,7 @@ class GraphController with MouseController, KeyboardController {
 
     var cmd = graph.history.undo();
     if (cmd.isLocked) {
+      editor.updateHistory(graph);
       undoHistory();
       return;
     }
@@ -204,6 +206,8 @@ class GraphController with MouseController, KeyboardController {
 
     clearSelection();
     graph.endUpdate(true);
+
+    editor.updateHistory(graph);
   }
 
   void redoHistory() {
@@ -213,8 +217,8 @@ class GraphController with MouseController, KeyboardController {
 
     applyCommand(cmd);
     graph.history.push(cmd, clear: false);
-
     clearSelection();
+    editor.updateHistory(graph);
     graph.endUpdate(true);
   }
 
@@ -226,6 +230,7 @@ class GraphController with MouseController, KeyboardController {
       node.selected = false;
     }
     selection.clear();
+    editor.updateSelection();
     graph.endUpdate(true);
   }
 
@@ -237,7 +242,7 @@ class GraphController with MouseController, KeyboardController {
       selection.add(node);
       node.selected = true;
     }
-
+    editor.updateSelection();
     graph.endUpdate(true);
   }
 
@@ -253,6 +258,7 @@ class GraphController with MouseController, KeyboardController {
         node.selected = false;
       }
     }
+    editor.updateSelection();
     graph.endUpdate(true);
   }
 
@@ -263,6 +269,7 @@ class GraphController with MouseController, KeyboardController {
 
     graph.beginUpdate();
     node.selected = true;
+    editor.updateSelection();
     graph.endUpdate(true);
   }
 
@@ -280,6 +287,7 @@ class GraphController with MouseController, KeyboardController {
     if (save) {
       var cmd = GraphCommand.removeLink(link);
       graph.history.push(cmd);
+      editor.updateHistory(graph);
     }
   }
 
@@ -379,6 +387,7 @@ class GraphController with MouseController, KeyboardController {
 
     if (save) {
       graph.history.push(GraphCommand.all(cmds), locked: locked);
+      editor.updateHistory(graph);
     }
   }
 
@@ -425,6 +434,7 @@ class GraphController with MouseController, KeyboardController {
 
     if (save) {
       graph.history.push(GraphCommand.all(cmds), locked: locked);
+      editor.updateHistory(graph);
     }
   }
 
@@ -450,6 +460,7 @@ class GraphController with MouseController, KeyboardController {
 
     if (save) {
       graph.history.push(GraphCommand.all(cmds));
+      editor.updateHistory(graph);
     }
 
     if (graph.isLibrary) {
@@ -485,6 +496,7 @@ class GraphController with MouseController, KeyboardController {
 
     if (save) {
       graph.history.push(GraphCommand.all(cmds));
+      editor.updateHistory(graph);
     }
   }
 
@@ -504,6 +516,7 @@ class GraphController with MouseController, KeyboardController {
         selection.add(node);
       }
     }
+    editor.updateSelection();
     graph.endUpdate(changed);
   }
 
@@ -519,7 +532,7 @@ class GraphController with MouseController, KeyboardController {
     selection.clear();
     node.selected = true;
     selection.add(node);
-
+    editor.updateSelection();
     graph.endUpdate(true);
   }
 
@@ -532,6 +545,7 @@ class GraphController with MouseController, KeyboardController {
       node.selected = true;
       selection.add(node);
     }
+    editor.updateSelection();
     graph.endUpdate(true);
   }
 
@@ -708,6 +722,7 @@ class GraphController with MouseController, KeyboardController {
     if (dragging && selection.isNotEmpty) {
       var cmd = GraphCommand.moveAll(selection);
       graph.history.push(cmd);
+      editor.updateHistory(graph);
     }
 
     moveMode = MouseMoveMode.none;

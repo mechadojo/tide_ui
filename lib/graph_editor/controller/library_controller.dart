@@ -115,6 +115,7 @@ class LibraryController with MouseController, KeyboardController {
 
   LibraryController(this.editor) {
     _setMenu(library.mode);
+    _setClipboardButtons();
   }
 
   /// stores the current display [mode] when hiding the library
@@ -148,6 +149,18 @@ class LibraryController with MouseController, KeyboardController {
     editor.dispatch(GraphEditorCommand((editor) {
       updateScrollPos();
     }));
+  }
+
+  void updateClipboard() {
+    library.beginUpdate();
+    _setClipboardButtons();
+    library.endUpdate(true);
+  }
+
+  void updateHistory() {
+    library.beginUpdate();
+    _setClipboardButtons();
+    library.endUpdate(true);
   }
 
   void updateScrollPos() {
@@ -222,6 +235,37 @@ class LibraryController with MouseController, KeyboardController {
 
     onSelectFile = onSelect;
     filesTitle = title;
+  }
+
+  void _setClipboardButtons() {
+    var canUndo = false;
+    var canRedo = false;
+    var hasSelection = false;
+
+    if (editor.graph != null) {
+      canUndo = editor.graph.history.canUndo;
+      canRedo = editor.graph.history.canRedo;
+    }
+
+    if (editor.graph != null) {
+      hasSelection = editor.graph.controller.selection.isNotEmpty;
+    }
+
+    library.clipboardButtons = [
+      MenuItem(icon: "copy", command: GraphEditorCommand.copySelection())
+        ..disabled = !hasSelection,
+      MenuItem(icon: "cut", command: GraphEditorCommand.cutSelection())
+        ..disabled = !hasSelection,
+      MenuItem(icon: "paste", command: GraphEditorCommand.pasteClipboard())
+        ..disabled = editor.clipboard.isEmpty,
+      MenuItem(icon: "undo", command: GraphEditorCommand.undoHistory())
+        ..disabled = !canUndo,
+      MenuItem(icon: "redo", command: GraphEditorCommand.redoHistory())
+        ..disabled = !canRedo,
+      MenuItem(
+          icon: "trash-restore", command: GraphEditorCommand.clearClipboard())
+        ..disabled = editor.clipboard.isEmpty,
+    ];
   }
 
   void _setMenu(LibraryDisplayMode mode) {
@@ -426,8 +470,10 @@ class LibraryController with MouseController, KeyboardController {
         yield* library.widgets;
         break;
       case LibraryTab.clipboard:
+        yield* library.clipboardButtons;
         yield* library.clipboard;
         break;
+
       default:
         break;
     }
@@ -712,7 +758,13 @@ class LibraryController with MouseController, KeyboardController {
             item.alerted && library.mode == LibraryDisplayMode.collapsed;
 
         if (alerted) continue;
-
+        if (item.disabled) {
+          if (item.hovered) {
+            changed = true;
+            item.hovered = false;
+          }
+          continue;
+        }
         changed |= item.checkHovered(evt.pos);
         if (!alerted) {
           hovered |= item.hovered;
@@ -969,6 +1021,10 @@ class LibraryController with MouseController, KeyboardController {
           yield* item.items;
         }
         break;
+      case LibraryTab.clipboard:
+        yield* library.clipboardButtons;
+        break;
+
       default:
         break;
     }

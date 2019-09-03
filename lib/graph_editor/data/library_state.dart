@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_web/material.dart';
+import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_event.dart';
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
@@ -136,6 +137,8 @@ class LibraryState extends UpdateNotifier {
   List<MenuItemSet> imports = [];
 
   List<MenuItem> importButtons = [];
+
+  List<MenuItem> clipboardButtons = [];
 
   /// list of widgets used in Tab-Widgets mode
   List<LibraryItem> widgets = [];

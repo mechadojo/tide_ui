@@ -141,6 +141,9 @@ class Graph {
   static Paint LibraryItemIconColor = Paint()
     ..color = Color(0xff333333).withAlpha(150);
 
+  static Paint LibraryItemIconDisabledColor = Paint()
+    ..color = Color(0xff333333).withAlpha(50);
+
   static Paint LibraryItemIconHoverColor = Paint()..color = Colors.black;
 
   static Paint LibraryItemIconAlertColor = Paint()..color = GroupColors[0];

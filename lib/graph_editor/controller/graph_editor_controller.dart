@@ -239,11 +239,13 @@ class GraphEditorController extends GraphEditorControllerBase
 
     for (var item in file.sheets) {
       var tab = loadGraph(item);
+      tab.graph.history.clear();
       library.controller.addSheet(tab.graph);
     }
 
     for (var item in file.library) {
       var tab = loadLibrary(item);
+      tab.graph.history.clear();
       library.controller.addLibrary(tab.graph);
     }
 
@@ -775,6 +777,29 @@ class GraphEditorController extends GraphEditorControllerBase
     graph.endUpdate(true);
   }
 
+  void clearClipboard({bool confirmed = false}) {
+    if (clipboard.isEmpty) return;
+
+    if (!confirmed) {
+      String msg = "This will empty the clipboard.";
+
+      showConfirmDialog("Empty clipboard?", msg).then((bool result) {
+        if (result) {
+          clearClipboard(confirmed: true);
+        }
+      });
+
+      return;
+    }
+
+    clipboard.clear();
+
+    library.beginUpdate();
+    library.clipboard.clear();
+    editor.controller.updateClipboard();
+    library.endUpdate(true);
+  }
+
   void pasteClipboard() {
     if (clipboard.isEmpty) return;
 
@@ -820,6 +845,8 @@ class GraphEditorController extends GraphEditorControllerBase
     var selection = GraphSelection.all(nls, links);
     library.controller.addSelection(selection);
     clipboard.add(selection);
+    editor.controller.updateClipboard();
+    editor.controller.updateSelection();
 
     graph.controller.removeNodes(nls);
   }
@@ -847,6 +874,7 @@ class GraphEditorController extends GraphEditorControllerBase
     var selection = GraphSelection.all(nodes.values.toList(), links);
     library.controller.addSelection(selection);
     clipboard.add(selection);
+    library.controller.updateClipboard();
   }
 
   GraphState getGraph(String name) {
@@ -910,6 +938,18 @@ class GraphEditorController extends GraphEditorControllerBase
         controller.close();
       }
     };
+  }
+
+  void updateHistory(GraphState graph) {
+    library.controller.updateHistory();
+  }
+
+  void updateClipboard() {
+    library.controller.updateClipboard();
+  }
+
+  void updateSelection() {
+    library.controller.updateClipboard();
   }
 
   void updateNode(GraphState graph, GraphNode node) {
@@ -1062,6 +1102,9 @@ class GraphEditorController extends GraphEditorControllerBase
     canvas = tab.canvas;
 
     hideMenu();
+    updateSelection();
+    updateHistory(graph);
+
     endUpdateAll();
 
     return true;

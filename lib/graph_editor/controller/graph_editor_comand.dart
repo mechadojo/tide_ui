@@ -32,6 +32,31 @@ class GraphEditorCommand {
       }
     };
   }
+
+  GraphEditorCommand.copySelection() {
+    handler = (GraphEditorController editor) {
+      editor.copySelection();
+    };
+  }
+
+  GraphEditorCommand.cutSelection() {
+    handler = (GraphEditorController editor) {
+      editor.cutSelection();
+    };
+  }
+
+  GraphEditorCommand.pasteClipboard() {
+    handler = (GraphEditorController editor) {
+      editor.pasteClipboard();
+    };
+  }
+
+  GraphEditorCommand.clearClipboard() {
+    handler = (GraphEditorController editor) {
+      editor.clearClipboard();
+    };
+  }
+
   GraphEditorCommand.ensureVisible(GlobalKey item) {
     handler = (GraphEditorController editor) {
       Scrollable.ensureVisible(item.currentContext);

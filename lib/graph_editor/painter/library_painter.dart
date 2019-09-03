@@ -182,19 +182,26 @@ class LibraryPainter {
     }
   }
 
-  double drawTabsButton(Canvas canvas, MenuItem btn, double cx, double cy) {
-    var size = Graph.LibraryFileIconSize;
+  double drawTabsButton(Canvas canvas, MenuItem btn, double cx, double cy,
+      {double size, double spacing}) {
+    size = size ?? Graph.LibraryFileIconSize;
+    spacing = spacing ?? Graph.LibraryFileIconSpacing;
+
     if (btn.hovered) size *= 1.25;
 
     var fill = btn.hovered
         ? Graph.LibraryItemIconHoverColor
         : Graph.LibraryItemIconColor;
 
+    if (btn.disabled) {
+      fill = Graph.LibraryItemIconDisabledColor;
+    }
+
     btn.size = Size(size, size);
     btn.moveTo(cx, cy, update: true);
 
     VectorIcons.paint(canvas, btn.icon, btn.pos, size, fill: fill);
-    cx += Graph.LibraryFileIconSize + Graph.LibraryFileIconSpacing;
+    cx += size + spacing;
     return cx;
   }
 
@@ -277,14 +284,26 @@ class LibraryPainter {
   }
 
   double drawClipboardTab(Canvas canvas, LibraryState library, Rect rect) {
-    var cy = rect.top + Graph.LibraryGroupTopPadding + 5;
+    var cy = rect.top + Graph.LibraryGroupTopPadding - 5;
     var top = cy;
-    var cx = rect.center.dx;
+
+    var cx = rect.left + 15 + Graph.LibraryTopIconSize / 2;
+    cy += Graph.LibraryTopIconSize / 2;
+
+    for (var btn in library.clipboardButtons) {
+      drawTabsButton(canvas, btn, cx, cy, size: Graph.LibraryTopIconSize);
+      cx += Graph.LibraryTopIconSpacing;
+    }
+
+    cy += Graph.LibraryTopIconSize / 2 + 20;
+
+    cx = rect.center.dx;
 
     var width = rect.width - 20;
     var height = 100.0;
 
     if (library.clipboard.isEmpty) {
+      cy += 10;
       Graph.font.paint(canvas, "Clipboard is empty.",
           Offset(rect.left + 10, cy), Graph.LibraryTitleSize,
           style: "Bold", fill: Graph.LibraryTitleColor);
