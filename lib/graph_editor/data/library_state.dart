@@ -12,6 +12,7 @@ import 'update_notifier.dart';
 class LibraryItem extends MenuItem {
   GraphNode node;
   GraphState graph;
+  GraphSelection selection;
 
   String name;
   bool isDefault = false;
@@ -28,6 +29,13 @@ class LibraryItem extends MenuItem {
   bool collapsed = false;
   bool get isCollapsed => collapsed;
   bool get isExpanded => !collapsed;
+
+  LibraryItem.selection(GraphSelection selection) {
+    this.selection = selection;
+    this.name =
+        "${selection.nodes.length} nodes - ${selection.links.length} links";
+    this.icon = selection.nodes.first.icon;
+  }
 
   LibraryItem.group(String name, List<GraphNode> nodes) {
     this.name = name;
@@ -118,11 +126,15 @@ class LibraryState extends UpdateNotifier {
   /// expanded and detailed modes display groups of items and subgroups
   List<LibraryItem> groups = [];
 
+  // List of clipboard items used int Tab-Clipboard mode
+  List<LibraryItem> clipboard = [];
+
   /// list of files used in Tab-Files mode
   List<MenuItemSet> files = [];
 
   /// list of files used in Tab-Imports mode
   List<MenuItemSet> imports = [];
+
   List<MenuItem> importButtons = [];
 
   /// list of widgets used in Tab-Widgets mode

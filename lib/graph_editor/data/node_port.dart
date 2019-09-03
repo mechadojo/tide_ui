@@ -3,6 +3,7 @@ import 'package:tide_chart/tide_chart.dart';
 import 'package:tide_ui/graph_editor/data/graph_property_set.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
 
+import 'canvas_interactive.dart';
 import 'graph.dart';
 import 'graph_node.dart';
 
@@ -116,6 +117,13 @@ class NodePort extends GraphObject {
     if (hasLink) return "Link";
     if (hasEvent) return "Event";
     return null;
+  }
+
+  @override
+  Iterable<CanvasInteractive> interactive() sync* {
+    if (showFlag) yield flag;
+    if (hasFilter) yield filterFlag;
+    yield this;
   }
 
   int get syncGroupIndex {

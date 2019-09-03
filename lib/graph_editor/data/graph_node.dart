@@ -671,8 +671,8 @@ class GraphNode extends GraphObject {
 
   @override
   Iterable<CanvasInteractive> interactive() sync* {
-    yield* inports;
-    yield* outports;
+    yield* inports.expand((x) => x.interactive());
+    yield* outports.expand((x) => x.interactive());
     yield this;
   }
 

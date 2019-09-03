@@ -4,13 +4,19 @@ import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
+
 import 'package:tide_ui/graph_editor/data/library_state.dart';
 import 'package:tide_ui/graph_editor/data/menu_item.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
 
+import 'graph_link_painter.dart';
+import 'graph_node_painter.dart';
 import 'widget_node_painter.dart';
 
 class LibraryPainter {
+  var nodePainter = GraphNodePainter();
+  var linkPainter = GraphLinkPainter();
+
   Path createTabPath(Offset pos, Rect rect) {
     var result = Path();
 
@@ -108,6 +114,9 @@ class LibraryPainter {
             height = drawWidgetsTab(canvas, library, rect);
             break;
 
+          case LibraryTab.clipboard:
+            height = drawClipboardTab(canvas, library, rect);
+            break;
           default:
             break;
         }
@@ -265,6 +274,71 @@ class LibraryPainter {
       cx += Graph.LibraryFileIconSize + Graph.LibraryFileIconSpacing;
     }
     return pos.dy + Graph.LibraryFileNameSize + Graph.LibraryFileNameSpacing;
+  }
+
+  double drawClipboardTab(Canvas canvas, LibraryState library, Rect rect) {
+    var cy = rect.top + Graph.LibraryGroupTopPadding + 5;
+    var top = cy;
+    var cx = rect.center.dx;
+
+    var width = rect.width - 20;
+    var height = 100.0;
+
+    if (library.clipboard.isEmpty) {
+      Graph.font.paint(canvas, "Clipboard is empty.",
+          Offset(rect.left + 10, cy), Graph.LibraryTitleSize,
+          style: "Bold", fill: Graph.LibraryTitleColor);
+      cy += Graph.LibraryTitleSize + 20;
+    } else {
+      for (var item in library.clipboard.reversed) {
+        var extents = item.selection.extents;
+
+        var scale = (width - 20) / extents.width;
+        var scaleY = (height - 20) / extents.height;
+
+        if (scaleY < scale) scale = scaleY;
+        var sz = extents.size * scale;
+        sz = Size(sz.width + 20, sz.height + 20);
+
+        cy += sz.height / 2;
+        item.hitbox = Rect.fromCenter(
+            center: Offset(cx, cy), width: width, height: sz.height);
+        item.pos = item.hitbox.center;
+        item.size = item.hitbox.size;
+
+        var rrect = RRect.fromRectXY(item.hitbox, 5, 5);
+        canvas.drawRRect(
+            rrect,
+            item.hovered
+                ? Graph.LibraryClipboardHoverFill
+                : Graph.LibraryClipboardFill);
+
+        canvas.drawRRect(rrect, Graph.LibraryClipboardBorder);
+
+        canvas.save();
+        canvas.clipRRect(rrect.deflate(2));
+
+        canvas.translate(cx, cy);
+        canvas.scale(scale);
+
+        for (var link in item.selection.links) {
+          linkPainter.paint(canvas, scale, link);
+        }
+
+        for (var node in item.selection.nodes) {
+          if (node.isWidget) {
+            WidgetNodePainter.paintNode(canvas, node, scale: scale);
+          } else {
+            nodePainter.paint(canvas, scale, node);
+          }
+        }
+
+        canvas.restore();
+        cy += sz.height / 2;
+        cy += 10;
+      }
+    }
+    return cy - top;
   }
 
   double drawWidgetsTab(Canvas canvas, LibraryState library, Rect rect) {

@@ -425,6 +425,9 @@ class LibraryController with MouseController, KeyboardController {
       case LibraryTab.widgets:
         yield* library.widgets;
         break;
+      case LibraryTab.clipboard:
+        yield* library.clipboard;
+        break;
       default:
         break;
     }
@@ -576,6 +579,12 @@ class LibraryController with MouseController, KeyboardController {
   void addWidget(GraphNode widget) {
     library.beginUpdate();
     library.widgets.add(LibraryItem.widget(widget));
+    library.endUpdate(true);
+  }
+
+  void addSelection(GraphSelection selection) {
+    library.beginUpdate();
+    library.clipboard.add(LibraryItem.selection(selection));
     library.endUpdate(true);
   }
 
@@ -902,6 +911,10 @@ class LibraryController with MouseController, KeyboardController {
           case LibraryTab.widgets:
             yield* library.widgets;
             break;
+          case LibraryTab.clipboard:
+            yield* library.clipboard;
+            break;
+
           default:
             break;
         }
@@ -976,14 +989,19 @@ class LibraryController with MouseController, KeyboardController {
   bool checkStartDrag(GraphEvent evt) {
     for (var item in draggable()) {
       if (item.alerted) continue;
+
       if (item.graph != null && item.graph.type == GraphType.opmode) continue;
 
       if (item.isHovered(evt.pos)) {
         mouseMode = LibraryMouseMode.dragging;
         dragging = MenuItem()..copy(item);
-        var node = item.dropNode..moveTo(0, 0);
-        dropping = GraphSelection.node(node);
 
+        if (item.selection != null) {
+          dropping = item.selection;
+        } else {
+          var node = item.dropNode..moveTo(0, 0);
+          dropping = GraphSelection.node(node);
+        }
         return true;
       }
     }
@@ -1015,7 +1033,7 @@ class LibraryController with MouseController, KeyboardController {
 
     if (isDragging) {
       if (dropping != null && evt.pos.dx < editor.canvas.size.width) {
-        editor.endDrop(dropping);
+        editor.endDrop(dropping, select: true);
       }
 
       dropping = null;

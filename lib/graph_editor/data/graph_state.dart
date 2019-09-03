@@ -64,6 +64,12 @@ class GraphSelection {
     }
   }
 
+  Rect get extents {
+    var rect = GraphState.getExtents(
+        [...nodes.expand((x) => x.interactive()), ...links]);
+    return rect;
+  }
+
   GraphSelection.all(List<GraphNode> nodes, List<GraphLink> links) {
     var rect = GraphState.getExtents(
         [...nodes.expand((x) => x.interactive()), ...links]);

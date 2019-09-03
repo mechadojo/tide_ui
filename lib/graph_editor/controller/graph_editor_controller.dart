@@ -176,7 +176,7 @@ class GraphEditorController extends GraphEditorControllerBase
     dispatch(
         GraphEditorCommand.restoreCharts()
           ..then(GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
-              tab: LibraryTab.widgets)),
+              tab: LibraryTab.clipboard)),
         afterTicks: 5);
   }
 
@@ -393,8 +393,8 @@ class GraphEditorController extends GraphEditorControllerBase
     graph.controller.startDrop(dropping);
   }
 
-  void endDrop(GraphSelection dropping) {
-    graph.controller.endDrop(dropping);
+  void endDrop(GraphSelection dropping, {bool select = false}) {
+    graph.controller.endDrop(dropping, select: select);
   }
 
   void startLongPress(GraphEvent evt) {
@@ -818,6 +818,7 @@ class GraphEditorController extends GraphEditorControllerBase
 
     var nls = nodes.values.toList();
     var selection = GraphSelection.all(nls, links);
+    library.controller.addSelection(selection);
     clipboard.add(selection);
 
     graph.controller.removeNodes(nls);
@@ -844,6 +845,7 @@ class GraphEditorController extends GraphEditorControllerBase
     }
 
     var selection = GraphSelection.all(nodes.values.toList(), links);
+    library.controller.addSelection(selection);
     clipboard.add(selection);
   }
 

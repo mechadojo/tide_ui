@@ -81,6 +81,14 @@ class Graph {
   static const double LibraryGridIconSize = 20;
   static const int LibraryGridColumns = 5;
 
+  static Paint LibraryClipboardFill = CanvasColor;
+  static Paint LibraryClipboardHoverFill = Paint()..color = Color(0xFFDFFEFE);
+
+  static Paint LibraryClipboardBorder = Paint()
+    ..color = Color(0xFF333333).withAlpha(150)
+    ..strokeWidth = 1
+    ..style = PaintingStyle.stroke;
+
   static const double LibraryTabPadding = 12;
   static const double LibraryTabIconSize = 15;
 
