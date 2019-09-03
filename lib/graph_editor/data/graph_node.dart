@@ -677,6 +677,19 @@ class GraphNode extends GraphObject {
   }
 
   @override
+  void moveBy(double dx, double dy) {
+    super.moveBy(dx, dy);
+
+    for (var port in inports) {
+      port.moveBy(dx, dy);
+    }
+
+    for (var port in outports) {
+      port.moveBy(dx, dy);
+    }
+  }
+
+  @override
   bool moveTo(double dx, double dy, {bool update = false}) {
     var origin = this.pos;
     var moved = super.moveTo(dx, dy);
@@ -693,7 +706,6 @@ class GraphNode extends GraphObject {
       }
     }
 
-    if (moved) version++;
     return moved;
   }
 

@@ -132,6 +132,9 @@ class GraphEditorControllerBase {
 
   List<TideChartProperty> nodePropsClipboard = [];
   List<TideChartProperty> graphPropsClipboard = [];
+
+  List<GraphSelection> clipboard = [];
+  int pasteIndex = 0;
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -507,6 +510,29 @@ class GraphEditorController extends GraphEditorControllerBase
       return true;
     }
 
+    if (key == "c" && evt.ctrlKey) {
+      copySelection();
+      return true;
+    }
+
+    if (key == "a" && evt.ctrlKey) {
+      if (graph.controller.moveMode == MouseMoveMode.none &&
+          graph.controller.dropping == null) {
+        graph.controller.selectAll();
+      }
+      return true;
+    }
+
+    if (key == "x" && evt.ctrlKey) {
+      cutSelection();
+      return true;
+    }
+
+    if (key == "v" && evt.ctrlKey) {
+      pasteClipboard();
+      return true;
+    }
+
     return false;
   }
 
@@ -749,6 +775,78 @@ class GraphEditorController extends GraphEditorControllerBase
     graph.endUpdate(true);
   }
 
+  void pasteClipboard() {
+    if (clipboard.isEmpty) return;
+
+    if (graph.controller.dropping != null) {
+      if (GraphEvent.last.shiftKey) {
+        pasteIndex++;
+        if (pasteIndex >= clipboard.length) pasteIndex = 0;
+      } else {
+        pasteIndex--;
+        if (pasteIndex < 0) pasteIndex = clipboard.length - 1;
+      }
+    } else {
+      pasteIndex = clipboard.length - 1;
+    }
+
+    var last = clipboard[pasteIndex];
+    last.pos = canvas.toGraphCoord(cursor);
+
+    previewDrop(last);
+  }
+
+  void cutSelection({bool withLinks = true}) {
+    if (graph.controller.selection.isEmpty) return;
+
+    Map<String, GraphNode> nodes = {};
+
+    for (var node in graph.controller.selection) {
+      nodes[node.name] = node;
+    }
+
+    List<GraphLink> links = [];
+
+    if (withLinks) {
+      for (var link in graph.links) {
+        if (nodes.containsKey(link.outPort.node.name) &&
+            nodes.containsKey(link.inPort.node.name)) {
+          links.add(link);
+        }
+      }
+    }
+
+    var nls = nodes.values.toList();
+    var selection = GraphSelection.all(nls, links);
+    clipboard.add(selection);
+
+    graph.controller.removeNodes(nls);
+  }
+
+  void copySelection({bool withLinks = true}) {
+    if (graph.controller.selection.isEmpty) return;
+
+    Map<String, GraphNode> nodes = {};
+
+    for (var node in graph.controller.selection) {
+      nodes[node.name] = node;
+    }
+
+    List<GraphLink> links = [];
+
+    if (withLinks) {
+      for (var link in graph.links) {
+        if (nodes.containsKey(link.outPort.node.name) &&
+            nodes.containsKey(link.inPort.node.name)) {
+          links.add(link);
+        }
+      }
+    }
+
+    var selection = GraphSelection.all(nodes.values.toList(), links);
+    clipboard.add(selection);
+  }
+
   GraphState getGraph(String name) {
     var tab = editor.tabs[name];
     if (tab == null) return null;
@@ -759,7 +857,7 @@ class GraphEditorController extends GraphEditorControllerBase
   void editNode(GraphNode node, {NodePort port, String focus}) {
     setCursor("default");
     bottomSheetActive = true;
-    var rect = graph.getExtents(node.walkNode());
+    var rect = GraphState.getExtents(node.walkNode());
     var pos = canvas.pos;
     var scale = canvas.scale;
 

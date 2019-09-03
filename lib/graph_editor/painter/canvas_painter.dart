@@ -45,7 +45,7 @@ class CanvasPainter extends CustomPainter {
     canvas.translate(state.pos.dx, state.pos.dy);
 
     for (var link in graph.links) {
-      linkPainter.paint(canvas, size, state.pos, state.scale, link);
+      linkPainter.paint(canvas, state.scale, link);
     }
 
     if (graph.controller.linking) {
@@ -101,6 +101,10 @@ class CanvasPainter extends CustomPainter {
   void drawDropPreview(Canvas canvas, GraphSelection dropping) {
     canvas.save();
     canvas.translate(dropping.pos.dx, dropping.pos.dy);
+
+    for (var link in dropping.links) {
+      linkPainter.paint(canvas, state.scale, link);
+    }
 
     for (var node in dropping.nodes) {
       drawNode(canvas, node, state.scale);

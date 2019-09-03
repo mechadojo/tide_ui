@@ -23,12 +23,78 @@ typedef GetNodeByName(String name);
 
 class GraphSelection {
   Offset pos = Offset.zero;
+  Offset origin = Offset.zero;
+  Size size = Size.zero;
 
   List<GraphNode> nodes = [];
   List<GraphLink> links = [];
 
   GraphSelection.node(GraphNode node) {
-    nodes.add(node);
+    nodes.add(GraphNode.clone(node)..name = GraphNode.randomName());
+  }
+
+  GraphSelection.copy(GraphSelection other) {
+    pos = other.pos;
+    origin = other.origin;
+    size = other.size;
+
+    Map<String, String> renameFrom = {};
+    Map<String, GraphNode> renameTo = {};
+
+    for (var node in other.nodes) {
+      var next = GraphNode.clone(node);
+      next.name = GraphNode.randomName();
+
+      renameFrom[node.name] = next.name;
+      renameTo[next.name] = next;
+
+      this.nodes.add(next);
+    }
+
+    var lookup = (String name) {
+      return renameTo[name];
+    };
+
+    for (var link in other.links) {
+      var packed = link.pack();
+      packed.inNode = renameFrom[link.inPort.node.name];
+      packed.outNode = renameFrom[link.outPort.node.name];
+
+      this.links.add(GraphLink.unpack(packed, lookup));
+    }
+  }
+
+  GraphSelection.all(List<GraphNode> nodes, List<GraphLink> links) {
+    var rect = GraphState.getExtents(
+        [...nodes.expand((x) => x.interactive()), ...links]);
+
+    origin = rect.center;
+    size = rect.size;
+
+    Map<String, String> renameFrom = {};
+    Map<String, GraphNode> renameTo = {};
+
+    for (var node in nodes) {
+      var next = GraphNode.clone(node);
+      next.name = GraphNode.randomName();
+      next.moveBy(-origin.dx, -origin.dy);
+
+      renameFrom[node.name] = next.name;
+      renameTo[next.name] = next;
+
+      this.nodes.add(next);
+    }
+    var lookup = (String name) {
+      return renameTo[name];
+    };
+
+    for (var link in links) {
+      var packed = link.pack();
+      packed.inNode = renameFrom[link.inPort.node.name];
+      packed.outNode = renameFrom[link.outPort.node.name];
+
+      this.links.add(GraphLink.unpack(packed, lookup));
+    }
   }
 }
 
@@ -320,7 +386,7 @@ class GraphState {
     return true;
   }
 
-  Rect getExtents(Iterable<CanvasInteractive> items) {
+  static Rect getExtents(Iterable<CanvasInteractive> items) {
     double top = 0;
     double left = 0;
     double bottom = 0;

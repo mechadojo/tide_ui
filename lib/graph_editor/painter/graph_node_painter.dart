@@ -269,11 +269,15 @@ class GraphNodePainter {
     }
 
     if (node.isAnyType(Inport_Trigger)) {
-      return Graph.NodeInportIconColor;
+      return node.selected
+          ? Graph.NodeHoverDarkIconColor
+          : Graph.NodeInportIconColor;
     }
 
     if (node.isAnyType(Outport_Event)) {
-      return Graph.NodeOutportIconColor;
+      return node.selected
+          ? Graph.NodeHoverDarkIconColor
+          : Graph.NodeOutportIconColor;
     }
 
     return zoomedIn ? Graph.NodeZoomedIconColor : Graph.NodeIconColor;
