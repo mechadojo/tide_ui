@@ -129,17 +129,6 @@ class CanvasController with MouseController, KeyboardController {
   }
 
   @override
-  bool onKeyDown(GraphEvent evt) {
-    if (evt.key == "h") {
-      canvas.beginUpdate();
-      canvas.reset();
-      canvas.endUpdate(true);
-      return true;
-    }
-    return false;
-  }
-
-  @override
   bool onMouseWheel(GraphEvent evt) {
     var pt = toGraphCoord(evt.pos);
 

@@ -1,14 +1,115 @@
 import 'dart:math';
 
 import 'package:flutter_web/material.dart';
-import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
+import 'package:tide_chart/tide_chart.dart';
+
 import 'package:tide_ui/graph_editor/controller/graph_event.dart';
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
+import 'graph_history.dart';
 import 'graph_node.dart';
 import 'menu_item.dart';
 import 'update_notifier.dart';
+
+class HistoryItem extends LibraryItem {
+  TideChartCommand cmd;
+  TideChartLink cmdLink;
+  TideChartNode cmdNode;
+
+  bool isUndoItem = true;
+  bool get isRedoItem => !isUndoItem;
+  int index = 0;
+  TideChartCommandUpdateType cmdType;
+  String typeIcon;
+  String version;
+
+  String getTypeIcon(TideChartCommandUpdateType type) {
+    switch (type) {
+      case TideChartCommandUpdateType.add:
+        return "plus";
+      case TideChartCommandUpdateType.remove:
+        return "minus";
+      case TideChartCommandUpdateType.update:
+        return "edit-solid";
+    }
+    return "question";
+  }
+
+  String getTypeName(TideChartCommandUpdateType type) {
+    switch (type) {
+      case TideChartCommandUpdateType.add:
+        return "Add";
+      case TideChartCommandUpdateType.remove:
+        return "Remove";
+      case TideChartCommandUpdateType.update:
+        return "Update";
+    }
+    return "???";
+  }
+
+  HistoryItem.command(this.cmd, this.index, {bool undo = true}) {
+    isUndoItem = undo;
+
+    if (cmd.hasGroup()) {
+      var count = cmd.group.commands.length;
+      typeIcon = "archive";
+      Set<String> groupTypes = {};
+      var groupType = "";
+      for (var subcmd in cmd.group.commands) {
+        if (subcmd.hasGroup()) groupTypes.add("group");
+        if (subcmd.hasMove()) groupTypes.add("move");
+        if (subcmd.hasNode()) {
+          groupTypes.add("${getTypeName(subcmd.node.type).toLowerCase()} node");
+        }
+        if (subcmd.hasLink()) {
+          groupTypes.add("${getTypeName(subcmd.link.type).toLowerCase()} link");
+        }
+      }
+      if (groupTypes.length == 1) groupType = "${groupTypes.first} ";
+      if (groupTypes.length == 2) {
+        var first = groupTypes.first;
+        var last = groupTypes.last;
+        for (var prefix in ["add ", "remove ", "update "]) {
+          if (first.startsWith(prefix) && last.startsWith(prefix)) {
+            last = last.substring(prefix.length);
+          }
+        }
+        groupType = "${first} and ${last} ";
+      }
+
+      if (groupTypes.length > 2) {
+        groupType = groupTypes.join(",") + " ";
+      }
+
+      title = "${count} ${groupType}commands";
+    }
+
+    if (cmd.hasMove()) {
+      typeIcon = "arrows-alt";
+      title =
+          "(${cmd.move.fromPosX}, ${cmd.move.fromPosY}) to (${cmd.move.toPosX}, ${cmd.move.toPosY})";
+    }
+
+    if (cmd.hasNode()) {
+      cmdType = cmd.node.type;
+      cmdNode = GraphCommand.getNode(cmd.node);
+      icon = cmdNode.icon;
+      title = cmdNode.title == null ? "Node ${cmdNode.name}" : cmdNode.title;
+      typeIcon = getTypeIcon(cmdType);
+    }
+
+    if (cmd.hasLink()) {
+      cmdType = cmd.link.type;
+      cmdLink = GraphCommand.getLink(cmd.link);
+      icon = "share-alt";
+      title = "${cmdLink.outPort} to ${cmdLink.inPort}";
+      typeIcon = getTypeIcon(cmdType);
+    }
+  }
+}
+
+class VersionItem extends MenuItem {}
 
 class LibraryItem extends MenuItem {
   GraphNode node;
@@ -31,6 +132,7 @@ class LibraryItem extends MenuItem {
   bool get isCollapsed => collapsed;
   bool get isExpanded => !collapsed;
 
+  LibraryItem();
   LibraryItem.selection(GraphSelection selection) {
     this.selection = selection;
     this.name =
@@ -130,6 +232,10 @@ class LibraryState extends UpdateNotifier {
   // List of clipboard items used int Tab-Clipboard mode
   List<LibraryItem> clipboard = [];
 
+  List<HistoryItem> history = [];
+
+  List<VersionItem> versions = [];
+
   /// list of files used in Tab-Files mode
   List<MenuItemSet> files = [];
 
@@ -137,8 +243,9 @@ class LibraryState extends UpdateNotifier {
   List<MenuItemSet> imports = [];
 
   List<MenuItem> importButtons = [];
-
   List<MenuItem> clipboardButtons = [];
+  List<MenuItem> historyButtons = [];
+  List<MenuItem> versionButtons = [];
 
   /// list of widgets used in Tab-Widgets mode
   List<LibraryItem> widgets = [];
@@ -151,6 +258,8 @@ class LibraryState extends UpdateNotifier {
 
   LibraryItem behaviorGroup = LibraryItem.group("Behaviors", []);
   LibraryItem opmodeGroup = LibraryItem.group("OpModes", []);
+  LibraryItem historyGroup = LibraryItem.group("History", []);
+  LibraryItem versionGroup = LibraryItem.group("Version", []);
 
   Rect hitbox = Rect.zero;
 
@@ -183,7 +292,7 @@ class LibraryState extends UpdateNotifier {
     switch (tab) {
       case LibraryTab.files:
         return true;
-      case LibraryTab.history:
+      case LibraryTab.templates:
         return true;
       default:
         return false;

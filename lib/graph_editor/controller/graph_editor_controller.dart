@@ -176,7 +176,7 @@ class GraphEditorController extends GraphEditorControllerBase
     dispatch(
         GraphEditorCommand.restoreCharts()
           ..then(GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
-              tab: LibraryTab.clipboard)),
+              tab: LibraryTab.history)),
         afterTicks: 5);
   }
 
@@ -239,13 +239,11 @@ class GraphEditorController extends GraphEditorControllerBase
 
     for (var item in file.sheets) {
       var tab = loadGraph(item);
-      tab.graph.history.clear();
       library.controller.addSheet(tab.graph);
     }
 
     for (var item in file.library) {
       var tab = loadLibrary(item);
-      tab.graph.history.clear();
       library.controller.addLibrary(tab.graph);
     }
 
@@ -489,6 +487,22 @@ class GraphEditorController extends GraphEditorControllerBase
     return false;
   }
 
+  LibraryTab get nextLibraryTab {
+    switch (library.currentTab) {
+      case LibraryTab.widgets:
+        return LibraryTab.history;
+        break;
+      case LibraryTab.history:
+        return LibraryTab.clipboard;
+        break;
+      case LibraryTab.clipboard:
+        return LibraryTab.widgets;
+        break;
+      default:
+        return LibraryTab.widgets;
+    }
+  }
+
   @override
   bool onKeyDown(GraphEvent evt) {
     var key = evt.key.toLowerCase();
@@ -503,8 +517,23 @@ class GraphEditorController extends GraphEditorControllerBase
       return true;
     }
 
-    if (key == "h") {
-      zoomHome();
+    if (key == "s") {
+      showLibrary(LibraryDisplayMode.search);
+      return true;
+    }
+
+    if (key == "w") {
+      showLibrary(LibraryDisplayMode.tabs, tab: LibraryTab.widgets);
+      return true;
+    }
+
+    if (key == "q") {
+      if (library.mode == LibraryDisplayMode.tabs) {
+        showLibrary(LibraryDisplayMode.tabs, tab: nextLibraryTab);
+      } else {
+        showLibrary(LibraryDisplayMode.tabs, tab: library.currentTab);
+      }
+      return true;
     }
 
     if (key == "f") {
@@ -521,6 +550,23 @@ class GraphEditorController extends GraphEditorControllerBase
       if (graph.controller.moveMode == MouseMoveMode.none &&
           graph.controller.dropping == null) {
         graph.controller.selectAll();
+      }
+      return true;
+    }
+
+    if (key == 't') {
+      if (evt.shiftKey) {
+        if (library.isExpanded) {
+          editor.dispatch(GraphEditorCommand.collapseLibrary());
+        } else {
+          editor.dispatch(GraphEditorCommand.expandLibrary());
+        }
+      } else {
+        if (evt.ctrlKey) {
+          showLibrary(LibraryDisplayMode.toolbox);
+        } else {
+          nextLibrary();
+        }
       }
       return true;
     }
@@ -637,13 +683,6 @@ class GraphEditorController extends GraphEditorControllerBase
         mode = LibraryDisplayMode.detailed;
         break;
       case LibraryDisplayMode.detailed:
-        mode = LibraryDisplayMode.tabs;
-        tab = LibraryTab.widgets;
-        break;
-      case LibraryDisplayMode.tabs:
-        mode = LibraryDisplayMode.expanded;
-        break;
-      case LibraryDisplayMode.search:
         mode = LibraryDisplayMode.expanded;
         break;
 
@@ -845,8 +884,8 @@ class GraphEditorController extends GraphEditorControllerBase
     var selection = GraphSelection.all(nls, links);
     library.controller.addSelection(selection);
     clipboard.add(selection);
-    editor.controller.updateClipboard();
-    editor.controller.updateSelection();
+    updateClipboard();
+    updateSelection();
 
     graph.controller.removeNodes(nls);
   }
@@ -874,7 +913,8 @@ class GraphEditorController extends GraphEditorControllerBase
     var selection = GraphSelection.all(nodes.values.toList(), links);
     library.controller.addSelection(selection);
     clipboard.add(selection);
-    library.controller.updateClipboard();
+    updateClipboard();
+    updateSelection();
   }
 
   GraphState getGraph(String name) {

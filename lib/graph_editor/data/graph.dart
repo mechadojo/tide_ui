@@ -103,6 +103,7 @@ class Graph {
   static const double LibraryDetailedIconSpacing = 10;
 
   static const double LibraryTitleSize = 12;
+  static const double LibraryInfoSize = 10;
 
   static const double LibraryFileNameSize = 10;
   static const double LibraryFileNameSpacing = 20;

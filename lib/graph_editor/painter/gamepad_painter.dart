@@ -105,6 +105,15 @@ class GamepadPainter extends WidgetNodePainter {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1;
 
+  static Paint penHoverBodyShadow = Paint()
+    ..color = Color(0xFFDFFEFE).withAlpha(200)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3;
+  static Paint penHoverBody = Paint()
+    ..color = Colors.black.withAlpha(200)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3;
+
   static Paint paintLedOn = Paint()..color = Color(0xFF83B656);
   static Paint paintLedOff = Paint()..color = Colors.green;
   static Paint penLed = Paint()
@@ -262,7 +271,8 @@ class GamepadPainter extends WidgetNodePainter {
   }
 
   @override
-  void paint(Canvas canvas, Size size, WidgetState state, double zoom) {
+  void paint(Canvas canvas, Size size, WidgetState state, double zoom,
+      {GraphNode node}) {
     var gamepad = state as GamepadState ?? GamepadState();
 
     canvas.save();
@@ -271,6 +281,12 @@ class GamepadPainter extends WidgetNodePainter {
     canvas.translate(-gamepadSize.width / 2, -gamepadSize.height / 2);
 
     var zoomedOut = Graph.isZoomedOut(zoom);
+
+    if (node?.hovered ?? false) {
+      canvas.drawPath(
+          gamepadBody, penHoverBodyShadow..strokeWidth = 20 / scale);
+      canvas.drawPath(gamepadBody, penHoverBody..strokeWidth = 4 / scale);
+    }
 
     drawTriggers(canvas, gamepad);
     drawBumpers(canvas, gamepad);
@@ -283,6 +299,10 @@ class GamepadPainter extends WidgetNodePainter {
     drawLed(canvas, gamepad);
 
     canvas.restore();
+
+    if (node != null) {
+      drawNode(canvas, node, zoom);
+    }
   }
 
   @override
@@ -332,6 +352,7 @@ class GamepadPainter extends WidgetNodePainter {
     canvas.drawPath(gamepadBody, paintBody);
     canvas.drawPath(rightGrip, paintGrip);
     canvas.drawPath(leftGrip, paintGrip);
+
     canvas.drawPath(gamepadBody, penBody);
 
     canvas.drawPath(leftButtonBase, paintButtonBase);

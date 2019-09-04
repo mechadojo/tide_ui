@@ -23,7 +23,7 @@ class WidgetNodePainter {
     canvas.translate(node.pos.dx, node.pos.dy);
 
     state = state ?? widgetDefaultState[node.widget];
-    painter.paint(canvas, node.size, state, scale);
+    painter.paint(canvas, node.size, state, scale, node: node);
     canvas.restore();
 
     painter.drawNode(canvas, node, scale);
@@ -57,5 +57,6 @@ class WidgetNodePainter {
     return size;
   }
 
-  void paint(Canvas canvas, Size size, WidgetState state, double scale) {}
+  void paint(Canvas canvas, Size size, WidgetState state, double scale,
+      {GraphNode node}) {}
 }

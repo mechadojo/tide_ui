@@ -157,7 +157,11 @@ mixin GraphEditorFileSource on GraphEditorControllerBase {
   }
 
   void openLastFile() {
-    if (!window.localStorage.containsKey("LastChartFile")) return;
+    if (!window.localStorage.containsKey("LastChartFile")) {
+      editor.controller.newFile();
+      return;
+    }
+
     var lastFile = window.localStorage["LastChartFile"];
     openLocalFile(lastFile);
   }

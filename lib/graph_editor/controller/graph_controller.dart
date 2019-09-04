@@ -919,23 +919,6 @@ class GraphController with MouseController, KeyboardController {
     }
 
     // toggle the librTary panels
-    if (key == 't') {
-      if (evt.shiftKey) {
-        if (editor.library.isExpanded) {
-          editor.dispatch(GraphEditorCommand.collapseLibrary());
-        } else {
-          editor.dispatch(GraphEditorCommand.expandLibrary());
-        }
-      } else {
-        if (evt.ctrlKey) {
-          editor.dispatch(
-              GraphEditorCommand.showLibrary(LibraryDisplayMode.toolbox));
-        } else {
-          editor.dispatch(GraphEditorCommand.nextLibrary());
-        }
-      }
-      return true;
-    }
 
     if (evt.keyCode >= 48 && evt.keyCode <= 57) {
       int hotkey = evt.keyCode == 48 ? 9 : evt.keyCode - 49;

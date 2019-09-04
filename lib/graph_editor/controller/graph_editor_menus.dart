@@ -26,7 +26,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
         command: GraphEditorCommand.printGraph(),
       ),
       MenuItem(
-        icon: "save",
+        icon: "save-solid",
         title: "Save",
         command: GraphEditorCommand.pushMenu(getSaveFileMenu()),
       ),
@@ -36,7 +36,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
         command: GraphEditorCommand.pushMenu(getOpenFileMenu()),
       ),
       MenuItem(
-        icon: "file",
+        icon: "file-solid",
         title: "New",
         command: GraphEditorCommand.newFile(),
       ),
@@ -114,10 +114,6 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
   MenuItemSet getOpenFileMenu() {
     return MenuItemSet([
       MenuItem(
-          icon: "code-branch",
-          title: "Branch",
-          command: GraphEditorCommand.openFile(FileSourceType.branch)),
-      MenuItem(
           icon: editor.platformIcon,
           title: "Local",
           command: GraphEditorCommand.openFile(FileSourceType.local)),
@@ -140,10 +136,6 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
   MenuItemSet getSaveFileMenu() {
     return MenuItemSet([
       MenuItem(
-          icon: "code-branch",
-          title: "Branch",
-          command: GraphEditorCommand.saveFile(FileSourceType.branch)),
-      MenuItem(
           icon: editor.platformIcon,
           title: "Local",
           command: GraphEditorCommand.saveFile(FileSourceType.local)),
@@ -160,7 +152,7 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
           title: "Device",
           command: GraphEditorCommand.saveFile(FileSourceType.device)),
     ])
-      ..icon = "folder-open-solid";
+      ..icon = "save-solid";
   }
 
   MenuItemSet getConnectMenu() {

@@ -12,6 +12,7 @@ class VectorIcon {
   String svg;
   Path path;
   String name;
+  double scale = 1;
 
   VectorIcon(this.width, this.height, this.svg) {
     path = parseSvgPathData(svg);
@@ -21,11 +22,15 @@ class VectorIcon {
     path = parseSvgPathData(svg);
   }
 
+  VectorIcon.scaled(this.name, this.scale, this.width, this.height, this.svg) {
+    path = parseSvgPathData(svg);
+  }
+
   void paint(Canvas canvas, Offset pos, double size,
-      {Paint fill, Paint stroke}) {
+      {Paint fill, Paint stroke, double scale = 1.0}) {
     canvas.save();
     canvas.translate(pos.dx, pos.dy);
-    scaleTo(canvas, size);
+    scaleTo(canvas, size * scale);
 
     if (fill != null) {
       canvas.drawPath(path, fill);
@@ -80,6 +85,7 @@ class VectorIcons {
     var icon = iconDefinitions[name];
     if (icon == null) return;
 
-    icon.paint(canvas, pos, size, fill: fill, stroke: stroke);
+    icon.paint(canvas, pos, size,
+        fill: fill, stroke: stroke, scale: icon.scale);
   }
 }

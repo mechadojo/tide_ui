@@ -113,9 +113,11 @@ class LibraryPainter {
           case LibraryTab.widgets:
             height = drawWidgetsTab(canvas, library, rect);
             break;
-
           case LibraryTab.clipboard:
             height = drawClipboardTab(canvas, library, rect);
+            break;
+          case LibraryTab.history:
+            height = drawHistoryTab(canvas, library, rect);
             break;
           default:
             break;
@@ -305,8 +307,8 @@ class LibraryPainter {
     if (library.clipboard.isEmpty) {
       cy += 10;
       Graph.font.paint(canvas, "Clipboard is empty.",
-          Offset(rect.left + 10, cy), Graph.LibraryTitleSize,
-          style: "Bold", fill: Graph.LibraryTitleColor);
+          Offset(rect.left + 10, cy), Graph.LibraryInfoSize,
+          fill: Graph.LibraryTitleColor);
       cy += Graph.LibraryTitleSize + 20;
     } else {
       for (var item in library.clipboard.reversed) {
@@ -384,6 +386,132 @@ class LibraryPainter {
     }
 
     cy += 20;
+    return cy - top;
+  }
+
+  double drawHistoryItem(
+      Canvas canvas, HistoryItem item, double dy, Rect rect) {
+    var fill = item.isUndoItem
+        ? Graph.LibraryItemIconColor
+        : Graph.LibraryItemIconDisabledColor;
+
+    var cx = rect.left + 14;
+    VectorIcons.paint(canvas, item.typeIcon, Offset(cx, dy), 11, fill: fill);
+    cx += 14;
+    if (item.icon != null && item.icon.isNotEmpty) {
+      VectorIcons.paint(canvas, item.icon, Offset(cx, dy), 11, fill: fill);
+      cx += 14;
+    }
+    cx -= 4;
+    Graph.font.paint(canvas, item.title, Offset(cx, dy), 8,
+        fill: fill, alignment: Alignment.centerLeft);
+
+    dy += 18;
+
+    return dy;
+  }
+
+  double drawVersionItem(
+      Canvas canvas, VersionItem item, double dy, Rect rect) {
+    return dy;
+  }
+
+  double drawHistoryTab(Canvas canvas, LibraryState library, Rect rect) {
+    var cy = rect.top + Graph.LibraryGroupTopPadding + 10;
+    var top = cy;
+
+    var left = rect.left + 25;
+
+    //
+    //  Draw history items
+    //
+
+    var cx = rect.right -
+        25 -
+        (Graph.LibraryTopIconSpacing * (library.historyButtons.length - 1));
+
+    drawExpandoBtn(
+        canvas, library.historyGroup, Offset(rect.left + 10, cy), rect,
+        margin: (rect.right - cx) + Graph.LibraryTabIconSize / 2 + 10);
+
+    var fill = library.historyGroup.expandoButton.hovered
+        ? Graph.blackPaint
+        : Graph.LibraryTitleColor;
+
+    Graph.font.paint(
+        canvas, "History", Offset(left, cy), Graph.LibraryTitleSize,
+        style: "Bold", fill: fill);
+
+    cy -= 6;
+
+    for (var btn in library.historyButtons) {
+      drawTabsButton(canvas, btn, cx, cy, size: Graph.LibraryTopIconSize);
+      cx += Graph.LibraryTopIconSpacing;
+    }
+
+    cy += Graph.LibraryTitleSize + 10;
+
+    if (library.historyGroup.isExpanded) {
+      if (library.history.isEmpty) {
+        cy += 10;
+        Graph.font.paint(canvas, "No file changes.", Offset(rect.left + 10, cy),
+            Graph.LibraryInfoSize,
+            fill: Graph.LibraryTitleColor);
+        cy += Graph.LibraryTitleSize + 20;
+      }
+      for (var item in library.history) {
+        cy = drawHistoryItem(canvas, item, cy, rect);
+      }
+      cy += 20;
+    } else {
+      cy += 20;
+    }
+
+    //
+    //  Draw version items
+    //
+    cx = rect.right -
+        25 -
+        (Graph.LibraryTopIconSpacing * (library.versionButtons.length - 1));
+
+    drawExpandoBtn(
+        canvas, library.versionGroup, Offset(rect.left + 10, cy), rect,
+        margin: (rect.right - cx) + Graph.LibraryTabIconSize / 2 + 10);
+
+    fill = library.versionGroup.expandoButton.hovered
+        ? Graph.blackPaint
+        : Graph.LibraryTitleColor;
+
+    Graph.font.paint(
+        canvas, "Versions", Offset(left, cy), Graph.LibraryTitleSize,
+        style: "Bold", fill: fill);
+
+    cy -= 6;
+
+    for (var btn in library.versionButtons) {
+      drawTabsButton(canvas, btn, cx, cy, size: Graph.LibraryTopIconSize);
+      cx += Graph.LibraryTopIconSpacing;
+    }
+
+    cy += Graph.LibraryTitleSize + 10;
+
+    if (library.versionGroup.isExpanded) {
+      if (library.versions.isEmpty) {
+        cy += 10;
+        Graph.font.paint(canvas, "No file versions.",
+            Offset(rect.left + 10, cy), Graph.LibraryInfoSize,
+            fill: Graph.LibraryTitleColor);
+        cy += Graph.LibraryTitleSize + 20;
+      }
+
+      for (var item in library.versions) {
+        cy = drawVersionItem(canvas, item, cy, rect);
+      }
+      cy += 20;
+    } else {
+      cy += 20;
+    }
+
     return cy - top;
   }
 
@@ -592,14 +720,15 @@ class LibraryPainter {
     return drawDetailed(canvas, library, rect);
   }
 
-  void drawExpandoBtn(Canvas canvas, LibraryItem item, Offset pos, Rect rect) {
+  void drawExpandoBtn(Canvas canvas, LibraryItem item, Offset pos, Rect rect,
+      {double margin = 30}) {
     var btn = item.isCollapsed ? item.expandButton : item.collapseButton;
 
     btn.size = Size(16, 16);
     btn.moveTo(pos.dx + 5, pos.dy - 5, update: true);
     var hb = btn.hitbox;
     btn.hitbox =
-        Rect.fromLTRB(hb.left, hb.top - 2, rect.right - 30, hb.bottom + 2);
+        Rect.fromLTRB(hb.left, hb.top - 2, rect.right - margin, hb.bottom + 2);
 
     var fill = btn.hovered
         ? Graph.LibraryItemIconHoverColor

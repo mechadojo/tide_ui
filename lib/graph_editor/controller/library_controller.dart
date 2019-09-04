@@ -159,7 +159,21 @@ class LibraryController with MouseController, KeyboardController {
 
   void updateHistory() {
     library.beginUpdate();
+
+    library.history.clear();
+    if (editor.graph != null) {
+      var cmds = editor.graph.history.redoCmds;
+      for (int i = 0; i < cmds.length; i++) {
+        library.history.add(HistoryItem.command(cmds[i], i, undo: false));
+      }
+
+      cmds = editor.graph.history.undoCmds;
+      for (int i = cmds.length - 1; i >= 0; i--) {
+        library.history.add(HistoryItem.command(cmds[i], i, undo: true));
+      }
+    }
     _setClipboardButtons();
+    _setHistoryButtons();
     library.endUpdate(true);
   }
 
@@ -252,9 +266,9 @@ class LibraryController with MouseController, KeyboardController {
     }
 
     library.clipboardButtons = [
-      MenuItem(icon: "copy", command: GraphEditorCommand.copySelection())
-        ..disabled = !hasSelection,
       MenuItem(icon: "cut", command: GraphEditorCommand.cutSelection())
+        ..disabled = !hasSelection,
+      MenuItem(icon: "copy-solid", command: GraphEditorCommand.copySelection())
         ..disabled = !hasSelection,
       MenuItem(icon: "paste", command: GraphEditorCommand.pasteClipboard())
         ..disabled = editor.clipboard.isEmpty,
@@ -265,6 +279,29 @@ class LibraryController with MouseController, KeyboardController {
       MenuItem(
           icon: "trash-restore", command: GraphEditorCommand.clearClipboard())
         ..disabled = editor.clipboard.isEmpty,
+    ];
+  }
+
+  void _setHistoryButtons() {
+    var canUndo = false;
+    var canRedo = false;
+
+    if (editor.graph != null) {
+      canUndo = editor.graph.history.canUndo;
+      canRedo = editor.graph.history.canRedo;
+    }
+
+    library.historyButtons = [
+      MenuItem(icon: "undo", command: GraphEditorCommand.undoHistory())
+        ..disabled = !canUndo,
+      MenuItem(icon: "redo", command: GraphEditorCommand.redoHistory())
+        ..disabled = !canRedo,
+    ];
+
+    library.versionButtons = [
+      MenuItem(icon: "git-merge"),
+      MenuItem(icon: "git-branch"),
+      MenuItem(icon: "check")
     ];
   }
 
@@ -298,32 +335,32 @@ class LibraryController with MouseController, KeyboardController {
     // optionsMenu
     library.tabs = [
       MenuItem(
-          icon: "share-square-solid",
-          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
-              tab: LibraryTab.templates))
-        ..selected = library.currentTab == LibraryTab.templates,
-      MenuItem(
           icon: "hat-wizard",
           command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
               tab: LibraryTab.widgets))
         ..selected = library.currentTab == LibraryTab.widgets,
       MenuItem(
-          icon: "file-import",
+          icon: "history",
           command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
-              tab: LibraryTab.imports))
-        ..selected = library.currentTab == LibraryTab.imports,
+              tab: LibraryTab.history))
+        ..selected = library.currentTab == LibraryTab.history,
       MenuItem(
           icon: "clipboard-solid",
           command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
               tab: LibraryTab.clipboard))
         ..selected = library.currentTab == LibraryTab.clipboard,
+      MenuItem(
+          icon: "file-import",
+          command: GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+              tab: LibraryTab.imports))
+        ..selected = library.currentTab == LibraryTab.imports,
       if (tabStack.isNotEmpty)
         MenuItem(
             icon: "window-close-solid",
             command: GraphEditorCommand.popLibraryTabs()),
-      if (library.currentTab == LibraryTab.history)
-        MenuItem(icon: "history")
-          ..selected = library.currentTab == LibraryTab.history,
+      if (library.currentTab == LibraryTab.templates)
+        MenuItem(icon: "share-square-solid")
+          ..selected = library.currentTab == LibraryTab.templates,
       if (library.currentTab == LibraryTab.files)
         MenuItem(
             icon: "folder-open-solid",
@@ -473,7 +510,13 @@ class LibraryController with MouseController, KeyboardController {
         yield* library.clipboardButtons;
         yield* library.clipboard;
         break;
+      case LibraryTab.history:
+        yield* library.historyButtons;
+        yield* library.versionButtons;
+        yield library.historyGroup.expandoButton;
+        yield library.versionGroup.expandoButton;
 
+        break;
       default:
         break;
     }
@@ -817,6 +860,16 @@ class LibraryController with MouseController, KeyboardController {
       }
     }
 
+    if (library.mode == LibraryDisplayMode.tabs &&
+        library.currentTab == LibraryTab.history) {
+      for (var group in [library.historyGroup, library.versionGroup]) {
+        if (group.expandoButton.hitbox.contains(evt.pos)) {
+          group.collapsed = !group.collapsed;
+          changed = true;
+        }
+      }
+    }
+
 /*
     if (expanded != null) {
       for (var group in library.groups) {
@@ -1023,6 +1076,11 @@ class LibraryController with MouseController, KeyboardController {
         break;
       case LibraryTab.clipboard:
         yield* library.clipboardButtons;
+        break;
+
+      case LibraryTab.history:
+        yield* library.historyButtons;
+        yield* library.versionButtons;
         break;
 
       default:
