@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'package:convert/convert.dart';
+import 'package:crypto/crypto.dart' as crypto;
+
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/keyboard_handler.dart';
@@ -59,63 +63,29 @@ class GraphEditorState extends UpdateNotifier {
     }
   }
 
+  String get version {
+    List<String> parts = [
+      ...tabs.values.map((g) => "${g.graph.id}:${g.graph.version}"),
+      ...imports
+    ];
+
+    //print("Chart Parts: ${parts.join("\n")}");
+
+    var content = Utf8Encoder().convert(parts.join(";"));
+    var md5 = crypto.md5;
+    var digest = md5.convert(content);
+    return hex.encode(digest.bytes);
+  }
+
+  String lastVersion = "";
+  bool get isDirty => lastVersion != version;
+
   void dispatch(GraphEditorCommand cmd) {
     controller.dispatch(cmd);
   }
 
   void saveChanges() {
-    //  if (currentTab != null) {
-    //    currentTab.canvas.copy(controller.canvas);
-    //    currentTab.graph.copy(controller.graph);
-    //  }
+    lastVersion = version;
+    controller.updateVersion();
   }
-
-/*
-  void onChangeTab(CanvasTab tab, CanvasState canvas, GraphState graph) {
-    // Save current canvas and graph state
-    if (currentTab != null) {
-      if (tab != null && currentTab.name == tab.name) {
-        return;
-      }
-
-      if (controller.closeBottomSheet != null) {
-        controller.closeBottomSheet(true);
-      }
-
-      // currentTab.canvas.copy(canvas);
-      // currentTab.graph.copy(graph);
-    }
-
-    if (tab == null) {
-      if (tabs.isNotEmpty) {
-        controller.showTab(tabs.keys.first, reload: true);
-      }
-      return;
-    }
-
-    beginUpdate();
-    if (tab != null) {
-      var next = tabs[tab.name];
-      if (next == null) {
-        next = CanvasTab()..copy(tab);
-        tabs[next.name] = next;
-      }
-
-      canvas = next.canvas;
-      graph = next.graph;
-
-      //canvas.copy(next.canvas);
-      //graph.copy(next.graph);
-      controller.hideMenu();
-      currentTab = next;
-    } else {
-      canvas.reset();
-      graph.clear();
-      currentTab = null;
-    }
-
-    endUpdate(true);
-  }
-  */
-
 }

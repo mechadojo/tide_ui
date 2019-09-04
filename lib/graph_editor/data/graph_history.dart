@@ -122,7 +122,27 @@ class GraphHistory {
         'commands': undoCmds,
       };
 
+  String getVersionLabel() {
+    return version.split("-").first;
+  }
+
+  void apply(TideChartCommand cmd) {
+    if (cmd == null) {
+      version = "";
+    } else {
+      if (cmd.version == null || cmd.version.isEmpty) {
+        cmd.version = Uuid().v1().toString();
+      }
+
+      version = cmd.version;
+    }
+  }
+
   void push(TideChartCommand cmd, {bool clear = true, bool locked = false}) {
+    if (cmd.version == null || cmd.version.isEmpty) {
+      cmd.version = Uuid().v1().toString();
+    }
+
     // optimize empty and single command groups
     if (cmd.hasGroup()) {
       if (cmd.group.commands.isEmpty) return;
@@ -132,11 +152,11 @@ class GraphHistory {
     }
     cmd.isLocked = locked;
     undoCmds.add(cmd);
+    apply(cmd);
     if (clear) {
       redoCmds.clear();
     }
   }
-
 
   TideChartCommand undo() {
     var last = undoCmds.removeLast();
@@ -152,5 +172,4 @@ class GraphHistory {
     undoCmds.clear();
     redoCmds.clear();
   }
-  
 }

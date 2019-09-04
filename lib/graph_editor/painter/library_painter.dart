@@ -461,7 +461,14 @@ class LibraryPainter {
             Graph.LibraryInfoSize,
             fill: Graph.LibraryTitleColor);
         cy += Graph.LibraryTitleSize + 20;
+      } else if (library.graphVersion != null &&
+          library.graphVersion.isNotEmpty) {
+        // Graph.font.paint(canvas, library.graphVersion,
+        //     Offset(rect.left + 10, cy), Graph.LibrarySubGroupLabelSize,
+        //     fill: Graph.LibraryItemIconColor, style: "Bold");
+        // cy += Graph.LibrarySubGroupLabelSize + 10;
       }
+
       for (var item in library.history) {
         cy = drawHistoryItem(canvas, item, cy, rect);
       }
@@ -499,6 +506,11 @@ class LibraryPainter {
     cy += Graph.LibraryTitleSize + 10;
 
     if (library.versionGroup.isExpanded) {
+      // Graph.font.paint(canvas, library.chartVersion, Offset(rect.left + 10, cy),
+      //     Graph.LibrarySubGroupLabelSize,
+      //     fill: Graph.LibraryItemIconColor, style: "Bold");
+      // cy += Graph.LibrarySubGroupLabelSize + 10;
+
       if (library.versions.isEmpty) {
         cy += 10;
         Graph.font.paint(canvas, "No file versions.",

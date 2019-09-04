@@ -161,7 +161,10 @@ class LibraryController with MouseController, KeyboardController {
     library.beginUpdate();
 
     library.history.clear();
+    library.graphVersion = "";
     if (editor.graph != null) {
+      library.graphVersion = editor.graph.history.getVersionLabel();
+
       var cmds = editor.graph.history.redoCmds;
       for (int i = 0; i < cmds.length; i++) {
         library.history.add(HistoryItem.command(cmds[i], i, undo: false));
@@ -172,6 +175,9 @@ class LibraryController with MouseController, KeyboardController {
         library.history.add(HistoryItem.command(cmds[i], i, undo: true));
       }
     }
+
+    library.chartVersion = editor.version.substring(0, 8);
+
     _setClipboardButtons();
     _setHistoryButtons();
     library.endUpdate(true);
@@ -647,6 +653,8 @@ class LibraryController with MouseController, KeyboardController {
     }
 
     library.endUpdate(true);
+
+    updateHistory();
   }
 
   void removeLibrary(String name) {

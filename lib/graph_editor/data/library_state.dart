@@ -262,6 +262,8 @@ class LibraryState extends UpdateNotifier {
   LibraryItem opmodeGroup = LibraryItem.group("OpModes", []);
   LibraryItem historyGroup = LibraryItem.group("History", [])..collapsed = true;
   LibraryItem versionGroup = LibraryItem.group("Version", []);
+  String graphVersion = "";
+  String chartVersion = "";
 
   Rect hitbox = Rect.zero;
 

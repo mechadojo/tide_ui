@@ -47,16 +47,18 @@ typedef GraphKeyPress(GraphEvent evt);
 
 class GraphEditorControllerBase {
   final GraphEditorState editor = GraphEditorState();
+  static MenuItem saveButton = MenuItem(
+      name: "save",
+      icon: "solidSave",
+      iconAlt: "save",
+      command: GraphEditorCommand.saveFile());
+
   final CanvasTabsState tabs = CanvasTabsState(menu: [
     MenuItem(
       name: "app-menu",
       icon: "ellipsisV",
     ),
-    MenuItem(
-        name: "save",
-        icon: "solidSave",
-        iconAlt: "save",
-        command: GraphEditorCommand.saveFile()),
+    saveButton,
     MenuItem(
         name: "open",
         icon: "solidFolderOpen",
@@ -135,6 +137,8 @@ class GraphEditorControllerBase {
 
   List<GraphSelection> clipboard = [];
   int pasteIndex = 0;
+  String get version => editor.version;
+  bool get isDirty => editor.isDirty;
 }
 
 class GraphEditorController extends GraphEditorControllerBase
@@ -275,6 +279,7 @@ class GraphEditorController extends GraphEditorControllerBase
       await loadImports();
     }
 
+    editor.saveChanges();
     endUpdateAll();
   }
 
@@ -980,8 +985,14 @@ class GraphEditorController extends GraphEditorControllerBase
     };
   }
 
+  void updateVersion() {
+    library.controller.updateHistory();
+    tabs.controller.updateVersion();
+  }
+
   void updateHistory(GraphState graph) {
     library.controller.updateHistory();
+    tabs.controller.updateVersion();
   }
 
   void updateClipboard() {

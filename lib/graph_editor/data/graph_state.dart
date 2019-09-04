@@ -155,8 +155,6 @@ class GraphState {
   set opModeType(String type) =>
       settings.replace(GraphProperty.asString("opmode_type", type));
 
-  int version = 0;
-
   bool isLogging = false;
   bool isDebugging = false;
   bool isPaused = false;
@@ -169,6 +167,7 @@ class GraphState {
   // allows reconstructing the recursively defined graph objects
   Map<String, GraphNode> referenced = {};
   GraphHistory history = GraphHistory();
+  String get version => history.version;
 
   GraphState();
   GraphState.random() {
@@ -332,6 +331,11 @@ class GraphState {
     links = [...graph.links.map((x) => unpackLink(x))];
 
     history = GraphHistory()..undoCmds = [...graph.history];
+
+    for (var cmd in history.undoCmds) {
+      history.apply(cmd);
+    }
+
     props = GraphPropertySet.unpack(graph.props);
     settings = GraphPropertySet.unpack(graph.settings);
   }
@@ -462,27 +466,6 @@ class GraphState {
             : rnd.nextInt(3)
         ..title = rnd.nextBool() ? "Node ${rnd.nextInt(count) + 1}" : "";
     }
-  }
-
-  bool equalTo(GraphState other) {
-    if (id != other.id) return false;
-    if (name != other.name) return false;
-    if (title != other.title) return false;
-    if (icon != other.icon) return false;
-
-    if (version != other.version) return false;
-    if (nodes.length != other.nodes.length) return false;
-    if (links.length != other.links.length) return false;
-
-    for (int i = 0; i < nodes.length; i++) {
-      if (!nodes[i].equalTo(other.nodes[i])) return false;
-    }
-
-    for (int i = 0; i < links.length; i++) {
-      if (!links[i].equalTo(other.links[i])) return false;
-    }
-
-    return true;
   }
 
   bool allowAddFlag(NodePort port) {

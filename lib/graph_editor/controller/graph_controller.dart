@@ -60,7 +60,11 @@ class GraphController with MouseController, KeyboardController {
   bool updating = false;
 
   void applyCommand(TideChartCommand cmd, {bool reverse = false}) {
-    if (cmd.isLocked && reverse) return;
+    if (cmd.isLocked && reverse) {
+      graph.history.apply(cmd);
+      editor.updateHistory(graph);
+      return;
+    }
 
     graph.beginUpdate();
 
@@ -118,6 +122,8 @@ class GraphController with MouseController, KeyboardController {
         break;
     }
 
+    graph.history.apply(cmd);
+    editor.updateHistory(graph);
     graph.endUpdate(true);
   }
 
@@ -176,9 +182,8 @@ class GraphController with MouseController, KeyboardController {
     }
 
     if (cmd.group.commands.isNotEmpty) {
-      applyCommand(cmd);
       graph.history.push(cmd);
-      editor.updateHistory(graph);
+      applyCommand(cmd);
     }
 
     if (select) {
@@ -202,11 +207,14 @@ class GraphController with MouseController, KeyboardController {
 
     graph.beginUpdate();
     applyCommand(cmd, reverse: true);
-
+    if (graph.history.undoCmds.isNotEmpty) {
+      graph.history.apply(graph.history.undoCmds.last);
+    } else {
+      graph.history.apply(null);
+    }
+    editor.updateHistory(graph);
     clearSelection();
     graph.endUpdate(true);
-
-    editor.updateHistory(graph);
 
     if (index != null && index < (graph.history.undoCmds.length - 1)) {
       undoHistory(index: index);
@@ -218,11 +226,10 @@ class GraphController with MouseController, KeyboardController {
     graph.beginUpdate();
 
     var cmd = graph.history.redo();
-    applyCommand(cmd);
     graph.history.push(cmd, clear: false);
 
+    applyCommand(cmd);
     clearSelection();
-    editor.updateHistory(graph);
     graph.endUpdate(true);
 
     if (index != null && index < graph.history.redoCmds.length) {

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_web/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 
@@ -21,6 +23,16 @@ class CanvasTabsController with MouseController, KeyboardController {
 
   Offset swipeStart = Offset.zero;
   Offset swipeLast = Offset.zero;
+
+  void updateVersion() {
+    var dirty = editor.isDirty;
+
+    if (dirty != GraphEditorControllerBase.saveButton.disabled) return;
+
+    tabs.beginUpdate();
+    GraphEditorControllerBase.saveButton.disabled = !dirty;
+    tabs.endUpdate(true);
+  }
 
   void startSwipe(Offset pt) {
     swipeStart = pt;
@@ -140,8 +152,15 @@ class CanvasTabsController with MouseController, KeyboardController {
 
     tabs.beginUpdate();
     for (var item in tabs.interactive()) {
-      notify = notify || item.checkHovered(pt);
-      hovered = hovered || item.hovered;
+      if (item.disabled) {
+        if (item.hovered) {
+          item.hovered = false;
+          notify = true;
+        }
+      } else {
+        notify = notify || item.checkHovered(pt);
+        hovered = hovered || item.hovered;
+      }
     }
 
     tabs.endUpdate(notify);
