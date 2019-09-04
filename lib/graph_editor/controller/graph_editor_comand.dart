@@ -169,15 +169,15 @@ class GraphEditorCommand {
     };
   }
 
-  GraphEditorCommand.undoHistory() {
+  GraphEditorCommand.undoHistory({int index}) {
     handler = (GraphEditorController editor) {
-      editor.graph.controller.undoHistory();
+      editor.graph.controller.undoHistory(index: index);
     };
   }
 
-  GraphEditorCommand.redoHistory() {
+  GraphEditorCommand.redoHistory({int index}) {
     handler = (GraphEditorController editor) {
-      editor.graph.controller.redoHistory();
+      editor.graph.controller.redoHistory(index: index);
     };
   }
 

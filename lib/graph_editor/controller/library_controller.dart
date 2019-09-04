@@ -515,7 +515,7 @@ class LibraryController with MouseController, KeyboardController {
         yield* library.versionButtons;
         yield library.historyGroup.expandoButton;
         yield library.versionGroup.expandoButton;
-
+        yield* library.history;
         break;
       default:
         break;
@@ -837,6 +837,17 @@ class LibraryController with MouseController, KeyboardController {
       if (item.hitbox.contains(evt.pos)) {
         if (item.graph != null) {
           editor.dispatch(GraphEditorCommand.selectTab(item.graph.name));
+        }
+      }
+    }
+    if (library.isHistory) {
+      for (var item in library.history) {
+        if (item.hitbox.contains(evt.pos)) {
+          if (item.isUndoItem) {
+            editor.dispatch(GraphEditorCommand.undoHistory(index: item.index));
+          } else {
+            editor.dispatch(GraphEditorCommand.redoHistory(index: item.index));
+          }
         }
       }
     }

@@ -189,37 +189,45 @@ class GraphController with MouseController, KeyboardController {
     graph.endUpdate(true);
   }
 
-  void undoHistory() {
+  void undoHistory({int index}) {
     if (!graph.history.canUndo) return;
     if (graph.history.undoCmds.isEmpty) return;
 
     var cmd = graph.history.undo();
     if (cmd.isLocked) {
       editor.updateHistory(graph);
-      undoHistory();
+      undoHistory(index: index);
       return;
     }
 
     graph.beginUpdate();
-
     applyCommand(cmd, reverse: true);
 
     clearSelection();
     graph.endUpdate(true);
 
     editor.updateHistory(graph);
+
+    if (index != null && index < (graph.history.undoCmds.length - 1)) {
+      undoHistory(index: index);
+    }
   }
 
-  void redoHistory() {
+  void redoHistory({int index}) {
     if (!graph.history.canRedo) return;
     graph.beginUpdate();
-    var cmd = graph.history.redo();
 
+    var cmd = graph.history.redo();
     applyCommand(cmd);
     graph.history.push(cmd, clear: false);
+
     clearSelection();
     editor.updateHistory(graph);
     graph.endUpdate(true);
+
+    if (index != null && index < graph.history.redoCmds.length) {
+      redoHistory(index: index);
+    }
   }
 
   void clearSelection() {
@@ -720,9 +728,12 @@ class GraphController with MouseController, KeyboardController {
     graph.beginUpdate();
 
     if (dragging && selection.isNotEmpty) {
-      var cmd = GraphCommand.moveAll(selection);
-      graph.history.push(cmd);
-      editor.updateHistory(graph);
+      if (hasMoved(selection)) {
+        var cmd = GraphCommand.moveAll(selection);
+
+        graph.history.push(cmd);
+        editor.updateHistory(graph);
+      }
     }
 
     moveMode = MouseMoveMode.none;
@@ -733,6 +744,14 @@ class GraphController with MouseController, KeyboardController {
 
     graph.endUpdate(true);
     return true;
+  }
+
+  bool hasMoved(List<GraphNode> nodes) {
+    for (var node in nodes) {
+      if (node.dragStart.dx.round() != node.pos.dx.round()) return true;
+      if (node.dragStart.dy.round() != node.pos.dy.round()) return true;
+    }
+    return false;
   }
 
   @override

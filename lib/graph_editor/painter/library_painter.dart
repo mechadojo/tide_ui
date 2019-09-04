@@ -391,9 +391,11 @@ class LibraryPainter {
 
   double drawHistoryItem(
       Canvas canvas, HistoryItem item, double dy, Rect rect) {
-    var fill = item.isUndoItem
-        ? Graph.LibraryItemIconColor
-        : Graph.LibraryItemIconDisabledColor;
+    var fill = item.hovered
+        ? Graph.LibraryItemIconHoverColor
+        : item.isUndoItem
+            ? Graph.LibraryItemIconColor
+            : Graph.LibraryItemIconDisabledColor;
 
     var cx = rect.left + 14;
     VectorIcons.paint(canvas, item.typeIcon, Offset(cx, dy), 11, fill: fill);
@@ -405,7 +407,8 @@ class LibraryPainter {
     cx -= 4;
     Graph.font.paint(canvas, item.title, Offset(cx, dy), 8,
         fill: fill, alignment: Alignment.centerLeft);
-
+    item.hitbox =
+        Rect.fromLTRB(rect.left + 10, dy - 5, rect.right - 10, dy + 5);
     dy += 18;
 
     return dy;

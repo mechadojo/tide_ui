@@ -95,7 +95,9 @@ class HistoryItem extends LibraryItem {
       cmdType = cmd.node.type;
       cmdNode = GraphCommand.getNode(cmd.node);
       icon = cmdNode.icon;
-      title = cmdNode.title == null ? "Node ${cmdNode.name}" : cmdNode.title;
+      title = cmdNode.title == null || cmdNode.title.isEmpty
+          ? "Node ${cmdNode.name}"
+          : cmdNode.title;
       typeIcon = getTypeIcon(cmdType);
     }
 
@@ -258,7 +260,7 @@ class LibraryState extends UpdateNotifier {
 
   LibraryItem behaviorGroup = LibraryItem.group("Behaviors", []);
   LibraryItem opmodeGroup = LibraryItem.group("OpModes", []);
-  LibraryItem historyGroup = LibraryItem.group("History", []);
+  LibraryItem historyGroup = LibraryItem.group("History", [])..collapsed = true;
   LibraryItem versionGroup = LibraryItem.group("Version", []);
 
   Rect hitbox = Rect.zero;
@@ -274,6 +276,24 @@ class LibraryState extends UpdateNotifier {
       mode == LibraryDisplayMode.detailed ||
       mode == LibraryDisplayMode.search ||
       mode == LibraryDisplayMode.tabs;
+
+  bool get isHistory =>
+      mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.history;
+  bool get isWidgets =>
+      mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.widgets;
+  bool get isClipboard =>
+      mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.clipboard;
+  bool get isImports =>
+      mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.imports;
+  bool get isFiles =>
+      mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.files;
+  bool get isTemplates =>
+      mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.templates;
+  bool get isSearch => mode == LibraryDisplayMode.search;
+  bool get isDetailed => mode == LibraryDisplayMode.detailed;
+  bool get isGrid => mode == LibraryDisplayMode.expanded;
+  bool get isToolbox => mode == LibraryDisplayMode.toolbox;
+  bool get isBehaviors => mode == LibraryDisplayMode.collapsed;
 
   LibraryState() {
     int count = 10;
