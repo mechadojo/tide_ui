@@ -655,6 +655,7 @@ class LibraryController with MouseController, KeyboardController {
     library.endUpdate(true);
 
     updateHistory();
+    editor.updateVersion();
   }
 
   void removeLibrary(String name) {

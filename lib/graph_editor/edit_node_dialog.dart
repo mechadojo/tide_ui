@@ -1432,6 +1432,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
 
   Widget createPortsButtons(BuildContext context) {
     var isDefault = isPortsTab && (selectedPort?.isDefault ?? false);
+    var allowDelete = selectedPort == null
+        ? false
+        : editor.graph.allowDeletePort(selectedPort);
 
     return Column(
       children: <Widget>[
@@ -1452,11 +1455,8 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
                 ? onAddPort
                 : null)),
         createIconButton(context, "trash-alt-solid",
-            onPressed: (selectedPort != null &&
-                        editor.graph.allowDeletePort(selectedPort) ||
-                    editor.graph.isLibrary
-                ? onDeletePort
-                : null)),
+            onPressed:
+                (allowDelete || editor.graph.isLibrary) ? onDeletePort : null),
       ],
     );
   }

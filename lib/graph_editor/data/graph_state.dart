@@ -386,8 +386,8 @@ class GraphState {
   bool allowDeletePort(NodePort port) {
     if (port == null) return false;
 
-    if (port.isRequired) return false;
-    if (port.showFlag) return false;
+    if (port.isRequired ?? true) return false;
+    if (port.showFlag ?? false) return false;
 
     if (links.any((x) => x.outPort.equalTo(port) || x.inPort.equalTo(port))) {
       return false;

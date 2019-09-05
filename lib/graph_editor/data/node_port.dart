@@ -247,8 +247,8 @@ class NodePort extends GraphObject {
     NodePort result = target.getOrAddPort(
         packed.name, NodePort.parsePortType(packed.type),
         autoResize: false);
-    result.isDefault = packed.isDefault;
-    result.isRequired = packed.isRequired;
+    result.isDefault = packed.isDefault ?? false;
+    result.isRequired = packed.isRequired ?? true;
     result.value = packed.value;
     result.trigger = packed.trigger;
     result.event = packed.event;
