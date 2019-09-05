@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:provider/provider.dart';
 import 'package:flutter_web/material.dart';
 import 'package:tide_chart/tide_chart.dart';
@@ -12,6 +14,7 @@ import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_file.dart';
+import 'package:tide_ui/graph_editor/data/graph_input_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
@@ -88,6 +91,7 @@ class GraphEditorControllerBase {
 
   GraphState graph;
   CanvasState canvas;
+
   CanvasController canvasController;
   GraphController graphController;
 
@@ -95,7 +99,7 @@ class GraphEditorControllerBase {
   CanvasStateNotifier canvasNotifier;
 
   final RadialMenuState menu = RadialMenuState();
-
+  final GraphInputState prompt = GraphInputState();
   final LibraryState library = LibraryState();
   final LongPressFocusState longPress = LongPressFocusState();
 
@@ -189,6 +193,69 @@ class GraphEditorController extends GraphEditorControllerBase
 
   void setModalKeyHandler(GraphKeyPress handler) {
     modalKeyHandler = handler;
+  }
+
+  void showCommandPrompt(GraphEvent evt) {
+    showPrompt(
+      hint: "Type ? to get help on commands",
+    ).then((cmd) {
+      print("Got: $cmd");
+    });
+  }
+
+  void cancelPrompt() {
+    if (!prompt.visible) return;
+
+    prompt.beginUpdate();
+    prompt.visible = false;
+    if (prompt.onCancel != null) {
+      prompt.onCancel(prompt.value);
+    }
+    prompt.endUpdate(true);
+  }
+
+  void submitPrompt() {
+    if (!prompt.visible) return;
+
+    prompt.beginUpdate();
+    prompt.visible = false;
+    if (prompt.onSubmit != null) {
+      prompt.onSubmit(prompt.value);
+    }
+    prompt.endUpdate(true);
+  }
+
+  Future<String> showPrompt(
+      {HandleSubmitInput onSubmit,
+      HandleSubmitInput onCancel,
+      HandleValidateInput onValidate,
+      HandleSuggestInput onSuggest,
+      String title,
+      String value,
+      String hint,
+      String caption,
+      String error}) {
+    var result = Completer<String>();
+
+    prompt.beginUpdate();
+    prompt
+      ..title = title ?? ""
+      ..value = value ?? ""
+      ..hint = hint ?? ""
+      ..error = error
+      ..onSubmit = (value) {
+        if (onSubmit != null) onSubmit(value);
+        result.complete(value);
+      }
+      ..onCancel = onCancel
+      ..onValidate = onValidate
+      ..onSuggest = onSuggest
+      ..visible = true;
+
+    prompt.endUpdate(true);
+
+    dispatch(GraphEditorCommand.requestFocus(prompt.focus), afterTicks: 5);
+    return result.future;
   }
 
   void newFile() {
@@ -449,6 +516,7 @@ class GraphEditorController extends GraphEditorControllerBase
       ChangeNotifierProvider(builder: (_) => menu),
       ChangeNotifierProvider(builder: (_) => library),
       ChangeNotifierProvider(builder: (_) => longPress),
+      ChangeNotifierProvider(builder: (_) => prompt),
     ];
   }
 
@@ -521,6 +589,11 @@ class GraphEditorController extends GraphEditorControllerBase
 
     if (key == "o" && evt.ctrlKey) {
       editor.dispatch(GraphEditorCommand.openFile());
+      return true;
+    }
+
+    if (key == "p" && evt.ctrlKey) {
+      showCommandPrompt(evt);
       return true;
     }
 

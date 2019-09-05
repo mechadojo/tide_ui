@@ -4,6 +4,10 @@ import 'package:tide_ui/graph_editor/data/graph_file.dart';
 import 'graph_editor_controller.dart';
 
 mixin GraphEditorVersionControl on GraphEditorControllerBase {
+  bool get allowCommit => editor.version != editor.source;
+  bool get allowMerge => editor.version == editor.source;
+  bool get allowBranch => editor.version == editor.source;
+
   void commitChanges(String message, {String user}) {
     var current = editor.version;
 

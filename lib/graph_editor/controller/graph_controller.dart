@@ -929,6 +929,7 @@ class GraphController with MouseController, KeyboardController {
       dropping = null;
 
       clearSelection();
+      editor.cancelPrompt();
       editor.cancelDrop();
       editor.cancelEditing();
 

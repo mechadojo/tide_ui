@@ -58,6 +58,16 @@ class KeyboardHandler {
       return;
     }
 
+    if (evt.key == "Escape" && editor.prompt.visible) {
+      editor.cancelPrompt();
+      return;
+    }
+
+    if (evt.key == "Enter" && editor.prompt.visible) {
+      editor.submitPrompt();
+      return;
+    }
+
     if (evt.key == "Tab") {
       evt.preventDefault();
     }
@@ -72,7 +82,7 @@ class KeyboardHandler {
       return;
     }
 
-    if (editor.isModalActive) return;
+    if (editor.isModalActive || editor.prompt.visible) return;
 
     if (evt.key == "Space" && evt.ctrlKey && editor.autoComplete != null) {
       editor.autoComplete(evt.shiftKey);

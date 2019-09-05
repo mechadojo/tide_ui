@@ -304,10 +304,12 @@ class LibraryController with MouseController, KeyboardController {
         ..disabled = !canRedo,
     ];
 
+    var canCommit = editor.allowCommit;
+
     library.versionButtons = [
-      MenuItem(icon: "git-merge"),
-      MenuItem(icon: "git-branch"),
-      MenuItem(icon: "check")
+      MenuItem(icon: "git-merge")..disabled = canCommit,
+      MenuItem(icon: "git-branch")..disabled = canCommit,
+      MenuItem(icon: "check")..disabled = !canCommit
     ];
   }
 

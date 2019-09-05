@@ -6,6 +6,7 @@ import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_editor_state.dart';
 import 'package:tide_ui/graph_editor/data/graph.dart';
+import 'package:tide_ui/graph_editor/graph_input.dart';
 import 'package:tide_ui/graph_editor/icons/font_awesome_icons.dart';
 import 'graph_canvas.dart';
 import 'graph_library.dart';
@@ -53,6 +54,7 @@ class _GraphEditorPageState extends State<GraphEditorPage>
                         GraphLibrary(),
                         LongPressFocus(),
                         GraphMenu(),
+                        GraphInput(),
                         Column(
                             mainAxisAlignment: MainAxisAlignment.end,
                             crossAxisAlignment: CrossAxisAlignment.start,

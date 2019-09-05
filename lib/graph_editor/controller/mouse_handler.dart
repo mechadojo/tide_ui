@@ -78,26 +78,30 @@ class MouseHandler {
 
   Iterable<MouseController> getActiveControllers(GraphEvent evt,
       [bool clicking = false]) sync* {
-    if (editor.isModalActive) {
-      if (editor.menu.visible) {
-        yield menu;
-      }
+    if (editor.prompt.visible && editor.prompt.hitbox.contains(evt.pos)) {
+      // no active controller
     } else {
-      var useCanvas =
-          clicking && shouldAutoPan(evt) || canvas.panning || canvas.zooming;
-
-      if (clicking && graph.dropping != null) {
-        useCanvas = false;
-      }
-
-      if (useCanvas) {
-        yield canvas;
+      if (editor.isModalActive) {
+        if (editor.menu.visible) {
+          yield menu;
+        }
       } else {
-        if (shouldUseLibrary(evt)) {
-          yield library;
+        var useCanvas =
+            clicking && shouldAutoPan(evt) || canvas.panning || canvas.zooming;
+
+        if (clicking && graph.dropping != null) {
+          useCanvas = false;
+        }
+
+        if (useCanvas) {
+          yield canvas;
         } else {
-          yield editor;
-          yield graph;
+          if (shouldUseLibrary(evt)) {
+            yield library;
+          } else {
+            yield editor;
+            yield graph;
+          }
         }
       }
     }
@@ -354,6 +358,9 @@ class MouseHandler {
 
   bool allowLongPress(GraphEvent evt) {
     if (library.isHovered(evt.pos)) return false;
+    if (editor.prompt.visible && editor.prompt.hitbox.contains(evt.pos)) {
+      return false;
+    }
 
     if (editor.isModalActive && !editor.menu.visible) return false;
     int release = editor.graph.controller.dragRelease;
