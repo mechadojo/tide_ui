@@ -18,6 +18,10 @@ class GraphEditorState extends UpdateNotifier {
   final Map<String, CanvasTab> tabs = {};
   final List<String> imports = [];
 
+  String branch = "";
+  String source = "";
+  String merge = "";
+
   Iterable<GraphState> get sheets sync* {
     for (var tab in tabs.values) {
       if (tab.graph.isOpMode || tab.graph.isBehavior) {
@@ -65,6 +69,9 @@ class GraphEditorState extends UpdateNotifier {
 
   String get version {
     List<String> parts = [
+      source ?? "",
+      merge ?? "",
+      branch ?? "",
       ...tabs.values.map((g) => "${g.graph.id}:${g.graph.version}"),
       ...imports
     ];

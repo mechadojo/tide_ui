@@ -31,6 +31,7 @@ import 'package:uuid/uuid.dart';
 import 'canvas_controller.dart';
 import 'graph_controller.dart';
 import 'graph_editor_filesource.dart';
+import 'graph_editor_versioncontrol.dart';
 import 'library_controller.dart';
 import 'graph_editor_comand.dart';
 import 'graph_editor_menus.dart';
@@ -137,6 +138,7 @@ class GraphEditorControllerBase {
 
   List<GraphSelection> clipboard = [];
   int pasteIndex = 0;
+
   String get version => editor.version;
   bool get isDirty => editor.isDirty;
 }
@@ -147,6 +149,7 @@ class GraphEditorController extends GraphEditorControllerBase
         KeyboardController,
         GraphEditorMenus,
         GraphEditorFileSource,
+        GraphEditorVersionControl,
         GraphEditorBrowser {
   GraphEditorController() {
     editor.controller = this;
@@ -278,6 +281,10 @@ class GraphEditorController extends GraphEditorControllerBase
 
       await loadImports();
     }
+
+    editor.branch = file.branch ?? "";
+    editor.merge = file.merge ?? "";
+    editor.source = file.source ?? "";
 
     editor.saveChanges();
     endUpdateAll();

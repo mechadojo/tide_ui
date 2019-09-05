@@ -29,10 +29,13 @@ class GraphFile {
     sheets = [...editor.sheets.map((x) => x.pack())];
 
     var libs = editor.library.where((x) => !x.imported).toList();
-
     library = [...libs.map((x) => x.packLibrary())];
-
     imports = [...editor.imports.map(packSource)];
+
+    version = editor.version;
+    branch = editor.branch;
+    source = editor.source;
+    merge = editor.merge;
   }
 
   static TideChartSource packSource(String filename) {
