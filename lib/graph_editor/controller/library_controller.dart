@@ -157,8 +157,76 @@ class LibraryController with MouseController, KeyboardController {
     library.endUpdate(true);
   }
 
+  void updateVersion() {
+    library.beginUpdate();
+    library.versions.clear();
+    library.lastVersions.clear();
+    Map<String, VersionItem> versions = {};
+    Map<String, int> columns = {"master": 0};
+    Map<String, int> colors = {"master": 0};
+    Map<String, VersionItem> terminal = {};
+
+    int row = editor.chartFile.history.length;
+    String branch;
+
+    for (var data in editor.chartFile.history) {
+      branch = data.branch;
+      if (branch == null || branch.isEmpty) branch = "master";
+      if (!colors.containsKey(branch)) colors[branch] = colors.length;
+      if (!columns.containsKey(branch)) {
+        var max = 0;
+        for (var col in columns.values) {
+          if (col > max) max = col;
+        }
+        columns[branch] = max + 1;
+      }
+
+      var next = VersionItem.chart(data)
+        ..color = colors[branch]
+        ..column = columns[branch]
+        ..row = row;
+
+      library.lastVersions[branch] = next;
+      library.versions.add(next);
+      versions[next.version] = next;
+      if (data.merge != null && data.merge.isNotEmpty) {
+        var target = versions[data.merge];
+        if (target != null) {
+          columns.remove(target.branch);
+          library.lastVersions.remove(target.branch);
+        }
+      }
+
+      row--;
+    }
+
+    library.currentVersion.updateFrom(editor.editor);
+    branch = library.currentVersion.branch;
+    if (branch == null || branch.isEmpty) branch = "master";
+    if (!colors.containsKey(branch)) colors[branch] = colors.length;
+    if (!columns.containsKey(branch)) columns[branch] = columns.length;
+    library.currentVersion
+      ..color = colors[branch]
+      ..column = columns[branch]
+      ..row = 0;
+    library.currentBranch = branch;
+
+    library.versions.add(library.currentVersion);
+
+    for (var item in library.versions) {
+      item.source = versions[item.sourceVersion];
+      item.merge = versions[item.mergeVersion];
+    }
+
+    _setHistoryButtons();
+    library.endUpdate(true);
+  }
+
   void updateHistory() {
     library.beginUpdate();
+    if (library.currentVersion != null) {
+      library.currentVersion.version = editor.version;
+    }
 
     library.history.clear();
     library.graphVersion = "";
@@ -305,11 +373,16 @@ class LibraryController with MouseController, KeyboardController {
     ];
 
     var canCommit = editor.allowCommit;
+    var canMerge = editor.allowMerge;
+    var canBranch = editor.allowBranch;
 
     library.versionButtons = [
-      MenuItem(icon: "git-merge")..disabled = canCommit,
-      MenuItem(icon: "git-branch")..disabled = canCommit,
-      MenuItem(icon: "check")..disabled = !canCommit
+      MenuItem(icon: "git-merge", command: GraphEditorCommand.mergeVersion())
+        ..disabled = !canMerge,
+      MenuItem(icon: "git-branch", command: GraphEditorCommand.branchVersion())
+        ..disabled = !canBranch,
+      MenuItem(icon: "check", command: GraphEditorCommand.commitChanges())
+        ..disabled = !canCommit
     ];
   }
 
@@ -965,7 +1038,7 @@ class LibraryController with MouseController, KeyboardController {
     }
 
     for (var item in buttons()) {
-      if (item.hitbox.contains(evt.pos)) {
+      if (!item.disabled && item.hitbox.contains(evt.pos)) {
         editor.dispatch(item.command);
 
         return true;

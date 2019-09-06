@@ -4,15 +4,20 @@ import 'package:tide_ui/graph_editor/data/graph_file.dart';
 import 'graph_editor_controller.dart';
 
 mixin GraphEditorVersionControl on GraphEditorControllerBase {
-  bool get allowCommit => editor.version != editor.source;
-  bool get allowMerge => editor.version == editor.source;
-  bool get allowBranch => editor.version == editor.source;
+  bool get allowCommit => editor.version != editor.origin;
+  bool get allowMerge =>
+      editor.version == editor.origin && (editor.branch ?? "").isNotEmpty;
+
+  bool get allowBranch => editor.version == editor.origin;
 
   void commitChanges(String message, {String user}) {
     var current = editor.version;
 
     // for now don't commit empty changes
-    if (current == editor.source) return;
+    if (current == editor.origin) {
+      print("Commit changes requires there to be a version change.");
+      return;
+    }
 
     var packed = GraphFile.editor(editor);
     packed.commitDesc = message;
@@ -20,16 +25,18 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
     packed.commitDate = DateTime.now().toIso8601String();
 
     chartFile.history.add(packed.toChart());
+    print("Added ${packed.version} to history.");
 
-    editor.source = current;
-
-    for (var item in editor.sheets) {
+    for (var item in [
+      ...editor.sheets,
+      ...editor.library.where((x) => !x.imported)
+    ]) {
       item.history.clear();
     }
 
-    for (var item in editor.library) {
-      item.history.clear();
-    }
+    editor.source = packed.version;
+    editor.merge = "";
+    editor.origin = editor.version;
 
     editor.controller.updateHistory(graph);
     editor.controller.updateVersion();
@@ -39,17 +46,26 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
     var current = editor.version;
 
     // for now don't branch if there are uncommitted changes
-    if (current != editor.source) return;
+    if (current != editor.origin) return;
 
     // a new branch has to be a new name
-    if (branch == null || branch.isEmpty || branch == editor.branch) return;
+    if (branch == null || branch.isEmpty || branch == editor.branch) {
+      print("must have a new branch name");
+      return;
+    }
 
     // a new branch cannot match a currently open branch name
     var branches = getBranches().map((x) => x.branch).toSet();
-    if (branches.contains(branch)) return;
+    print("Open branches: $branches");
 
-    editor.source = current;
+    if (branches.contains(branch)) {
+      print("must have a unique branch name");
+      return;
+    }
+
+    //editor.source = current;
     editor.branch = branch;
+    editor.origin = editor.version;
 
     editor.controller.updateHistory(graph);
     editor.controller.updateVersion();
@@ -66,7 +82,7 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
     var current = editor.version;
 
     // for now don't merge if there are uncommitted changes
-    if (current != editor.source) return;
+    if (current != editor.origin) return;
 
     // find the origin of the current branch
     var versions = getVersions();
@@ -91,26 +107,38 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
       }
     }
 
-    // try to merge changes with the source branch
-    var merged = await tryMergeChart(last, source);
-    if (!merged) return;
+    if (editor.source == last.version) {
+      editor.branch = last.branch;
+      editor.merge = "";
+      editor.origin = editor.version;
+    } else {
+      // try to merge changes with the source branch
+      var merged = await tryMergeChart(last, source);
+      if (!merged) return;
 
-    editor.branch = last.branch;
-    editor.source = last.version;
-    editor.merge = current;
+      editor.branch = last.branch;
+      editor.merge = editor.source;
+      editor.source = last.version;
 
-    // capture the new version number
-    current = editor.version;
+      var packed = GraphFile.editor(editor);
+      packed.commitDesc = "merge #${editor.merge.substring(0, 7)}";
+      packed.commitBy = user;
+      packed.commitDate = DateTime.now().toIso8601String();
 
-    var packed = GraphFile.editor(editor);
-    packed.commitDesc = "Merged from ${editor.merge.substring(0, 8)}";
-    packed.commitBy = user;
-    packed.commitDate = DateTime.now().toIso8601String();
+      chartFile.history.add(packed.toChart());
 
-    chartFile.history.add(packed.toChart());
+      for (var item in [
+        ...editor.sheets,
+        ...editor.library.where((x) => !x.imported)
+      ]) {
+        item.history.clear();
+      }
 
-    editor.source = current;
-    editor.merge = "";
+      editor.source = packed.version;
+      editor.merge = "";
+      editor.origin = editor.version;
+    }
+
     editor.controller.updateHistory(graph);
     editor.controller.updateVersion();
   }
@@ -124,22 +152,23 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
   }
 
   Iterable<TideChartData> getBranches({bool open = true}) sync* {
+    Map<String, TideChartData> versions = {};
     Map<String, TideChartData> last = {};
     List<String> sorted = [];
 
     for (var data in chartFile.history) {
       var b = data.branch ?? "";
-      if (b.isNotEmpty) {
-        last[b] = data;
-      }
+      last[b] = data;
+      versions[data.version] = data;
 
       if (!sorted.contains(b)) {
         sorted.add(b);
       }
 
       if (open) {
-        var m = data.merge ?? "";
-        if (last.containsKey(m)) last.remove(m);
+        var m = versions[data.merge ?? ""];
+
+        if (m != null && last.containsKey(m.branch)) last.remove(m.branch);
       }
     }
 

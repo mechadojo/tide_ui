@@ -327,6 +327,38 @@ class GraphEditorCommand {
 
   // ************************************************************
   //
+  //  Version Control Commands
+  //
+  // ************************************************************
+
+  GraphEditorCommand.commitChanges() {
+    handler = (GraphEditorController editor) {
+      editor
+          .showPrompt(title: "Commit changes", hint: "Enter a commit message")
+          .then((message) {
+        editor.commitChanges(message);
+      });
+    };
+  }
+
+  GraphEditorCommand.mergeVersion() {
+    handler = (GraphEditorController editor) {
+      editor.mergeVersion();
+    };
+  }
+
+  GraphEditorCommand.branchVersion() {
+    handler = (GraphEditorController editor) {
+      editor
+          .showPrompt(title: "Create new branch", hint: "Enter a branch name")
+          .then((branch) {
+        editor.branchVersion(branch);
+      });
+    };
+  }
+
+  // ************************************************************
+  //
   //  Radial Menu Commands
   //
   // ************************************************************

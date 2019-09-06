@@ -22,7 +22,7 @@ class CanvasTabsController with MouseController, KeyboardController {
   Offset swipeStart = Offset.zero;
   Offset swipeLast = Offset.zero;
 
-  void updateVersion() {
+  void updateHistory() {
     var dirty = editor.isDirty;
 
     if (dirty != GraphEditorControllerBase.saveButton.disabled) return;

@@ -7,6 +7,7 @@ import 'package:tide_ui/graph_editor/controller/graph_event.dart';
 import 'package:tide_ui/graph_editor/controller/library_controller.dart';
 import 'package:tide_ui/graph_editor/data/graph_library_state.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
+import 'graph_editor_state.dart';
 import 'graph_history.dart';
 import 'graph_node.dart';
 import 'menu_item.dart';
@@ -111,7 +112,47 @@ class HistoryItem extends LibraryItem {
   }
 }
 
-class VersionItem extends MenuItem {}
+class VersionItem extends MenuItem {
+  String version;
+  String get versionLabel => version.substring(0, 7);
+  String commitBy;
+  String message;
+  String sourceVersion;
+  String mergeVersion;
+
+  VersionItem source;
+  VersionItem merge;
+  DateTime commitDate;
+  String branch;
+
+  int column = 0;
+  int row = 0;
+  int color = 0;
+
+  VersionItem();
+
+  VersionItem.chart(TideChartData chart) {
+    version = chart.version;
+    commitBy = chart.commitBy;
+    message = chart.commitDesc;
+    commitDate = DateTime.parse(chart.commitDate);
+    branch = chart.branch ?? "";
+    sourceVersion = chart.source ?? "";
+    mergeVersion = chart.merge ?? "";
+
+    if (branch.isEmpty) branch = "master";
+  }
+
+  void updateFrom(GraphEditorState editor) {
+    version = editor.version;
+    branch = editor.branch;
+    sourceVersion = editor.source ?? "";
+    mergeVersion = editor.merge ?? "";
+    message = "latest version";
+
+    if (branch.isEmpty) branch = "master";
+  }
+}
 
 class LibraryItem extends MenuItem {
   GraphNode node;
@@ -237,6 +278,9 @@ class LibraryState extends UpdateNotifier {
   List<HistoryItem> history = [];
 
   List<VersionItem> versions = [];
+  VersionItem currentVersion = VersionItem();
+  Map<String, VersionItem> lastVersions = {};
+  String currentBranch;
 
   /// list of files used in Tab-Files mode
   List<MenuItemSet> files = [];

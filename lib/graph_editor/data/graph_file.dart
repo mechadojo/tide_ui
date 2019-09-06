@@ -13,6 +13,7 @@ class GraphFile {
   String branch;
   String source;
   String merge;
+  String origin;
 
   String commitDate;
   String commitBy;
@@ -36,6 +37,7 @@ class GraphFile {
     branch = editor.branch;
     source = editor.source;
     merge = editor.merge;
+    origin = editor.origin;
   }
 
   static TideChartSource packSource(String filename) {
@@ -56,6 +58,7 @@ class GraphFile {
     branch = chart.branch;
     source = chart.source;
     merge = chart.merge;
+    origin = chart.origin;
 
     commitDate = chart.commitDate;
     commitBy = chart.commitBy;
@@ -76,6 +79,7 @@ class GraphFile {
     if (branch != null) result.branch = branch;
     if (source != null) result.source = source;
     if (merge != null) result.merge = merge;
+    if (origin != null) result.origin = origin;
 
     if (commitDate != null) result.commitDate = commitDate;
     if (commitBy != null) result.commitBy = commitBy;

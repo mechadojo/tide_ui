@@ -352,6 +352,7 @@ class GraphEditorController extends GraphEditorControllerBase
     editor.branch = file.branch ?? "";
     editor.merge = file.merge ?? "";
     editor.source = file.source ?? "";
+    editor.origin = file.origin ?? "";
 
     editor.saveChanges();
     endUpdateAll();
@@ -1066,13 +1067,14 @@ class GraphEditorController extends GraphEditorControllerBase
   }
 
   void updateVersion() {
+    library.controller.updateVersion();
     library.controller.updateHistory();
-    tabs.controller.updateVersion();
+    tabs.controller.updateHistory();
   }
 
   void updateHistory(GraphState graph) {
     library.controller.updateHistory();
-    tabs.controller.updateVersion();
+    tabs.controller.updateHistory();
   }
 
   void updateClipboard() {

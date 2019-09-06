@@ -175,6 +175,22 @@ class Graph {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.5;
 
+  static Paint LibraryVersionColor = Paint()..color = Color(0xff888888);
+
+  static Paint LibraryVersionLine = Paint()
+    ..color = LibraryVersionColor.color
+    ..strokeWidth = 4
+    ..strokeCap = StrokeCap.round
+    ..style = PaintingStyle.stroke;
+
+  static Paint LibraryVersionCurrentColor = Paint()..color = Color(0xff333333);
+
+  static Paint LibraryVersionCurrentLine = Paint()
+    ..color = LibraryVersionCurrentColor.color
+    ..strokeWidth = 4
+    ..strokeCap = StrokeCap.round
+    ..style = PaintingStyle.stroke;
+
   //
   // Zoom Slider Styling
   //

@@ -419,6 +419,130 @@ class LibraryPainter {
     return dy;
   }
 
+  void drawMergeLine(Canvas canvas, Offset p1, Offset p2, Paint line) {
+    var path = Path();
+    path.moveTo(p1.dx, p1.dy);
+    var cx = (p1.dx + p2.dx) / 2;
+    var cy = (p1.dy + p2.dy) / 2;
+
+    path.quadraticBezierTo(p1.dx, (cy + p1.dy) / 2, cx, cy);
+    path.quadraticBezierTo(p2.dx, (cy + p2.dy) / 2, p2.dx, p2.dy);
+
+    canvas.drawPath(path, line);
+  }
+
+  void drawBranchLine(Canvas canvas, Offset p1, Offset p2, Paint line) {
+    var path = Path();
+    path.moveTo(p1.dx, p1.dy);
+    var cx = (p1.dx + p2.dx) / 2;
+    var cy = (p1.dy + p2.dy) / 2;
+
+    path.quadraticBezierTo(p1.dx, (cy + p1.dy) / 2, cx, cy);
+    path.quadraticBezierTo(p2.dx, (cy + p2.dy) / 2, p2.dx, p2.dy);
+
+    canvas.drawPath(path, line);
+  }
+
+  double drawLibraryVersions(
+      Canvas canvas, LibraryState library, double dy, Rect rect) {
+    var maxColumn = 0;
+    var maxRow = 0;
+    for (var item in library.versions) {
+      if (item.row > maxRow) maxRow = item.row;
+      if (item.column > maxColumn) maxColumn = item.column;
+    }
+
+    var colsize = 15.0;
+    var rowsize = 35.0;
+    dy += colsize / 2;
+
+    var left = rect.left + 20;
+    var labelLeft = left + colsize * (maxColumn + 1);
+
+    for (var item in library.lastVersions.values) {
+      var cx = left + item.column * colsize;
+      var cy = dy + item.row * rowsize;
+
+      var pen = item.branch == library.currentBranch
+          ? Graph.LibraryVersionCurrentLine
+          : Graph.LibraryVersionLine;
+
+      var p1 = Offset(cx, cy);
+      var p2 = Offset(cx, dy);
+
+      canvas.drawLine(p1, p2, pen);
+    }
+
+    for (var item in library.versions.reversed) {
+      var cx = left + item.column * colsize;
+      var cy = dy + item.row * rowsize;
+
+      var pen = item.branch == library.currentBranch
+          ? Graph.LibraryVersionCurrentLine
+          : Graph.LibraryVersionLine;
+
+      var p1 = Offset(cx, cy);
+
+      if (item.source != null) {
+        var sx = left + item.source.column * colsize;
+        var sy = dy + item.source.row * rowsize;
+
+        if (item.branch != item.source.branch) {
+          drawBranchLine(canvas, Offset(sx, sy), p1, pen);
+        } else {
+          canvas.drawLine(p1, Offset(sx, sy), pen);
+        }
+      }
+
+      if (item.merge != null) {
+        var mx = left + item.merge.column * colsize;
+        var my = dy + item.merge.row * rowsize;
+        var mp = item.merge.branch == library.currentBranch
+            ? Graph.LibraryVersionCurrentLine
+            : Graph.LibraryVersionLine;
+
+        drawMergeLine(canvas, Offset(mx, my), p1, mp);
+      }
+    }
+
+    for (var item in library.versions) {
+      var cx = left + item.column * colsize;
+      var cy = dy + item.row * rowsize;
+
+      var fill = item.branch == library.currentBranch
+          ? Graph.LibraryVersionCurrentColor
+          : Graph.LibraryVersionColor;
+
+      var p1 = Offset(cx, cy);
+
+      if (item == library.currentVersion) {
+        canvas.drawCircle(p1, 6, fill);
+        canvas.drawCircle(p1, 3, Graph.CanvasColor);
+        Graph.font.paint(canvas, "[${item.branch}] ${item.versionLabel}",
+            Offset(labelLeft, cy - 1), 10,
+            width: rect.right - 10 - labelLeft,
+            fill: fill,
+            style: "Bold",
+            alignment: Alignment.centerLeft);
+      } else {
+        canvas.drawCircle(p1, 4, fill);
+        Graph.font.paint(canvas, "[${item.branch}] ${item.versionLabel}",
+            Offset(labelLeft, cy - 8), 7,
+            width: rect.right - 5 - labelLeft,
+            fill: fill,
+            style: "Bold",
+            alignment: Alignment.centerLeft);
+
+        Graph.font.paint(canvas, item.message, Offset(labelLeft, cy + 5), 10,
+            width: rect.right - 10 - labelLeft,
+            fill: fill,
+            alignment: Alignment.centerLeft);
+      }
+    }
+
+    return dy + (maxRow + 1) * rowsize;
+  }
+
   double drawHistoryTab(Canvas canvas, LibraryState library, Rect rect) {
     var cy = rect.top + Graph.LibraryGroupTopPadding + 10;
     var top = cy;
@@ -517,11 +641,10 @@ class LibraryPainter {
             Offset(rect.left + 10, cy), Graph.LibraryInfoSize,
             fill: Graph.LibraryTitleColor);
         cy += Graph.LibraryTitleSize + 20;
+      } else {
+        cy = drawLibraryVersions(canvas, library, cy, rect);
       }
 
-      for (var item in library.versions) {
-        cy = drawVersionItem(canvas, item, cy, rect);
-      }
       cy += 20;
     } else {
       cy += 20;

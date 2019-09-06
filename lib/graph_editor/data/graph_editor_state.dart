@@ -21,6 +21,7 @@ class GraphEditorState extends UpdateNotifier {
   String branch = "";
   String source = "";
   String merge = "";
+  String origin = "";
 
   Iterable<GraphState> get sheets sync* {
     for (var tab in tabs.values) {
@@ -72,16 +73,18 @@ class GraphEditorState extends UpdateNotifier {
       source ?? "",
       merge ?? "",
       branch ?? "",
-      ...tabs.values.map((g) => "${g.graph.id}:${g.graph.version}"),
+      ...sheets.map((g) => "${g.id}:${g.version}"),
+      ...library.where((x) => !x.imported).map((g) => "${g.id}:${g.version}"),
       ...imports
     ];
-
-    //print("Chart Parts: ${parts.join("\n")}");
 
     var content = Utf8Encoder().convert(parts.join(";"));
     var md5 = crypto.md5;
     var digest = md5.convert(content);
-    return hex.encode(digest.bytes);
+    var result = hex.encode(digest.bytes);
+    //print("Version: ${result.substring(0, 7)}\n${parts.join("\n")}");
+
+    return result;
   }
 
   String lastVersion = "";
