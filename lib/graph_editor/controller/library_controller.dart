@@ -164,10 +164,15 @@ class LibraryController with MouseController, KeyboardController {
     Map<String, VersionItem> versions = {};
     Map<String, int> columns = {"master": 0};
     Map<String, int> colors = {"master": 0};
-    Map<String, VersionItem> terminal = {};
 
     int row = editor.chartFile.history.length;
     String branch;
+
+    bool atOrigin = !editor.allowCommit && !editor.isNewBranch;
+
+    if (atOrigin) {
+      row--;
+    }
 
     for (var data in editor.chartFile.history) {
       branch = data.branch;
@@ -205,10 +210,12 @@ class LibraryController with MouseController, KeyboardController {
     if (branch == null || branch.isEmpty) branch = "master";
     if (!colors.containsKey(branch)) colors[branch] = colors.length;
     if (!columns.containsKey(branch)) columns[branch] = columns.length;
+
     library.currentVersion
       ..color = colors[branch]
       ..column = columns[branch]
-      ..row = 0;
+      ..row = atOrigin ? -1 : 0;
+
     library.currentBranch = branch;
 
     library.versions.add(library.currentVersion);
@@ -218,14 +225,25 @@ class LibraryController with MouseController, KeyboardController {
       item.merge = versions[item.mergeVersion];
     }
 
-    _setHistoryButtons();
+    _setVersionButtons();
     library.endUpdate(true);
   }
 
   void updateHistory() {
     library.beginUpdate();
+
     if (library.currentVersion != null) {
       library.currentVersion.version = editor.version;
+
+      if (library.currentVersion.row < 0) {
+        updateVersion();
+      }
+
+      if (editor.graph != null) {
+        if (editor.graph.history.undoCmds.isEmpty) {
+          updateVersion();
+        }
+      }
     }
 
     library.history.clear();
@@ -356,6 +374,21 @@ class LibraryController with MouseController, KeyboardController {
     ];
   }
 
+  void _setVersionButtons() {
+    var canCommit = editor.allowCommit || editor.isNewBranch;
+    var canMerge = editor.allowMerge;
+    var canBranch = editor.allowBranch;
+
+    library.versionButtons = [
+      MenuItem(icon: "git-merge", command: GraphEditorCommand.mergeVersion())
+        ..disabled = !canMerge,
+      MenuItem(icon: "git-branch", command: GraphEditorCommand.branchVersion())
+        ..disabled = !canBranch,
+      MenuItem(icon: "check", command: GraphEditorCommand.commitChanges())
+        ..disabled = !canCommit
+    ];
+  }
+
   void _setHistoryButtons() {
     var canUndo = false;
     var canRedo = false;
@@ -370,19 +403,6 @@ class LibraryController with MouseController, KeyboardController {
         ..disabled = !canUndo,
       MenuItem(icon: "redo", command: GraphEditorCommand.redoHistory())
         ..disabled = !canRedo,
-    ];
-
-    var canCommit = editor.allowCommit;
-    var canMerge = editor.allowMerge;
-    var canBranch = editor.allowBranch;
-
-    library.versionButtons = [
-      MenuItem(icon: "git-merge", command: GraphEditorCommand.mergeVersion())
-        ..disabled = !canMerge,
-      MenuItem(icon: "git-branch", command: GraphEditorCommand.branchVersion())
-        ..disabled = !canBranch,
-      MenuItem(icon: "check", command: GraphEditorCommand.commitChanges())
-        ..disabled = !canCommit
     ];
   }
 

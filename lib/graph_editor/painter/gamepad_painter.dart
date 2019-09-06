@@ -299,10 +299,6 @@ class GamepadPainter extends WidgetNodePainter {
     drawLed(canvas, gamepad);
 
     canvas.restore();
-
-    if (node != null) {
-      drawNode(canvas, node, zoom);
-    }
   }
 
   @override

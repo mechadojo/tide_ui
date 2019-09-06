@@ -4,7 +4,23 @@ import 'package:tide_ui/graph_editor/data/graph_file.dart';
 import 'graph_editor_controller.dart';
 
 mixin GraphEditorVersionControl on GraphEditorControllerBase {
-  bool get allowCommit => editor.version != editor.origin;
+  bool get isNewBranch {
+    if ((editor.source ?? "").isEmpty) return false;
+
+    var branch = editor.branch ?? "";
+    if (branch.isEmpty) return false;
+
+    for (var item in chartFile.history) {
+      if (item.version == editor.source) {
+        var source = item.branch ?? "";
+        return branch != source;
+      }
+    }
+
+    return false;
+  }
+
+  bool get allowCommit => (editor.version != editor.origin);
   bool get allowMerge =>
       editor.version == editor.origin && (editor.branch ?? "").isNotEmpty;
 
@@ -14,7 +30,7 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
     var current = editor.version;
 
     // for now don't commit empty changes
-    if (current == editor.origin) {
+    if (current == editor.origin && !isNewBranch) {
       print("Commit changes requires there to be a version change.");
       return;
     }
@@ -56,7 +72,6 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
 
     // a new branch cannot match a currently open branch name
     var branches = getBranches().map((x) => x.branch).toSet();
-    print("Open branches: $branches");
 
     if (branches.contains(branch)) {
       print("must have a unique branch name");

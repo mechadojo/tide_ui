@@ -460,6 +460,8 @@ class LibraryPainter {
     var labelLeft = left + colsize * (maxColumn + 1);
 
     for (var item in library.lastVersions.values) {
+      if (item.row < 0) continue;
+
       var cx = left + item.column * colsize;
       var cy = dy + item.row * rowsize;
 
@@ -474,6 +476,8 @@ class LibraryPainter {
     }
 
     for (var item in library.versions.reversed) {
+      if (item.row < 0) continue;
+
       var cx = left + item.column * colsize;
       var cy = dy + item.row * rowsize;
 
@@ -506,6 +510,8 @@ class LibraryPainter {
     }
 
     for (var item in library.versions) {
+      if (item.row < 0) continue;
+
       var cx = left + item.column * colsize;
       var cy = dy + item.row * rowsize;
 
@@ -515,9 +521,16 @@ class LibraryPainter {
 
       var p1 = Offset(cx, cy);
 
-      if (item == library.currentVersion) {
+      if (item == library.currentVersion ||
+          library.currentVersion.row < 0 &&
+              item == library.lastVersions[item.branch]) {
         canvas.drawCircle(p1, 6, fill);
         canvas.drawCircle(p1, 3, Graph.CanvasColor);
+      } else {
+        canvas.drawCircle(p1, 4, fill);
+      }
+
+      if (item == library.currentVersion) {
         Graph.font.paint(canvas, "[${item.branch}] ${item.versionLabel}",
             Offset(labelLeft, cy - 1), 10,
             width: rect.right - 10 - labelLeft,
@@ -525,7 +538,6 @@ class LibraryPainter {
             style: "Bold",
             alignment: Alignment.centerLeft);
       } else {
-        canvas.drawCircle(p1, 4, fill);
         Graph.font.paint(canvas, "[${item.branch}] ${item.versionLabel}",
             Offset(labelLeft, cy - 8), 7,
             width: rect.right - 5 - labelLeft,
