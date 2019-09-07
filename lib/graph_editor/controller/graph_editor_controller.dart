@@ -218,10 +218,19 @@ class GraphEditorController extends GraphEditorControllerBase
     if (!prompt.visible) return;
 
     prompt.beginUpdate();
-    prompt.visible = false;
-    if (prompt.onSubmit != null) {
-      prompt.onSubmit(prompt.value);
+    if (prompt.onValidate != null) {
+      prompt.error = prompt.onValidate(prompt.value);
+    } else {
+      prompt.error = null;
     }
+
+    if (prompt.error == null) {
+      prompt.visible = false;
+      if (prompt.onSubmit != null) {
+        prompt.onSubmit(prompt.value);
+      }
+    }
+
     prompt.endUpdate(true);
   }
 
@@ -301,11 +310,11 @@ class GraphEditorController extends GraphEditorControllerBase
     return tab;
   }
 
-  void loadChart() async {
+  void loadChart({TideChartData data}) async {
     beginUpdateAll();
 
     setTitle("Tide Chart Editor - ${chartFile.name}");
-    var file = GraphFile(chartFile.chart);
+    var file = GraphFile(data ?? chartFile.chart);
 
     editor.tabs.clear();
     tabs.clear();
@@ -1034,7 +1043,6 @@ class GraphEditorController extends GraphEditorControllerBase
     controller.closed.then((evt) {
       controller = null;
       if (closeBottomSheet != null) {
-        print("Swipe closing bottom");
         closeBottomSheet(true);
       }
     });

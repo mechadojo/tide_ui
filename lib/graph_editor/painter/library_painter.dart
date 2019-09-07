@@ -414,33 +414,39 @@ class LibraryPainter {
     return dy;
   }
 
-  double drawVersionItem(
-      Canvas canvas, VersionItem item, double dy, Rect rect) {
-    return dy;
-  }
-
-  void drawMergeLine(Canvas canvas, Offset p1, Offset p2, Paint line) {
+  void drawMergeLine(
+      Canvas canvas, Offset p1, Offset p2, Paint line, double curve) {
     var path = Path();
-    path.moveTo(p1.dx, p1.dy);
-    var cx = (p1.dx + p2.dx) / 2;
-    var cy = (p1.dy + p2.dy) / 2;
 
-    path.quadraticBezierTo(p1.dx, (cy + p1.dy) / 2, cx, cy);
+    var cx = (p1.dx + p2.dx) / 2;
+    var cy = p2.dy + curve;
+
+    path.moveTo(p1.dx, p1.dy);
+    var p3 = Offset(p1.dx, cy + curve);
+    path.lineTo(p3.dx, p3.dy);
+
+    path.quadraticBezierTo(p1.dx, (cy + p3.dy) / 2, cx, cy);
     path.quadraticBezierTo(p2.dx, (cy + p2.dy) / 2, p2.dx, p2.dy);
 
     canvas.drawPath(path, line);
+    //canvas.drawCircle(Offset(cx, cy), 4, Graph.redPen);
   }
 
-  void drawBranchLine(Canvas canvas, Offset p1, Offset p2, Paint line) {
+  void drawBranchLine(
+      Canvas canvas, Offset p1, Offset p2, Paint line, double curve) {
     var path = Path();
     path.moveTo(p1.dx, p1.dy);
     var cx = (p1.dx + p2.dx) / 2;
-    var cy = (p1.dy + p2.dy) / 2;
+    var cy = p1.dy - curve;
 
+    var p3 = Offset(p2.dx, cy - curve);
     path.quadraticBezierTo(p1.dx, (cy + p1.dy) / 2, cx, cy);
-    path.quadraticBezierTo(p2.dx, (cy + p2.dy) / 2, p2.dx, p2.dy);
 
+    path.quadraticBezierTo(p2.dx, (cy + p3.dy) / 2, p2.dx, p3.dy);
+    path.lineTo(p2.dx, p2.dy);
     canvas.drawPath(path, line);
+
+    //canvas.drawCircle(Offset(cx, cy), 4, Graph.redPen);
   }
 
   double drawLibraryVersions(
@@ -492,7 +498,7 @@ class LibraryPainter {
         var sy = dy + item.source.row * rowsize;
 
         if (item.branch != item.source.branch) {
-          drawBranchLine(canvas, Offset(sx, sy), p1, pen);
+          drawBranchLine(canvas, Offset(sx, sy), p1, pen, rowsize / 2);
         } else {
           canvas.drawLine(p1, Offset(sx, sy), pen);
         }
@@ -505,7 +511,7 @@ class LibraryPainter {
             ? Graph.LibraryVersionCurrentLine
             : Graph.LibraryVersionLine;
 
-        drawMergeLine(canvas, Offset(mx, my), p1, mp);
+        drawMergeLine(canvas, Offset(mx, my), p1, mp, rowsize / 2);
       }
     }
 
@@ -520,17 +526,26 @@ class LibraryPainter {
           : Graph.LibraryVersionColor;
 
       var p1 = Offset(cx, cy);
+      if (item.hovered) {
+        fill = Graph.LibraryItemIconHoverColor;
 
-      if (item == library.currentVersion ||
-          library.currentVersion.row < 0 &&
-              item == library.lastVersions[item.branch]) {
         canvas.drawCircle(p1, 6, fill);
-        canvas.drawCircle(p1, 3, Graph.CanvasColor);
+        canvas.drawCircle(p1, 3, Graph.LibraryVersionHoverColor);
       } else {
-        canvas.drawCircle(p1, 4, fill);
+        if (item == library.currentVersion ||
+            (library.currentVersion.row < 0 &&
+                item == library.lastVersions[item.branch] &&
+                item.branch == library.currentVersion.branch)) {
+          canvas.drawCircle(p1, 6, fill);
+          canvas.drawCircle(p1, 3, Graph.CanvasColor);
+        } else {
+          canvas.drawCircle(p1, 4, fill);
+        }
       }
 
-      if (item == library.currentVersion) {
+      var topLabel = item == library.currentVersion || item.row < 0;
+
+      if (topLabel) {
         Graph.font.paint(canvas, "[${item.branch}] ${item.versionLabel}",
             Offset(labelLeft, cy - 1), 10,
             width: rect.right - 10 - labelLeft,
@@ -540,15 +555,24 @@ class LibraryPainter {
       } else {
         Graph.font.paint(canvas, "[${item.branch}] ${item.versionLabel}",
             Offset(labelLeft, cy - 8), 7,
-            width: rect.right - 5 - labelLeft,
+            width: rect.right - 15 - labelLeft,
             fill: fill,
             style: "Bold",
             alignment: Alignment.centerLeft);
 
         Graph.font.paint(canvas, item.message, Offset(labelLeft, cy + 5), 10,
-            width: rect.right - 10 - labelLeft,
+            width: rect.right - 15 - labelLeft,
             fill: fill,
             alignment: Alignment.centerLeft);
+      }
+
+      if (item.row < 0) {
+        item.disabled = true;
+        item.hitbox = Rect.zero;
+      } else {
+        item.hitbox =
+            Rect.fromLTRB(rect.left + 10, cy - 14, rect.right - 10, cy + 14);
+        // canvas.drawRect(item.hitbox, Graph.redPen);
       }
     }
 

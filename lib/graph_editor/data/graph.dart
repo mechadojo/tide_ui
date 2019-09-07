@@ -175,6 +175,8 @@ class Graph {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.5;
 
+  static Paint LibraryVersionHoverColor = Paint()..color = Colors.green;
+
   static Paint LibraryVersionColor = Paint()..color = Color(0xff888888);
 
   static Paint LibraryVersionLine = Paint()

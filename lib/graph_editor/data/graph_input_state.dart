@@ -55,29 +55,10 @@ class GraphInputState extends UpdateNotifier {
   }
 
   void handleCloseButton(GraphEditorController editor) {
-    print("Close");
-    beginUpdate();
-    error = null;
-    visible = false;
-    if (onCancel != null) {
-      onCancel(value);
-    }
-    endUpdate(true);
+    editor.cancelPrompt();
   }
 
   void handleSubmitButton(GraphEditorController editor) {
-    print("Submit");
-    beginUpdate();
-    error = null;
-    if (onValidate != null) {
-      error = onValidate(value);
-    }
-
-    if (error != null && onSubmit != null) {
-      visible = false;
-      onSubmit(value);
-    }
-
-    endUpdate(true);
+    editor.submitPrompt();
   }
 }

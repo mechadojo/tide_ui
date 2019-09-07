@@ -113,6 +113,7 @@ class HistoryItem extends LibraryItem {
 }
 
 class VersionItem extends MenuItem {
+  TideChartData chart;
   String version;
   String get versionLabel => version.substring(0, 7);
   String commitBy;
@@ -132,6 +133,7 @@ class VersionItem extends MenuItem {
   VersionItem();
 
   VersionItem.chart(TideChartData chart) {
+    this.chart = chart;
     version = chart.version;
     commitBy = chart.commitBy;
     message = chart.commitDesc;

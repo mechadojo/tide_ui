@@ -16,6 +16,13 @@ class GraphInput extends StatelessWidget {
       fontFamily: "Source Sans Pro",
       fontWeight: FontWeight.bold);
 
+  final TextStyle _defaultErrorStyle = TextStyle(
+      background: Graph.CanvasColor,
+      color: Colors.red,
+      fontSize: 11,
+      fontFamily: "Source Sans Pro",
+      fontWeight: FontWeight.bold);
+
   final Paint _defaultButtonIcon = Graph.blackPaint;
   final Paint _disabledButtonIcon = Paint()
     ..color = Colors.black.withAlpha(127);
@@ -119,6 +126,13 @@ class GraphInput extends StatelessWidget {
                       child: Row(
                     children: <Widget>[
                       Text(input.title, style: _defaultLabelStyle)
+                    ],
+                  )),
+                if (input.error != null && input.error.isNotEmpty)
+                  Container(
+                      child: Row(
+                    children: <Widget>[
+                      Text(input.error, style: _defaultErrorStyle)
                     ],
                   ))
               ],

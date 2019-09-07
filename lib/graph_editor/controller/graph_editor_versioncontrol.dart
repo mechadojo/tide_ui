@@ -22,9 +22,47 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
 
   bool get allowCommit => (editor.version != editor.origin);
   bool get allowMerge =>
-      editor.version == editor.origin && (editor.branch ?? "").isNotEmpty;
+      editor.version == editor.origin &&
+      (editor.branch ?? "").isNotEmpty &&
+      !editor.branch.startsWith("~");
 
-  bool get allowBranch => editor.version == editor.origin;
+  bool get allowBranch =>
+      editor.version == editor.origin && !editor.branch.startsWith("~");
+
+  Future<bool> changeVersion(String version) async {
+    for (var item in chartFile.history) {
+      if (item.version == version) {
+        await editor.controller.loadChart(data: item);
+
+        clearHistory(update: false);
+
+        editor.source = item.version;
+        editor.merge = "";
+        editor.origin = editor.version;
+
+        editor.controller.updateHistory(graph);
+        editor.controller.updateVersion();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String sanitizeBranch(String branch) {
+    branch = branch ?? "";
+    branch = branch.trim().toLowerCase();
+    if (branch.isEmpty) branch == "master";
+    return branch;
+  }
+
+  bool validateBranch(String branch, {bool open = true}) {
+    branch = sanitizeBranch(branch);
+
+    if (branch == "master") return false;
+    if (branch == editor.branch) return false;
+
+    return !getBranches(open: open).any((x) => x.branch == branch);
+  }
 
   void commitChanges(String message, {String user}) {
     var current = editor.version;
@@ -43,12 +81,7 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
     chartFile.history.add(packed.toChart());
     print("Added ${packed.version} to history.");
 
-    for (var item in [
-      ...editor.sheets,
-      ...editor.library.where((x) => !x.imported)
-    ]) {
-      item.history.clear();
-    }
+    clearHistory(update: false);
 
     editor.source = packed.version;
     editor.merge = "";
@@ -58,28 +91,36 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
     editor.controller.updateVersion();
   }
 
+  void clearHistory({bool update = true}) {
+    for (var item in [
+      ...editor.sheets,
+      ...editor.library.where((x) => !x.imported)
+    ]) {
+      item.history.clear();
+    }
+
+    if (update) {
+      editor.controller.updateHistory(graph);
+      editor.controller.updateVersion();
+    }
+  }
+
   void branchVersion(String branch) {
     var current = editor.version;
 
     // for now don't branch if there are uncommitted changes
     if (current != editor.origin) return;
+    branch = sanitizeBranch(branch);
 
     // a new branch has to be a new name
-    if (branch == null || branch.isEmpty || branch == editor.branch) {
-      print("must have a new branch name");
-      return;
-    }
-
-    // a new branch cannot match a currently open branch name
-    var branches = getBranches().map((x) => x.branch).toSet();
-
-    if (branches.contains(branch)) {
+    if (!validateBranch(branch)) {
       print("must have a unique branch name");
       return;
     }
 
-    //editor.source = current;
+    // branching does not clear history
     editor.branch = branch;
+    editor.merge = "";
     editor.origin = editor.version;
 
     editor.controller.updateHistory(graph);
@@ -142,12 +183,7 @@ mixin GraphEditorVersionControl on GraphEditorControllerBase {
 
       chartFile.history.add(packed.toChart());
 
-      for (var item in [
-        ...editor.sheets,
-        ...editor.library.where((x) => !x.imported)
-      ]) {
-        item.history.clear();
-      }
+      clearHistory(update: false);
 
       editor.source = packed.version;
       editor.merge = "";

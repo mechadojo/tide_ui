@@ -165,14 +165,10 @@ class LibraryController with MouseController, KeyboardController {
     Map<String, int> columns = {"master": 0};
     Map<String, int> colors = {"master": 0};
 
-    int row = editor.chartFile.history.length;
+    int row = editor.chartFile.history.length - 1;
     String branch;
 
     bool atOrigin = !editor.allowCommit && !editor.isNewBranch;
-
-    if (atOrigin) {
-      row--;
-    }
 
     for (var data in editor.chartFile.history) {
       branch = data.branch;
@@ -214,15 +210,17 @@ class LibraryController with MouseController, KeyboardController {
     library.currentVersion
       ..color = colors[branch]
       ..column = columns[branch]
-      ..row = atOrigin ? -1 : 0;
+      ..row = -1;
 
     library.currentBranch = branch;
 
     library.versions.add(library.currentVersion);
+    bool shiftDown = library.currentVersion.row < 0 && !atOrigin;
 
     for (var item in library.versions) {
       item.source = versions[item.sourceVersion];
       item.merge = versions[item.mergeVersion];
+      if (shiftDown) item.row++;
     }
 
     _setVersionButtons();
@@ -266,6 +264,7 @@ class LibraryController with MouseController, KeyboardController {
 
     _setClipboardButtons();
     _setHistoryButtons();
+    _setVersionButtons();
     library.endUpdate(true);
   }
 
@@ -617,6 +616,7 @@ class LibraryController with MouseController, KeyboardController {
         yield library.historyGroup.expandoButton;
         yield library.versionGroup.expandoButton;
         yield* library.history;
+        yield* library.versions;
         break;
       default:
         break;
@@ -938,19 +938,34 @@ class LibraryController with MouseController, KeyboardController {
     evt = toScrollCoord(evt);
 
     for (var item in clickable()) {
-      if (item.hitbox.contains(evt.pos)) {
+      if (!item.disabled && item.hitbox.contains(evt.pos)) {
         if (item.graph != null) {
           editor.dispatch(GraphEditorCommand.selectTab(item.graph.name));
         }
       }
     }
+
     if (library.isHistory) {
-      for (var item in library.history) {
-        if (item.hitbox.contains(evt.pos)) {
-          if (item.isUndoItem) {
-            editor.dispatch(GraphEditorCommand.undoHistory(index: item.index));
-          } else {
-            editor.dispatch(GraphEditorCommand.redoHistory(index: item.index));
+      if (library.historyGroup.isExpanded) {
+        for (var item in library.history) {
+          if (!item.disabled && item.hitbox.contains(evt.pos)) {
+            if (item.isUndoItem) {
+              editor
+                  .dispatch(GraphEditorCommand.undoHistory(index: item.index));
+            } else {
+              editor
+                  .dispatch(GraphEditorCommand.redoHistory(index: item.index));
+            }
+          }
+        }
+      }
+
+      if (library.versionGroup.isExpanded) {
+        for (var item in library.versions) {
+          if (!item.disabled &&
+              item.chart != null &&
+              item.hitbox.contains(evt.pos)) {
+            editor.dispatch(GraphEditorCommand.changeVersion(item.version));
           }
         }
       }

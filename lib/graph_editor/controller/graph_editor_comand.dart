@@ -333,11 +333,92 @@ class GraphEditorCommand {
 
   GraphEditorCommand.commitChanges() {
     handler = (GraphEditorController editor) {
+      if (editor.editor.branch.startsWith("~")) {
+        editor
+            .showPrompt(
+                title: "Change branch name",
+                hint: "Enter a branch name",
+                onValidate: (String branch) {
+                  branch = branch.trim();
+                  if (branch.isEmpty) {
+                    return "Branch name cannot be empty.";
+                  }
+                  if (branch.startsWith("~")) {
+                    return "Only temporary branches can start with ~";
+                  }
+
+                  return editor.validateBranch(branch)
+                      ? null
+                      : "A branch named '$branch' already exists";
+                })
+            .then((branch) {
+          editor.editor.branch = branch;
+          editor.updateVersion();
+          editor.dispatch(GraphEditorCommand.commitChanges());
+        });
+        return;
+      }
+
+      editor
+          .showPrompt(
+              title: "Commit changes",
+              hint: "Enter a commit message",
+              onValidate: (String message) {
+                return (message.trim().isEmpty)
+                    ? "Commit message cannot be empty."
+                    : null;
+              })
+          .then((message) {
+        editor.commitChanges(message);
+      });
+    };
+  }
+
+  GraphEditorCommand.branchAndChangeVersion(String version, {String branch}) {
+    handler = (GraphEditorController editor) {
+      var open = editor.getBranches().map((x) => x.version).toSet();
+      var terminal = open.contains(version);
+
+      if (terminal) {
+        editor.changeVersion(version);
+      } else {
+        editor.dispatch(
+            GraphEditorCommand.branchVersion(version: version, branch: branch),
+            afterTicks: 5);
+      }
+    };
+  }
+
+  GraphEditorCommand.commitAndChangeVersion(String version) {
+    handler = (GraphEditorController editor) {
       editor
           .showPrompt(title: "Commit changes", hint: "Enter a commit message")
           .then((message) {
         editor.commitChanges(message);
+        editor.dispatch(GraphEditorCommand.branchAndChangeVersion(version,
+            branch: "~${version.substring(0, 7)}"));
       });
+    };
+  }
+
+  GraphEditorCommand.changeVersion(String version) {
+    handler = (GraphEditorController editor) {
+      if (editor.allowCommit) {
+        editor
+            .showConfirmDialog("Change version",
+                "Existing changes must be commited before changing versions.")
+            .then((bool result) {
+          if (result) {
+            editor.dispatch(GraphEditorCommand.commitAndChangeVersion(version),
+                afterTicks: 5);
+          }
+        });
+      } else {
+        editor.dispatch(
+            GraphEditorCommand.branchAndChangeVersion(version,
+                branch: "~${version.substring(0, 7)}"),
+            afterTicks: 5);
+      }
     };
   }
 
@@ -347,12 +428,39 @@ class GraphEditorCommand {
     };
   }
 
-  GraphEditorCommand.branchVersion() {
+  GraphEditorCommand.branchVersion({String version, String branch}) {
     handler = (GraphEditorController editor) {
+      if (branch != null) {
+        if (version != null) {
+          editor.changeVersion(version).then((bool result) {
+            editor.branchVersion(branch);
+          });
+        } else {
+          editor.branchVersion(branch);
+        }
+        return;
+      }
+
       editor
-          .showPrompt(title: "Create new branch", hint: "Enter a branch name")
+          .showPrompt(
+              title: "Open old version in a new branch",
+              hint: "Enter a branch name",
+              onValidate: (String branch) {
+                if (branch.trim().isEmpty) {
+                  return "Branch name cannot be empty.";
+                }
+                return editor.validateBranch(branch)
+                    ? null
+                    : "A branch named '$branch' already exists";
+              })
           .then((branch) {
-        editor.branchVersion(branch);
+        if (version != null) {
+          editor.changeVersion(version).then((bool result) {
+            editor.branchVersion(branch);
+          });
+        } else {
+          editor.branchVersion(branch);
+        }
       });
     };
   }
