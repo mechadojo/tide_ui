@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter_web/material.dart';
+import 'package:flutter/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
@@ -17,7 +17,7 @@ import 'painter/vector_icon_painter.dart';
 class EditNodeDialog extends StatefulWidget {
   static double EditNodeDialogHeight = 225;
   static double PortFormWidth = 435;
-  static double NodeFormWidth = 235;
+  static double NodeFormWidth = 250;
   static double CloseButtonWidth = 25;
 
   final GraphNode node;
@@ -1214,9 +1214,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   Iterable<Widget> createPropTypeRow(BuildContext context) sync* {
-    yield createLabeledRow("Type", width: 185, children: [
+    yield createLabeledRow("Type", width: 200, children: [
       Container(
-        width: 90,
+        width: 95,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
@@ -1230,7 +1230,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         ),
       ),
       Container(
-        width: 95,
+        width: 105,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
@@ -1245,9 +1245,9 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       ),
     ]);
 
-    yield createLabeledRow("", width: 185, children: [
+    yield createLabeledRow("", width: 200, children: [
       Container(
-        width: 90,
+        width: 95,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
@@ -1261,7 +1261,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
         ),
       ),
       Container(
-        width: 95,
+        width: 105,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
@@ -1802,29 +1802,36 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
   }
 
   Widget createDebugRow() {
-    return createLabeledRow("Debug", children: [
-      Switch(
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        value: node.isDebugging,
-        onChanged: (value) {
-          setState(() {
-            node.isDebugging = value;
-            update();
-          });
-        },
+    return Container(
+      padding: EdgeInsets.only(top: 0, left: 10, right: 0, bottom: 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Text("Debug:", style: _defaultLabelStyle),
+          Switch(
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            value: node.isDebugging,
+            onChanged: (value) {
+              setState(() {
+                node.isDebugging = value;
+                update();
+              });
+            },
+          ),
+          Text("Log:", style: _defaultLabelStyle),
+          Switch(
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            value: node.isLogging,
+            onChanged: (value) {
+              setState(() {
+                node.isLogging = value;
+                update();
+              });
+            },
+          )
+        ],
       ),
-      Text("Log:", style: _defaultLabelStyle),
-      Switch(
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        value: node.isLogging,
-        onChanged: (value) {
-          setState(() {
-            node.isLogging = value;
-            update();
-          });
-        },
-      )
-    ]);
+    );
   }
 
   Widget createDelayRow() {
@@ -1895,7 +1902,7 @@ class _EditNodeDialogState extends State<EditNodeDialog> {
       child: Container(
         height: height - 1,
         width: EditNodeDialog.NodeFormWidth,
-        padding: EdgeInsets.only(top: 5, left: 10, right: 10),
+        padding: EdgeInsets.only(top: 5, left: 10, right: 0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[

@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:js' as js;
-import 'dart:html';
+import 'dart:html' hide VoidCallback;
 
-import 'package:flutter_web/material.dart';
-import 'package:flutter_web_ui/ui.dart';
+import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:tide_ui/graph_editor/controller/graph_event.dart';
 
 import 'package:tide_ui/graph_editor/fonts/RobotoMono.dart';

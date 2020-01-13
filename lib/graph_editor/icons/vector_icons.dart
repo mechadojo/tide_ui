@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:flutter_web/material.dart';
+import 'package:flutter/material.dart';
 
 import 'vector_icon_definitions.dart';
 import '../utility/parse_path.dart' show parseSvgPathData;

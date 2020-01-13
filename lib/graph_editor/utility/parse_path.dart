@@ -1,4 +1,4 @@
-import 'package:flutter_web/material.dart' show Path;
+import 'package:flutter/material.dart' show Path;
 
 import 'package:path_parsing/path_parsing.dart';
 

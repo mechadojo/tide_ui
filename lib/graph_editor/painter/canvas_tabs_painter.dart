@@ -1,5 +1,5 @@
-import 'package:flutter_web/material.dart';
-import 'package:flutter_web_ui/ui.dart' as ui show Gradient;
+import 'package:flutter/material.dart';
+import 'dart:ui' as ui show Gradient;
 import 'package:tide_ui/graph_editor/data/canvas_tab.dart';
 import 'package:tide_ui/graph_editor/data/canvas_tabs_state.dart';
 

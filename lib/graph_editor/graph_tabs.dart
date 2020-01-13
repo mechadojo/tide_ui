@@ -1,4 +1,4 @@
-import 'package:flutter_web/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'data/canvas_tabs_state.dart';
 import 'painter/canvas_tabs_painter.dart';

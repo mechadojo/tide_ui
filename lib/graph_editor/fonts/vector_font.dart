@@ -1,4 +1,4 @@
-import 'package:flutter_web/material.dart';
+import 'package:flutter/material.dart';
 import '../utility/parse_path.dart' show parseSvgPathData;
 
 abstract class VectorFontGlyphProvider {

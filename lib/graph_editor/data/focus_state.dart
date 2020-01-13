@@ -1,4 +1,4 @@
-import 'package:flutter_web_ui/ui.dart';
+import 'dart:ui';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/controller/graph_event.dart';
