@@ -1,4 +1,4 @@
-import 'package:flutter_web/material.dart' show Path, Rect;
+import 'package:flutter/material.dart' show Path, Rect;
 
 Path createDashedPath(Rect rect, double dash) {
   var perim = rect.width * 2 + rect.height * 2;

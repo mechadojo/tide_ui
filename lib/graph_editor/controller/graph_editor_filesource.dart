@@ -1,4 +1,7 @@
-import 'package:flutter_web/material.dart';
+// indexed_db is failing static analysis
+// ignore_for_file: undefined_class, undefined_identifier, uri_does_not_exist
+
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:convert';

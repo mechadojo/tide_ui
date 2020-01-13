@@ -1,4 +1,4 @@
-import 'package:flutter_web/material.dart';
+import 'package:flutter/material.dart';
 import 'package:tide_chart/tide_chart.dart';
 import 'package:tide_ui/graph_editor/data/graph_property_set.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';

@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:flutter_web/material.dart';
-import 'package:flutter_web/rendering.dart';
-import 'package:flutter_web_ui/ui.dart' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'dart:ui' as ui;
 import 'package:tide_chart/tide_chart.dart';
 
 import 'package:tide_ui/graph_editor/controller/graph_controller.dart';

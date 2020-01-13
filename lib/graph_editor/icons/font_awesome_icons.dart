@@ -1,6 +1,6 @@
 // Converted to support flutter web from https://github.com/brianegan/font_awesome_flutter
 // Added string and array access to icons
-import 'package:flutter_web/widgets.dart';
+import 'package:flutter/widgets.dart';
 
 class IconDataBrands extends IconData {
   const IconDataBrands(int codePoint)

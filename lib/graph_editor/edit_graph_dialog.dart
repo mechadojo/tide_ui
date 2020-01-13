@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter_web/material.dart';
+import 'package:flutter/material.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_comand.dart';
 import 'package:tide_ui/graph_editor/controller/graph_editor_controller.dart';
 import 'package:tide_ui/graph_editor/icons/vector_icons.dart';
@@ -16,7 +16,7 @@ import 'painter/vector_icon_painter.dart';
 class EditGraphDialog extends StatefulWidget {
   static double EditNodeDialogHeight = 225;
   static double PropsFormWidth = 435;
-  static double GraphFormWidth = 285;
+  static double GraphFormWidth = 300;
   static double CloseButtonWidth = 25;
 
   final GraphEditorController editor;
@@ -703,9 +703,9 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
   }
 
   Widget createGraphTypeRow(BuildContext context, {double width = 150}) {
-    return createLabeledRow("Type", width: width, children: [
+    return createLabeledRow("Type", width: 205, children: [
       Container(
-        width: 100,
+        width: 105,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
@@ -769,9 +769,9 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
   }
 
   Iterable<Widget> createPropTypeRow(BuildContext context) sync* {
-    yield createLabeledRow("Type", width: 185, children: [
+    yield createLabeledRow("Type", width: 200, children: [
       Container(
-        width: 90,
+        width: 95,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
@@ -785,7 +785,7 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
         ),
       ),
       Container(
-        width: 95,
+        width: 105,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
@@ -800,9 +800,9 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
       ),
     ]);
 
-    yield createLabeledRow("", width: 185, children: [
+    yield createLabeledRow("", width: 200, children: [
       Container(
-        width: 90,
+        width: 95,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
@@ -816,7 +816,7 @@ class _EditGraphDialogState extends State<EditGraphDialog> {
         ),
       ),
       Container(
-        width: 95,
+        width: 105,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[

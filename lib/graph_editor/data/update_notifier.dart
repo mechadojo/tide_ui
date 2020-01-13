@@ -1,4 +1,4 @@
-import 'package:flutter_web/widgets.dart';
+import 'package:flutter/widgets.dart';
 
 class UpdateNotifier with ChangeNotifier {
   int updating = 0;

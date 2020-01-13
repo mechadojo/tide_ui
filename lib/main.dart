@@ -1,8 +1,8 @@
-import 'package:flutter_web/material.dart';
+import 'package:flutter/material.dart';
 import 'package:tide_ui/graph_editor/icons/font_awesome_icons.dart';
 import 'graph_editor/graph_editor.dart';
 
-const String AppVersion = "0.18";
+const String AppVersion = "0.20";
 const String ReleaseVersion = "0.$AppVersion";
 
 void main() => runApp(TheApp());
