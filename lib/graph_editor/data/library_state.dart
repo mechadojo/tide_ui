@@ -290,10 +290,14 @@ class LibraryState extends UpdateNotifier {
   /// list of files used in Tab-Imports mode
   List<MenuItemSet> imports = [];
 
+  /// list of files used in Tab-Build mode
+  List<MenuItemSet> java = [];
+
   List<MenuItem> importButtons = [];
   List<MenuItem> clipboardButtons = [];
   List<MenuItem> historyButtons = [];
   List<MenuItem> versionButtons = [];
+  List<MenuItem> buildButtons = [];
 
   /// list of widgets used in Tab-Widgets mode
   List<LibraryItem> widgets = [];
@@ -335,6 +339,8 @@ class LibraryState extends UpdateNotifier {
       mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.imports;
   bool get isFiles =>
       mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.files;
+  bool get isBuild =>
+      mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.build;
   bool get isTemplates =>
       mode == LibraryDisplayMode.tabs && currentTab == LibraryTab.templates;
   bool get isSearch => mode == LibraryDisplayMode.search;
@@ -361,6 +367,8 @@ class LibraryState extends UpdateNotifier {
       case LibraryTab.files:
         return true;
       case LibraryTab.templates:
+        return true;
+      case LibraryTab.build:
         return true;
       default:
         return false;

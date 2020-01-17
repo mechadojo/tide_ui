@@ -1,2 +1,2 @@
 echo "Copy to tidechart website ..."
-xcopy .\build ..\tidecharts\docs /e /i /y /s
+xcopy .\build\web ..\tidecharts\docs /e /i /y /s

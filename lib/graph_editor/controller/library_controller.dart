@@ -63,6 +63,9 @@ enum LibraryTab {
 
   /// displays the version history for this graph
   history,
+
+  /// displays the OnBot Java build interface
+  build,
 }
 
 typedef SelectFileHandler(String filename);
@@ -265,6 +268,7 @@ class LibraryController with MouseController, KeyboardController {
     _setClipboardButtons();
     _setHistoryButtons();
     _setVersionButtons();
+    _setBuildButtons();
     library.endUpdate(true);
   }
 
@@ -388,6 +392,18 @@ class LibraryController with MouseController, KeyboardController {
     ];
   }
 
+  void _setBuildButtons() {
+    library.buildButtons = [
+      MenuItem(
+          icon: "mobile-alt", command: GraphEditorCommand.print("Connect")),
+      MenuItem(
+          icon: "download",
+          command: GraphEditorCommand.print("Download Files")),
+      MenuItem(icon: "bug", command: GraphEditorCommand.print("Build Debug")),
+      MenuItem(icon: "code", command: GraphEditorCommand.print("Build")),
+    ];
+  }
+
   void _setHistoryButtons() {
     var canUndo = false;
     var canRedo = false;
@@ -466,6 +482,10 @@ class LibraryController with MouseController, KeyboardController {
             icon: "folder-open-solid",
             command: GraphEditorCommand.print("View Files"))
           ..selected = library.currentTab == LibraryTab.files,
+      if (library.currentTab == LibraryTab.build)
+        MenuItem(
+            icon: "code", command: GraphEditorCommand.print("Build OnBot Java"))
+          ..selected = library.currentTab == LibraryTab.build,
     ];
 
     switch (mode) {
@@ -609,6 +629,9 @@ class LibraryController with MouseController, KeyboardController {
       case LibraryTab.clipboard:
         yield* library.clipboardButtons;
         yield* library.clipboard;
+        break;
+      case LibraryTab.build:
+        yield* library.buildButtons;
         break;
       case LibraryTab.history:
         yield* library.historyButtons;
@@ -1212,7 +1235,9 @@ class LibraryController with MouseController, KeyboardController {
         yield* library.historyButtons;
         yield* library.versionButtons;
         break;
-
+      case LibraryTab.build:
+        yield* library.buildButtons;
+        break;
       default:
         break;
     }

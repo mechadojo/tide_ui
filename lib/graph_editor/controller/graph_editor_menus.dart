@@ -632,11 +632,16 @@ mixin GraphEditorMenus on GraphEditorControllerBase {
           title: "Undo",
           command:
               graph.history.canUndo ? GraphEditorCommand.undoHistory() : null),
+
+      // MenuItem(
+      //   icon: "cog",
+      //   title: "Settings",
+      //   command: GraphEditorCommand.print("Open Settings"),
+      // ),
       MenuItem(
-        icon: "cog",
-        title: "Settings",
-        command: GraphEditorCommand.print("Open Settings"),
-      ),
+          icon: "mobile-alt",
+          title: "Connect",
+          command: GraphEditorCommand.connect()),
     ]);
   }
 

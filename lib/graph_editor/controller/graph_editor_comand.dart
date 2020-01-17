@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:js' as js;
+
 import 'package:tide_ui/graph_editor/data/graph_link.dart';
 import 'package:tide_ui/graph_editor/data/graph_node.dart';
 import 'package:tide_ui/graph_editor/data/graph_state.dart';
@@ -322,6 +325,29 @@ class GraphEditorCommand {
       }
 
       editor.addNode(node, links: links, drag: drag, offset: offset);
+    };
+  }
+
+  // ************************************************************
+  //
+  //  Robot Connection Commands
+  //
+  // ************************************************************
+
+  GraphEditorCommand.connect() {
+    handler = (GraphEditorController editor) {
+      editor.dispatch(GraphEditorCommand.showLibrary(LibraryDisplayMode.tabs,
+          tab: LibraryTab.build));
+
+      /*
+      editor.showPrompt(
+          title: "Read Phone",
+          onValidate: (String url) {
+            http.read('http://127.0.0.1:4040/java/${url}').then((var result) {
+              print(result);
+            });
+          });
+          */
     };
   }
 

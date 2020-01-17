@@ -34,6 +34,7 @@ import 'package:uuid/uuid.dart';
 
 import 'canvas_controller.dart';
 import 'graph_controller.dart';
+import 'graph_editor_build.dart';
 import 'graph_editor_filesource.dart';
 import 'graph_editor_versioncontrol.dart';
 import 'library_controller.dart';
@@ -155,7 +156,8 @@ class GraphEditorController extends GraphEditorControllerBase
         GraphEditorMenus,
         GraphEditorFileSource,
         GraphEditorVersionControl,
-        GraphEditorBrowser {
+        GraphEditorBrowser,
+        GraphEditorBuild {
   GraphEditorController() {
     editor.controller = this;
 

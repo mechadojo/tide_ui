@@ -110,6 +110,9 @@ class LibraryPainter {
           case LibraryTab.files:
             height = drawFilesTab(canvas, library, rect);
             break;
+          case LibraryTab.build:
+            height = drawBuildTab(canvas, library, rect);
+            break;
           case LibraryTab.widgets:
             height = drawWidgetsTab(canvas, library, rect);
             break;
@@ -686,6 +689,30 @@ class LibraryPainter {
       cy += 20;
     }
 
+    return cy - top;
+  }
+
+  double drawBuildTab(Canvas canvas, LibraryState library, Rect rect) {
+    var cy = rect.top + Graph.LibraryGroupTopPadding - 5;
+    var top = cy;
+
+    var cx = rect.left + 15 + Graph.LibraryTopIconSize / 2;
+    cy += Graph.LibraryTopIconSize / 2;
+
+    for (var btn in library.buildButtons) {
+      drawTabsButton(canvas, btn, cx, cy, size: Graph.LibraryTopIconSize);
+      cx += Graph.LibraryTopIconSpacing;
+    }
+
+    cy += Graph.LibraryTopIconSize / 2 + 25;
+    cx = rect.left + 15;
+    Graph.font.paint(
+        canvas, "OnBot Java", Offset(cx, cy), Graph.LibraryTitleSize,
+        style: "Bold", fill: Graph.LibraryTitleColor);
+
+    cy += Graph.LibraryTitleSize + Graph.LibraryFileNameSize;
+
+    cy += 20;
     return cy - top;
   }
 
